@@ -15,7 +15,7 @@ namespace glk {
  *
  */
 class GLSLShader {
-public:
+ public:
   GLSLShader() {}
 
   /**
@@ -36,7 +36,6 @@ public:
   /** @brief find uniform variable location **/
   GLint uniform(const std::string& name);
 
-
   /*** getter and setter for uniforms ***/
   Eigen::Vector4f get_uniform4f(const std::string& name) {
     Eigen::Vector4f vec;
@@ -52,16 +51,26 @@ public:
 
   void set_uniform(const std::string& name, int value) { glUniform1i(uniform(name), value); }
   void set_uniform(const std::string& name, float value) { glUniform1f(uniform(name), value); }
-  void set_uniform(const std::string& name, const Eigen::Vector2f& vector) { glUniform2fv(uniform(name), 1, vector.data()); }
-  void set_uniform(const std::string& name, const Eigen::Vector3f& vector) { glUniform3fv(uniform(name), 1, vector.data()); }
-  void set_uniform(const std::string& name, const Eigen::Vector4f& vector) { glUniform4fv(uniform(name), 1, vector.data()); }
-  void set_uniform(const std::string& name, const Eigen::Vector4i& vector) { glUniform4iv(uniform(name), 1, vector.data()); }
-  void set_uniform(const std::string& name, const Eigen::Matrix4f& matrix) { glUniformMatrix4fv(uniform(name), 1, GL_FALSE, matrix.data()); }
+  void set_uniform(const std::string& name, const Eigen::Vector2f& vector) {
+    glUniform2fv(uniform(name), 1, vector.data());
+  }
+  void set_uniform(const std::string& name, const Eigen::Vector3f& vector) {
+    glUniform3fv(uniform(name), 1, vector.data());
+  }
+  void set_uniform(const std::string& name, const Eigen::Vector4f& vector) {
+    glUniform4fv(uniform(name), 1, vector.data());
+  }
+  void set_uniform(const std::string& name, const Eigen::Vector4i& vector) {
+    glUniform4iv(uniform(name), 1, vector.data());
+  }
+  void set_uniform(const std::string& name, const Eigen::Matrix4f& matrix) {
+    glUniformMatrix4fv(uniform(name), 1, GL_FALSE, matrix.data());
+  }
 
-private:
+ private:
   GLuint read_shader_from_file(const std::string& filename, GLuint shader_type);
 
-private:
+ private:
   GLuint shader_program;
   std::unordered_map<std::string, GLint> attrib_cache;
   std::unordered_map<std::string, GLint> uniform_cache;

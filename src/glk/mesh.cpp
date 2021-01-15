@@ -9,7 +9,9 @@
 
 namespace glk {
 
-Mesh::Mesh(const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>>& vertices, const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>>& normals, const std::vector<int>& indices)
+Mesh::Mesh(const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>>& vertices,
+           const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>>& normals,
+           const std::vector<int>& indices)
     : num_vertices(vertices.size()), num_indices(indices.size()) {
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);

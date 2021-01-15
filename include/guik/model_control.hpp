@@ -10,7 +10,7 @@
 namespace guik {
 
 class ModelControl {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   ModelControl(const std::string& name);
@@ -18,7 +18,7 @@ public:
   void draw_ui();
   Eigen::Matrix4f model_matrix() const;
 
-private:
+ private:
   std::string name;
   Eigen::Affine3f pose;
 };

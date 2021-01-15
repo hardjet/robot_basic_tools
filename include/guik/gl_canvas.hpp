@@ -17,7 +17,7 @@ namespace guik {
  *
  */
 class GLCanvas {
-public:
+ public:
   GLCanvas(const std::string& data_directory, const Eigen::Vector2i& size);
 
   bool ready() const;
@@ -38,7 +38,7 @@ public:
   void draw_ui();
   void show_projection_setting() const;
 
-public:
+ public:
   Eigen::Vector2i size;
   std::unique_ptr<glk::GLSLShader> shader;
   std::unique_ptr<glk::FrameBuffer> frame_buffer;
@@ -47,7 +47,7 @@ public:
   std::unique_ptr<guik::CameraControl> camera_control;
   std::unique_ptr<guik::ProjectionControl> projection_control;
 
-private:
+ private:
   float point_size;
   float min_z;
   float max_z;

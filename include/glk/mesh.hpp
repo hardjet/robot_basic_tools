@@ -14,30 +14,30 @@ namespace glk {
  * @brief Mesh class
  *
  */
-    class Mesh : public Drawable {
-    public:
-        Mesh(const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &vertices,
-             const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
-             const std::vector<int> &indices);
+class Mesh : public Drawable {
+ public:
+  Mesh(const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &vertices,
+       const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
+       const std::vector<int> &indices);
 
-        ~Mesh() override;
+  ~Mesh() override;
 
-        void draw(glk::GLSLShader &shader) const override;
+  void draw(glk::GLSLShader &shader) const override;
 
-    private:
-        Mesh(const Mesh &);
+ private:
+  Mesh(const Mesh &);
 
-        Mesh &operator=(const Mesh &);
+  Mesh &operator=(const Mesh &);
 
-    private:
-        int num_vertices;
-        int num_indices;
+ private:
+  int num_vertices;
+  int num_indices;
 
-        GLuint vao;
-        GLuint vbo;
-        GLuint nbo;
-        GLuint ebo;
-    };
+  GLuint vao;
+  GLuint vbo;
+  GLuint nbo;
+  GLuint ebo;
+};
 
 }  // namespace glk
 

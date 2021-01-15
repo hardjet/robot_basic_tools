@@ -11,7 +11,7 @@ class GLFWwindow;
 
 namespace guik {
 class Application {
-public:
+ public:
   Application();
   virtual ~Application();
 
@@ -28,7 +28,7 @@ public:
 
   virtual void draw_gl();
 
-protected:
+ protected:
   GLFWwindow* window;
 };
 

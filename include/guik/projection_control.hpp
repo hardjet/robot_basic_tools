@@ -6,15 +6,13 @@
 namespace guik {
 
 class ProjectionControl {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   ProjectionControl(const Eigen::Vector2i& size);
   ~ProjectionControl();
 
-  void set_size(const Eigen::Vector2i& size) {
-    this->size = size;
-  }
+  void set_size(const Eigen::Vector2i& size) { this->size = size; }
 
   Eigen::Matrix4f projection_matrix() const;
 
@@ -22,7 +20,7 @@ public:
 
   void show();
 
-private:
+ private:
   bool show_window;
   Eigen::Vector2i size;
 
@@ -34,6 +32,6 @@ private:
   float far;
 };
 
-}
+}  // namespace guik
 
 #endif

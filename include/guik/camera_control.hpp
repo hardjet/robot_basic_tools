@@ -13,7 +13,7 @@ namespace guik {
  *
  */
 class CameraControl {
-public:
+ public:
   virtual ~CameraControl() {}
 
   /** @brief mouse button callback */
@@ -34,7 +34,7 @@ public:
  *
  */
 class ArcCameraControl : public CameraControl {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   ArcCameraControl();
@@ -48,7 +48,7 @@ public:
   Eigen::Quaternionf rotation() const;
   Eigen::Matrix4f view_matrix() const override;
 
-private:
+ private:
   Eigen::Vector3f center;
   double distance;
 

@@ -15,7 +15,7 @@ namespace glk {
  */
 class FrameBuffer {
 public:
-  FrameBuffer(const Eigen::Vector2i& size);
+  explicit FrameBuffer(const Eigen::Vector2i& size);
 
   ~FrameBuffer();
 

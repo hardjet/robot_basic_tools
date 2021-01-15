@@ -110,7 +110,6 @@ include_directories(
         include
         thirdparty/gl3w
         thirdparty/imgui
-        thirdparty/imgui/examples
         thirdparty/portable-file-dialogs
         ${GLM_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}

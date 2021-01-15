@@ -12,8 +12,9 @@ namespace glk {
  *
  */
 class Texture {
-public:
-  Texture(const Eigen::Vector2i& size, GLuint internal_format, GLuint format, GLuint type) : width(size[0]), height(size[1]) {
+ public:
+  Texture(const Eigen::Vector2i& size, GLuint internal_format, GLuint format, GLuint type)
+      : width(size[0]), height(size[1]) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, internal_format, size[0], size[1], 0, format, type, 0);
@@ -35,7 +36,7 @@ public:
     return pixels;
   }
 
-private:
+ private:
   int width;
   int height;
   GLuint texture;

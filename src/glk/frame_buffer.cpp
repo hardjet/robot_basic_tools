@@ -42,10 +42,11 @@ void FrameBuffer::add_color_buffer(GLuint internal_format, GLuint format, GLuint
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 
   color_buffers.push_back(std::make_shared<Texture>(color_buffers.front()->size(), internal_format, format, type));
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + color_buffers.size() - 1, GL_TEXTURE_2D, color_buffers.back()->id(), 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + color_buffers.size() - 1, GL_TEXTURE_2D,
+                         color_buffers.back()->id(), 0);
 
   std::vector<GLuint> color_attachments(color_buffers.size());
-  for(int i=0; i<color_buffers.size(); i++) {
+  for (int i = 0; i < color_buffers.size(); i++) {
     color_attachments[i] = GL_COLOR_ATTACHMENT0 + i;
   }
   glDrawBuffers(color_buffers.size(), color_attachments.data());

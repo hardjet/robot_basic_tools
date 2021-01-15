@@ -11,23 +11,23 @@
 namespace glk {
 
 class PointCloudBuffer {
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using Ptr = std::shared_ptr<PointCloudBuffer>;
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  using Ptr = std::shared_ptr<PointCloudBuffer>;
 
-    PointCloudBuffer(const std::string& cloud_filename);
-    PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& cloud);
-    ~PointCloudBuffer();
+  PointCloudBuffer(const std::string& cloud_filename);
+  PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& cloud);
+  ~PointCloudBuffer();
 
-    void draw(glk::GLSLShader& shader) const;
+  void draw(glk::GLSLShader& shader) const;
 
-private:
-    GLuint vao{};
-    GLuint vbo{};
-    int stride;
-    int num_points;
+ private:
+  GLuint vao{};
+  GLuint vbo{};
+  int stride;
+  int num_points;
 };
 
-}
+}  // namespace glk
 
 #endif

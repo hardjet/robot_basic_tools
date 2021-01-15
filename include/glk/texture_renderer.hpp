@@ -11,9 +11,11 @@ namespace glk {
  *
  */
 class TextureRenderer {
-public:
+ public:
   TextureRenderer(const std::string& data_directory) {
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices = {Eigen::Vector3f(-1.0f, -1.0f, 0.0f), Eigen::Vector3f(1.0f, -1.0f, 0.0f), Eigen::Vector3f(-1.0f, 1.0f, 0.0f), Eigen::Vector3f(1.0f, 1.0f, 0.0f)};
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices = {
+        Eigen::Vector3f(-1.0f, -1.0f, 0.0f), Eigen::Vector3f(1.0f, -1.0f, 0.0f), Eigen::Vector3f(-1.0f, 1.0f, 0.0f),
+        Eigen::Vector3f(1.0f, 1.0f, 0.0f)};
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -57,7 +59,7 @@ public:
     glDisable(GL_TEXTURE_2D);
   }
 
-private:
+ private:
   GLuint vao;
   GLuint vbo;
 

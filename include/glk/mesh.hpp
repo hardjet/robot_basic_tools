@@ -6,7 +6,6 @@
 
 #include <GL/gl3w.h>
 #include <glk/drawble.hpp>
-#include <glk/glsl_shader.hpp>
 
 namespace glk {
 

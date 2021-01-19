@@ -54,7 +54,7 @@ configure_file(
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 set(USE_STACK_TRACE_LOGGER OFF CACHE BOOL "Enable automatic stack trace logger of google-glog")
-set(USE_STACK_TRACE_LOGGER OFF)
+set(USE_STACK_TRACE_LOGGER ON)
 if (USE_STACK_TRACE_LOGGER)
     message(STATUS "Stack trace logger: ENABLED")
     # Glog
@@ -94,6 +94,7 @@ message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 # ros相关
 find_package(catkin REQUIRED COMPONENTS
         roscpp
+        roslib
         )
 
 # ----- catking config -----
@@ -126,7 +127,7 @@ target_include_directories(imgui PUBLIC
 
 target_link_libraries(imgui
         PUBLIC
-#        ${OPENGL_LIBRARIES}
+        ${OPENGL_LIBRARIES}
         glfw
 #        dl
         )
@@ -158,10 +159,6 @@ target_include_directories(guik PUBLIC
 
 target_link_libraries(guik
         PUBLIC
-        ${OPENGL_LIBRARIES}
-#        ${PCL_LIBRARIES}
-#        glfw
-#        dl
         imgui
         )
 

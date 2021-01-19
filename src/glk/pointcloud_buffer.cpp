@@ -1,8 +1,9 @@
-#include <glk/pointcloud_buffer.hpp>
-
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+
+#include <glk/glsl_shader.hpp>
+#include <glk/pointcloud_buffer.hpp>
 
 namespace glk {
 

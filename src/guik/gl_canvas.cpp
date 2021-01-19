@@ -1,22 +1,20 @@
-#include <guik/gl_canvas.hpp>
-
-#include <iostream>
-
-#include <imgui.h>
-
 #include <glm/glm.hpp>
-#include <memory>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <imgui.h>
+#include <GL/gl3w.h>
+
 #include <glk/glsl_shader.hpp>
 #include <glk/frame_buffer.hpp>
+#include <glk/texture.hpp>
 #include <glk/texture_renderer.hpp>
 
 #include <guik/camera_control.hpp>
+#include <guik/projection_control.hpp>
 
-#include <GL/gl3w.h>
-#include <GL/gl.h>
+#include <guik/gl_canvas.hpp>
+
 
 namespace guik {
 

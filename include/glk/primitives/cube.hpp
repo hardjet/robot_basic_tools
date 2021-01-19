@@ -8,7 +8,7 @@
 namespace glk {
 
 class Cube {
-public:
+ public:
   Cube() {
     //   6 ------ 7     X
     //  /|       /|     |
@@ -17,7 +17,7 @@ public:
     // | 2 -----| 3   Y
     // |/       |/
     // 0 ------ 1
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices = {
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices_ = {
         Eigen::Vector3f(-0.5f, -0.5f, -0.5f),  // 0
         Eigen::Vector3f(-0.5f, -0.5f, 0.5f),   // 1
         Eigen::Vector3f(-0.5f, 0.5f, -0.5f),   // 2
@@ -28,18 +28,19 @@ public:
         Eigen::Vector3f(0.5f, 0.5f, 0.5f),     // 7
     };
 
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> normals(vertices.size());
-    for (int i = 0; i < vertices.size(); i++) {
-      normals[i] = vertices[i].normalized();
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> normals_(vertices_.size());
+    for (int i = 0; i < vertices_.size(); i++) {
+      normals_[i] = vertices_[i].normalized();
     }
 
-    std::vector<int> indices = {0, 1, 2, 1, 3, 2, 1, 5, 3, 3, 5, 7, 0, 4, 1, 1, 4, 5, 3, 6, 2, 3, 7, 6, 0, 2, 4, 2, 6, 4, 4, 6, 5, 5, 6, 7};
+    std::vector<int> indices_ = {0, 1, 2, 1, 3, 2, 1, 5, 3, 3, 5, 7, 0, 4, 1, 1, 4, 5,
+                                 3, 6, 2, 3, 7, 6, 0, 2, 4, 2, 6, 4, 4, 6, 5, 5, 6, 7};
 
-    this->vertices.swap(vertices);
-    this->indices.swap(indices);
+    this->vertices.swap(vertices_);
+    this->indices.swap(indices_);
   }
 
-public:
+ public:
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> normals;
   std::vector<int> indices;

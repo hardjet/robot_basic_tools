@@ -1,7 +1,12 @@
 #ifndef GLK_PRIMITIVES_HPP
 #define GLK_PRIMITIVES_HPP
 
-#include <glk/drawble.hpp>
+#include <vector>
+#include <memory>
+
+namespace glk{
+class Drawable;
+}
 
 namespace glk {
 

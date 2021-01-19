@@ -1,14 +1,20 @@
 #ifndef GLK_GL_CANVAS_CANVAS_HPP
 #define GLK_GL_CANVAS_CANVAS_HPP
 
-#include <imgui.h>
+#include <memory>
+#include <string>
+#include <Eigen/Core>
 
-#include <glk/glsl_shader.hpp>
-#include <glk/frame_buffer.hpp>
-#include <glk/texture_renderer.hpp>
+namespace glk {
+class GLSLShader;
+class FrameBuffer;
+class TextureRenderer;
+}
 
-#include <guik/camera_control.hpp>
-#include <guik/projection_control.hpp>
+namespace guik {
+class CameraControl;
+class ProjectionControl;
+}
 
 namespace guik {
 

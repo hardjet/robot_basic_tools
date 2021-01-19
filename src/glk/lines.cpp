@@ -1,7 +1,10 @@
-#include <glk/lines.hpp>
-
 #include <iostream>
 #include <Eigen/Geometry>
+
+#include <GL/gl3w.h>
+
+#include <glk/glsl_shader.hpp>
+#include <glk/lines.hpp>
 
 namespace glk {
 

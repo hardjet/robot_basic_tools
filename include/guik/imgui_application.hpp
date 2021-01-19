@@ -2,9 +2,7 @@
 #define GUIK_IMGUI_APPLICATION_HPP
 
 #include <iostream>
-
-#include <imgui.h>
-#include <GL/gl3w.h>
+#include <GLFW/glfw3.h>
 #include <Eigen/Core>
 
 class GLFWwindow;

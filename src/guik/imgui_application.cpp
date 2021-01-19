@@ -1,5 +1,3 @@
-#include <guik/imgui_application.hpp>
-
 #include <iostream>
 #include <unordered_map>
 
@@ -9,6 +7,7 @@
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
+#include <guik/imgui_application.hpp>
 
 namespace guik {
 
@@ -64,6 +63,8 @@ bool Application::init(const char *window_name, const Eigen::Vector2i &size, con
   // setup imgui
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  auto &io = ImGui::GetIO();
+  io.IniFilename = "/home/anson/catkin_map/src/robot_basic_tools/imgui.ini";
 
   ImGui::StyleColorsDark();
 

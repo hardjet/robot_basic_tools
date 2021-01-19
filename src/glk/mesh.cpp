@@ -1,11 +1,5 @@
-#include <glk/mesh.hpp>
-
-#include <vector>
-#include <Eigen/Core>
-
-#include <GL/gl3w.h>
-#include <glk/drawble.hpp>
 #include <glk/glsl_shader.hpp>
+#include <glk/mesh.hpp>
 
 namespace glk {
 

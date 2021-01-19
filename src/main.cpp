@@ -2,11 +2,18 @@
 #include <imgui.h>
 #include <portable-file-dialogs.h>
 
+#include <glk/primitives/primitives.hpp>
+#include <glk/drawble.hpp>
+#include <glk/texture.hpp>
+#include <glk/glsl_shader.hpp>
+#include <glk/frame_buffer.hpp>
+#include <glk/texture_renderer.hpp>
+
 #include <guik/gl_canvas.hpp>
 #include <guik/progress_modal.hpp>
 #include <guik/camera_control.hpp>
 #include <guik/imgui_application.hpp>
-#include <glk/primitives/primitives.hpp>
+#include <guik/projection_control.hpp>
 
 #include <ros/package.h>
 
@@ -41,8 +48,7 @@ class TestApplication : public guik::Application {
     progress = std::make_unique<guik::ProgressModal>("progress modal");
 
     // initialize the main OpenGL canvas
-    // std::string package_path = ros::package::getPath("robot_basic_tools");
-    std::string package_path = "/home/anson/catkin_map/src/robot_basic_tools";
+    std::string package_path = ros::package::getPath("robot_basic_tools");
     std::string data_directory = package_path + "/data";
 
     main_canvas = std::make_unique<guik::GLCanvas>(data_directory, framebuffer_size());
@@ -347,7 +353,14 @@ int main(int argc, char **argv) {
   std::unique_ptr<guik::Application> app(new TestApplication());
 
   std::string glsl_version = "#version 330";
-  if (!app->init("Interactive SLAM", Eigen::Vector2i(1280, 720), glsl_version.c_str())) {
+
+  auto path = ros::package::getPath("robot_basic_tools") + "/imgui.ini";
+  std::cout << "imgui path:" << path << std::endl;
+
+  // ImGuiIO &io = ImGui::GetIO();
+  // io.IniFilename = "/home/anson/catkin_map/src/robot_basic_tools/imgui.ini";
+  // std::cout << "imgui path:" << io.IniFilename << std::endl;
+  if (!app->init("Robot Basic Tools", Eigen::Vector2i(1280, 720), glsl_version.c_str())) {
     return 1;
   }
 

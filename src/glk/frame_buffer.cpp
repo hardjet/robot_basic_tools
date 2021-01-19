@@ -1,9 +1,5 @@
-#include <glk/frame_buffer.hpp>
-
-#include <GL/gl3w.h>
-#include <Eigen/Core>
-
 #include <glk/texture.hpp>
+#include <glk/frame_buffer.hpp>
 
 namespace glk {
 

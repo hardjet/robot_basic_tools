@@ -1,13 +1,14 @@
 #ifndef GLK_FRAME_BUFFER_HPP
 #define GLK_FRAME_BUFFER_HPP
 
+#include <vector>
 #include <memory>
 #include <GL/gl3w.h>
 #include <Eigen/Core>
 
-#include <glk/texture.hpp>
-
 namespace glk {
+
+class Texture;
 
 /**
  * @brief OpenGL FrameBuffer wrapper class

@@ -1,9 +1,7 @@
-#include <guik/model_control.hpp>
-
 #include <sstream>
 
 #include <imgui.h>
-#include <Eigen/Core>
+#include <guik/model_control.hpp>
 
 namespace guik {
 

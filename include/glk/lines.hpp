@@ -1,13 +1,10 @@
 #ifndef GLK_LINES_HPP
 #define GLK_LINES_HPP
 
-#include <GL/gl3w.h>
-
 #include <vector>
 #include <Eigen/Core>
 
 #include <glk/drawble.hpp>
-#include <glk/glsl_shader.hpp>
 
 namespace glk {
 

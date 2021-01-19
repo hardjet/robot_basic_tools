@@ -1,6 +1,5 @@
-#include <glk/primitives/primitives.hpp>
-
 #include <iostream>
+#include <glk/drawble.hpp>
 #include <glk/mesh.hpp>
 #include <glk/lines.hpp>
 #include <glk/mesh_utils.hpp>
@@ -11,6 +10,7 @@
 #include <glk/primitives/icosahedron.hpp>
 #include <glk/primitives/coordinate_system.hpp>
 #include <glk/loaders/ply_loader.hpp>
+#include <glk/primitives/primitives.hpp>
 
 namespace glk {
 

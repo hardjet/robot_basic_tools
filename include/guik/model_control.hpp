@@ -3,7 +3,6 @@
 
 #include <sstream>
 
-#include <imgui.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 

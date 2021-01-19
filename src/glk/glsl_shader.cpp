@@ -1,15 +1,11 @@
-#include <glk/glsl_shader.hpp>
-
-#include <memory>
 #include <string>
 #include <vector>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <unordered_map>
 
 #include <GL/gl3w.h>
-#include <Eigen/Core>
+#include <glk/glsl_shader.hpp>
 
 namespace glk {
 

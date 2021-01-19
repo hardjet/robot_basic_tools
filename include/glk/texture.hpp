@@ -2,8 +2,8 @@
 #define GLK_TEXTURE_HPP
 
 #include <vector>
-#include <GL/gl3w.h>
 #include <Eigen/Core>
+#include <GL/gl3w.h>
 
 namespace glk {
 
@@ -26,7 +26,7 @@ class Texture {
   ~Texture() { glDeleteRenderbuffers(1, &texture); }
 
   GLuint id() const { return texture; }
-  Eigen::Vector2i size() const { return Eigen::Vector2i(width, height); }
+  Eigen::Vector2i size() const { return Eigen::Vector2i{width, height}; }
 
   template <typename T>
   std::vector<T> read_pixels(GLuint format = GL_RGBA, GLuint type = GL_UNSIGNED_BYTE) const {

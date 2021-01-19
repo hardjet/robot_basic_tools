@@ -9,10 +9,10 @@ class ProjectionControl {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  ProjectionControl(const Eigen::Vector2i& size);
+  explicit ProjectionControl(const Eigen::Vector2i& size);
   ~ProjectionControl();
 
-  void set_size(const Eigen::Vector2i& size) { this->size = size; }
+  void set_size(const Eigen::Vector2i& _size) { this->size = _size; }
 
   Eigen::Matrix4f projection_matrix() const;
 

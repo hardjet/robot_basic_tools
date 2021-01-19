@@ -102,7 +102,7 @@ void Application::close() { glfwSetWindowShouldClose(window, 1); }
 Eigen::Vector2i Application::framebuffer_size() {
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
-  return Eigen::Vector2i(width, height);
+  return Eigen::Vector2i{width, height};
 }
 
 void Application::framebuffer_size_callback(const Eigen::Vector2i &size) {

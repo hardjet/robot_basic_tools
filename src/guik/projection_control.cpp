@@ -11,7 +11,7 @@ namespace guik {
 ProjectionControl::ProjectionControl(const Eigen::Vector2i& size)
     : show_window(false), size(size), projection_mode(0), fovy(30.0f), width(10.0f), near(1.0f), far(1000.0f) {}
 
-ProjectionControl::~ProjectionControl() {}
+ProjectionControl::~ProjectionControl() = default;
 
 Eigen::Matrix4f ProjectionControl::projection_matrix() const {
   double aspect_ratio = size[0] / static_cast<float>(size[1]);

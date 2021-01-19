@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robot_basic_tools)
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 message(STATUS "C++14 support: OK")
@@ -21,22 +22,32 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 # ----- Set Version -----
 # 程序版本以及编译信息
-# include(${PROJECT_SOURCE_DIR}/cmake/getGitInfo.cmake)
-# string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
-# message("Build timestamp is ${BUILD_TIMESTAMP}")
+include(${PROJECT_SOURCE_DIR}/cmake/getGitInfo.cmake)
+string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+message("Build timestamp is ${BUILD_TIMESTAMP}")
 
-# set(USE_VERSION_INFO 0)
-# if (USE_VERSION_INFO)
-#     set(VERSION_MAJOR 0)
-#     set(VERSION_MINOR 2)
-#     set(VERSION_PATCH 1)
-#     message("Version is ${VERSION_MAJOR} ${VERSION_MINOR} ${VERSION_PATCH}")
-# endif ()
+# 获取分支名
+set(GIT_BRANCH "")
+get_git_branch(GIT_BRANCH)
+message("Git branch is ${GIT_BRANCH}")
 
-# configure_file(
-#         "${PROJECT_SOURCE_DIR}/include/version_info.h.in"
-#         "${PROJECT_SOURCE_DIR}/include/version_info.h"
-# )
+# 获取HASH
+set(GIT_HASH "")
+get_git_hash(GIT_HASH)
+message("Git hash is ${GIT_HASH}")
+
+set(USE_VERSION_INFO 1)
+if (USE_VERSION_INFO)
+    set(VERSION_MAJOR 0)
+    set(VERSION_MINOR 0)
+    set(VERSION_PATCH 1)
+    message("Version is ${VERSION_MAJOR} ${VERSION_MINOR} ${VERSION_PATCH}")
+endif ()
+
+configure_file(
+        "${PROJECT_SOURCE_DIR}/include/version_info.h.in"
+        "${PROJECT_SOURCE_DIR}/include/version_info.h"
+)
 
 # ----- Set debug -----
 
@@ -44,7 +55,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 set(USE_STACK_TRACE_LOGGER OFF CACHE BOOL "Enable automatic stack trace logger of google-glog")
 set(USE_STACK_TRACE_LOGGER OFF)
-if(USE_STACK_TRACE_LOGGER)
+if (USE_STACK_TRACE_LOGGER)
     message(STATUS "Stack trace logger: ENABLED")
     # Glog
     find_package(Glog REQUIRED)
@@ -53,88 +64,75 @@ if(USE_STACK_TRACE_LOGGER)
     message(STATUS "GLOG_INCLUDE_DIR: ${GLOG_INCLUDE_DIR}")
     message(STATUS "GLOG_LIBRARIES: ${GLOG_LIBRARIES}")
 
-else()
+else ()
     message(STATUS "Stack trace logger: DISABLED")
-endif()
+endif ()
 
 # ----- find package -----
 find_package(GLM REQUIRED)
 
 if (POLICY CMP0072)
     set(OpenGL_GL_PREFERENCE GLVND)
-#    set(OpenGL_GL_PREFERENCE LEGACY)
+    # set(OpenGL_GL_PREFERENCE LEGACY)
 endif ()
 
 find_package(OpenGL REQUIRED)
+message(STATUS "OPENGL_LIBRARIES: ${OPENGL_LIBRARIES}")
 
 # pcl
-find_package(PCL 1.8 REQUIRED
+find_package(PCL 1.7 REQUIRED
         COMPONENTS
         common
-        #        kdtree
-        #        search
-        # filters     # 包含了上面所有的
+        io
         )
 message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
 
 add_definitions(${PCL_DEFINITIONS})
 message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
-#message(STATUS "PCL_COMMON_LIBRARIES: ${PCL_COMMON_LIBRARIES}")
-#message(STATUS "PCL_KDTREE_LIBRARIES: ${PCL_KDTREE_LIBRARIES}")
-#message(STATUS "PCL_SEARCH_LIBRARIES: ${PCL_SEARCH_LIBRARIES}")
-message(STATUS "PCL_LIBRARIES: ${PCL_LIBRARIES}")
+#message(STATUS "PCL_LIBRARIES: ${PCL_LIBRARIES}")
 
 # ros相关
 find_package(catkin REQUIRED COMPONENTS
         roscpp
-)
+        )
 
-##################
-# catking config #
-##################
+# ----- catking config -----
 catkin_package(
-        #  INCLUDE_DIRS include
-        #  LIBRARIES interactive_map_correction
-        #  CATKIN_DEPENDS other_catkin_pkg
-        #  DEPENDS system_lib
 )
 
-###########
-## Build ##
-###########
+# ----- Build -----
 # add_subdirectory(hdl_graph_slam)
-# add_subdirectory(thirdparty/ground_filter)
-# add_subdirectory(thirdparty/octomap_conversion)
 
-include_directories(
-        include
-        thirdparty/gl3w
-        thirdparty/imgui
-        thirdparty/portable-file-dialogs
-        ${GLM_INCLUDE_DIRS}
-        ${PCL_INCLUDE_DIRS}
-        ${catkin_INCLUDE_DIRS}
-)
-
-# imgui
+# build target imgui
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
-
-add_library(imgui STATIC
+add_library(imgui SHARED
         thirdparty/gl3w/gl3w.c
         thirdparty/imgui/imgui.cpp
         thirdparty/imgui/imgui_demo.cpp
         thirdparty/imgui/imgui_draw.cpp
         thirdparty/imgui/imgui_widgets.cpp
+        thirdparty/imgui/imgui_tables.cpp
         thirdparty/imgui/backends/imgui_impl_glfw.cpp
         thirdparty/imgui/backends/imgui_impl_opengl3.cpp
         )
-target_link_libraries(imgui
-        ${OPENGL_LIBRARIES}
-        glfw
-        dl
+
+set_target_properties(imgui PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME}
         )
 
-add_library(guik STATIC
+target_include_directories(imgui PUBLIC
+        $<BUILD_INTERFACE:thirdparty/gl3w;${GLM_INCLUDE_DIRS};thirdparty/imgui>
+        )
+
+target_link_libraries(imgui
+        PUBLIC
+#        ${OPENGL_LIBRARIES}
+        glfw
+#        dl
+        )
+
+# build target  guik
+add_library(guik SHARED
         src/glk/mesh.cpp
         src/glk/lines.cpp
         src/glk/colormap.cpp
@@ -150,35 +148,39 @@ add_library(guik STATIC
         src/guik/imgui_application.cpp
         )
 
-# add_executable(interactive_slam
-#         src/interactive_slam.cpp
-#         src/hdl_graph_slam/registration_methods.cpp
-#         src/hdl_graph_slam/interactive_graph.cpp
-#         src/hdl_graph_slam/interactive_keyframe.cpp
-#         src/hdl_graph_slam/version_modal.cpp
-#         src/hdl_graph_slam/graph_edit_window.cpp
-#         src/hdl_graph_slam/edge_refinement_window.cpp
-#         src/hdl_graph_slam/plane_detection_window.cpp
-#         src/hdl_graph_slam/plane_alignment_modal.cpp
-#         src/hdl_graph_slam/manual_loop_close_modal.cpp
-#         src/hdl_graph_slam/automatic_loop_close_window.cpp
-#         src/hdl_graph_slam/scan_context_manager.cpp
-#         src/hdl_graph_slam/manual_adjust_merge_modal.cpp
-#         src/hdl_graph_slam/view/edge_view.cpp
-#         src/hdl_graph_slam/view/vertex_view.cpp
-#         src/hdl_graph_slam/map_block_io.cpp
-#         src/hdl_graph_slam/map_grid.cpp)
+set_target_properties(guik PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME}/
+        )
 
-# target_link_libraries(interactive_slam
-#         ${OPENGL_LIBRARIES}
-#         ${catkin_LIBRARIES}
-#         glfw
-#         guik
-#         imgui
-#         hdl_graph_slam
-#         ground_filter
-#         octomap_conversion
-#         glog
-#         )
+target_include_directories(guik PUBLIC
+        $<BUILD_INTERFACE:include;${PCL_INCLUDE_DIRS}>
+        )
 
-# file(COPY data DESTINATION .)
+target_link_libraries(guik
+        PUBLIC
+        ${OPENGL_LIBRARIES}
+#        ${PCL_LIBRARIES}
+#        glfw
+#        dl
+        imgui
+        )
+
+# build target ${PROJECT_NAME}
+add_executable(${PROJECT_NAME}
+        src/main.cpp
+        )
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${catkin_INCLUDE_DIRS}
+        thirdparty/portable-file-dialogs
+        )
+
+target_link_libraries(${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+        ${PCL_LIBRARIES}
+        guik
+        imgui
+        glog
+        )
+
+#file(COPY data DESTINATION /home/anson/share)

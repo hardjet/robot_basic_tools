@@ -13,7 +13,7 @@ class ModelControl {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  ModelControl(const std::string& name);
+  explicit ModelControl(const std::string& name);
 
   void draw_ui();
   Eigen::Matrix4f model_matrix() const;

@@ -4,7 +4,7 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <glk/drawble.hpp>
 
 namespace glk {

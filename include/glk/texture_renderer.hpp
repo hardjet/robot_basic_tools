@@ -1,7 +1,7 @@
 #ifndef GLK_TEXTURE_RENDERER_HPP
 #define GLK_TEXTURE_RENDERER_HPP
 
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <glk/glsl_shader.hpp>
 
 namespace glk {

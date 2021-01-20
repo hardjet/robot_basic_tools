@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <memory>
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <Eigen/Core>
 
 namespace glk {

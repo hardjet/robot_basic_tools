@@ -2,8 +2,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <imgui.h>
-#include <GL/gl3w.h>
+#include "imgui.h"
+#include "GL/gl3w.h"
 
 #include <glk/glsl_shader.hpp>
 #include <glk/frame_buffer.hpp>
@@ -15,7 +15,6 @@
 
 #include <guik/gl_canvas.hpp>
 
-
 namespace guik {
 
 /**
@@ -25,7 +24,7 @@ namespace guik {
  * @param size
  */
 GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size)
-    : size(size), point_size(50.0f), min_z(-5.0f), max_z(20.0f), z_clipping(true) {
+    : show_window(false), size(size), point_size(50.0f), min_z(-5.0f), max_z(20.0f), z_clipping(true) {
   frame_buffer = std::make_unique<glk::FrameBuffer>(size);
   frame_buffer->add_color_buffer(GL_RGBA32I, GL_RGBA_INTEGER, GL_INT);
 
@@ -152,7 +151,7 @@ void GLCanvas::mouse_control() const {
  */
 Eigen::Vector4i GLCanvas::pick_info(const Eigen::Vector2i &p, int window) const {
   if (p[0] < 5 || p[1] < 5 || p[0] > size[0] - 5 || p[1] > size[1] - 5) {
-    return Eigen::Vector4i(-1, -1, -1, -1);
+    return Eigen::Vector4i{-1, -1, -1, -1};
   }
 
   std::vector<int> pixels = frame_buffer->color(1).read_pixels<int>(GL_RGBA_INTEGER, GL_INT);
@@ -177,7 +176,7 @@ Eigen::Vector4i GLCanvas::pick_info(const Eigen::Vector2i &p, int window) const 
     }
   }
 
-  return Eigen::Vector4i(-1, -1, -1, -1);
+  return Eigen::Vector4i{-1, -1, -1, -1};
 }
 
 /**
@@ -235,16 +234,20 @@ Eigen::Vector3f GLCanvas::unproject(const Eigen::Vector2i &p, float depth) const
   glm::vec3 wincoord = glm::vec3(p[0], size[1] - p[1], depth);
   glm::vec3 objcoord = glm::unProject(wincoord, view, projection, viewport);
 
-  return Eigen::Vector3f(objcoord.x, objcoord.y, objcoord.z);
+  return Eigen::Vector3f{objcoord.x, objcoord.y, objcoord.z};
 }
 
+void GLCanvas::show_shader_setting() { show_window = true; }
+
 void GLCanvas::draw_ui() {
-  ImGui::Begin("shader setting", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-  ImGui::DragFloat("point_size", &point_size, 10.0f);
-  ImGui::DragFloat("min_z", &min_z, 0.1f);
-  ImGui::DragFloat("max_z", &max_z, 0.1f);
-  ImGui::Checkbox("z_clipping", &z_clipping);
-  ImGui::End();
+  if (show_window) {
+    ImGui::Begin("shader setting", &show_window, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::DragFloat("point_size", &point_size, 10.0f);
+    ImGui::DragFloat("min_z", &min_z, 0.1f);
+    ImGui::DragFloat("max_z", &max_z, 0.1f);
+    ImGui::Checkbox("z_clipping", &z_clipping);
+    ImGui::End();
+  }
 
   projection_control->draw_ui();
 }

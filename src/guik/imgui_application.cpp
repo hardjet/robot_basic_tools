@@ -1,11 +1,12 @@
 #include <iostream>
+#include <unistd.h>
 #include <unordered_map>
 
-#include <imgui.h>
+#include "imgui.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <GLFW/glfw3.h>
 #include <guik/imgui_application.hpp>
 
@@ -33,7 +34,8 @@ void fb_size_callback(GLFWwindow *window, int width, int height) {
   appmap[window]->framebuffer_size_callback(Eigen::Vector2i(width, height));
 }
 
-bool Application::init(const char *window_name, const Eigen::Vector2i &size, const char *glsl_version) {
+bool Application::init(const char *window_name, const char *imgui_config_path, const Eigen::Vector2i &size,
+                       const char *glsl_version) {
   glfwSetErrorCallback(
       [](int err, const char *desc) { std::cerr << "glfw error " << err << ": " << desc << std::endl; });
   if (!glfwInit()) {
@@ -64,9 +66,9 @@ bool Application::init(const char *window_name, const Eigen::Vector2i &size, con
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   auto &io = ImGui::GetIO();
-  io.IniFilename = "/home/anson/catkin_map/src/robot_basic_tools/imgui.ini";
+  io.IniFilename = imgui_config_path;
 
-  ImGui::StyleColorsDark();
+  ImGui::StyleColorsClassic();
 
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
@@ -88,13 +90,16 @@ void Application::run() {
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
-    glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
+    // 设置背景色
+    glClearColor(82.0 / 255.0, 82.0 / 255.0, 82.0 / 255.0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     draw_gl();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
+
+    usleep(5000);
   }
 }
 

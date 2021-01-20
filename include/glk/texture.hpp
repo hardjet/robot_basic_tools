@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <Eigen/Core>
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 
 namespace glk {
 
@@ -17,7 +17,7 @@ class Texture {
       : width(size[0]), height(size[1]) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, size[0], size[1], 0, format, type, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, size[0], size[1], 0, format, type, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);

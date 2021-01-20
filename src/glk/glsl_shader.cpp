@@ -4,7 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <glk/glsl_shader.hpp>
 
 namespace glk {

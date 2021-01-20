@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <Eigen/Core>
 
 namespace glk {

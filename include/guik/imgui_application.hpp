@@ -13,7 +13,7 @@ class Application {
   Application();
   virtual ~Application();
 
-  virtual bool init(const char* window_name, const Eigen::Vector2i& size, const char* glsl_version);
+  virtual bool init(const char* window_name, const char* imgui_config_path, const Eigen::Vector2i& size, const char* glsl_version);
 
   void run();
 

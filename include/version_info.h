@@ -7,7 +7,7 @@
 #define VERSION_PATCH 1
 #endif
 
-#define BUILD_TIMESTAMP "2021-01-19 12:56:19"
+#define BUILD_TIMESTAMP "2021-01-20 21:41:41"
 
 #define GIT_BRANCH "dev"
-#define GIT_HASH "f5518b3"
+#define GIT_HASH "eb17f2c"

@@ -129,7 +129,6 @@ target_link_libraries(imgui
         PUBLIC
         ${OPENGL_LIBRARIES}
         glfw
-#        dl
         )
 
 # build target  guik
@@ -154,7 +153,7 @@ set_target_properties(guik PROPERTIES
         )
 
 target_include_directories(guik PUBLIC
-        $<BUILD_INTERFACE:include;${PCL_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:./include;${PCL_INCLUDE_DIRS}>
         )
 
 target_link_libraries(guik
@@ -164,6 +163,9 @@ target_link_libraries(guik
 
 # build target ${PROJECT_NAME}
 add_executable(${PROJECT_NAME}
+        src/dev/sensor.cpp
+        src/dev/camera.cpp
+        src/dev/sensor_manager.cpp
         src/main.cpp
         )
 
@@ -176,7 +178,6 @@ target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
         guik
-        imgui
         glog
         )
 

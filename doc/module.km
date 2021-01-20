@@ -1,0 +1,168 @@
+{
+    "root": {
+        "data": {
+            "id": "c8n3w21axyg0",
+            "created": 1611056568046,
+            "text": "功能规划"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "c8n43n6vxd40",
+                    "created": 1611057162645,
+                    "text": "传感器模块",
+                    "expandState": "expand",
+                    "layout": null
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c8n3wh59my00",
+                            "created": 1611056600937,
+                            "text": "相机",
+                            "layout": null
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c8n3y6q9noo0",
+                                    "created": 1611056734991,
+                                    "text": "多相机模型支持",
+                                    "progress": 1,
+                                    "layout": null
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c8n3ymwtgyo0",
+                                    "created": 1611056770216,
+                                    "text": "显示图像",
+                                    "progress": 1,
+                                    "layout": null
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c8n3yw9lzhc0",
+                                    "created": 1611056790580,
+                                    "text": "支持深度点云信息显示",
+                                    "progress": 1,
+                                    "layout": null
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c8n40jmr6xs0",
+                                    "created": 1611056919805,
+                                    "text": "相机内参支持手动输入与从json文件导入，支持导出json",
+                                    "progress": 1,
+                                    "layout": null
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c8n45tiwns00",
+                            "created": 1611057333161,
+                            "text": "激光",
+                            "layout": null
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c8n461jv99c0",
+                                    "created": 1611057350633,
+                                    "text": "点云数据显示",
+                                    "layout": null
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c8n441j6yn40",
+                    "created": 1611057193864,
+                    "text": "数据时间分析",
+                    "layout": null
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c8n44cqnfx40",
+                            "created": 1611057218260,
+                            "text": "单一数据分析数据的时间间隔稳定性",
+                            "layout": null
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c8n44wnu0js0",
+                            "created": 1611057261625,
+                            "text": "多传感器数据分析时间同步情况",
+                            "layout": null
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c8n47r23gio0",
+                    "created": 1611057484519,
+                    "text": "标定功能",
+                    "layout": null
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c8n47wt6ifc0",
+                            "created": 1611057497041,
+                            "text": "单线激光与相机标定",
+                            "layout": null
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c8n48dy5aao0",
+                            "created": 1611057534346,
+                            "text": "多单线之间标定",
+                            "layout": null
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c8n48psyn400",
+                            "created": 1611057560154,
+                            "text": "多相机之间标定",
+                            "layout": null
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c8n4a3wo9nk0",
+                    "created": 1611057669218,
+                    "text": "...",
+                    "layout": null
+                },
+                "children": []
+            }
+        ]
+    },
+    "template": "right",
+    "theme": "fresh-red",
+    "version": "1.4.43"
+}

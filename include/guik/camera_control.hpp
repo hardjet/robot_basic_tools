@@ -2,7 +2,7 @@
 #define GLK_CAMERA_CONTROL_HPP
 
 #include <memory>
-#include <GL/gl3w.h>
+#include "GL/gl3w.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 

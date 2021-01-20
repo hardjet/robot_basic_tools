@@ -9,12 +9,12 @@ namespace glk {
 class GLSLShader;
 class FrameBuffer;
 class TextureRenderer;
-}
+}  // namespace glk
 
 namespace guik {
 class CameraControl;
 class ProjectionControl;
-}
+}  // namespace guik
 
 namespace guik {
 
@@ -41,6 +41,8 @@ class GLCanvas {
   float pick_depth(const Eigen::Vector2i& p, int window = 2) const;
   Eigen::Vector3f unproject(const Eigen::Vector2i& p, float depth) const;
 
+  void show_shader_setting();
+
   void draw_ui();
   void show_projection_setting() const;
 
@@ -54,6 +56,7 @@ class GLCanvas {
   std::unique_ptr<guik::ProjectionControl> projection_control;
 
  private:
+  bool show_window;
   float point_size;
   float min_z;
   float max_z;

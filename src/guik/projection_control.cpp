@@ -1,6 +1,6 @@
 #include <guik/projection_control.hpp>
 
-#include <imgui.h>
+#include "imgui.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>

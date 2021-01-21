@@ -2,6 +2,7 @@
 cmake-build-debug/
 .vscode/
 *.ini
+./include/version_info.h
 
 # Prerequisites
 *.d

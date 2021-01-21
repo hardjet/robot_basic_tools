@@ -2,20 +2,19 @@ project(camera_model)
 
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11 -march=native")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC -fopenmp")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC -fopenmp -Wno-all")
 
 find_package(Boost REQUIRED COMPONENTS
         filesystem
         program_options
         system)
-#include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(OpenCV 4.3 PATHS "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" NO_DEFAULT_PATH REQUIRED
         COMPONENTS
         core
         imgproc
         calib3d
-        #        highgui
+        highgui
         )
 if (NOT OpenCV_FOUND)
     message(FATAL_ERROR "OpenCV == 4.3 or higher not found")
@@ -61,8 +60,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-        #        $<BUILD_INTERFACE:./include>
-        ./include
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         )
 
 target_link_libraries(${PROJECT_NAME}

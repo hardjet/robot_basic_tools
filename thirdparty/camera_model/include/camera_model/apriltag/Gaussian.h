@@ -7,8 +7,7 @@
 namespace AprilTags {
 
 class Gaussian {
-
-public:
+ public:
   static bool warned;
 
   //! Returns a Gaussian filter of size n.
@@ -25,13 +24,12 @@ public:
    *  @param alen
    *  @param f
    *  @param r the resultant array of pixels
-   *  @param roff 
+   *  @param roff
    */
   static void convolveSymmetricCentered(const std::vector<float>& a, unsigned int aoff, unsigned int alen,
-					const std::vector<float>& f, std::vector<float>& r, unsigned int roff);
-  
+                                        const std::vector<float>& f, std::vector<float>& r, unsigned int roff);
 };
 
-} // namespace
+}  // namespace AprilTags
 
 #endif

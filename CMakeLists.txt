@@ -13,11 +13,14 @@ set(CMAKE_BUILD_TYPE "Release")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # ----- Set compiler options ----
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 ")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+
+#set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -Wall")
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 ")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 ")
 
 
 # ----- Set Version -----
@@ -195,7 +198,7 @@ target_link_libraries(guik
         imgui
         )
 
-# build target ${PROJECT_NAME}
+# build target
 add_executable(${PROJECT_NAME}
         src/dev/sensor.cpp
         src/dev/camera.cpp
@@ -212,6 +215,7 @@ target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
         guik
+        camera_model
         glog
         )
 

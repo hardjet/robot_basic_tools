@@ -15,19 +15,27 @@ class SensorManager {
  public:
   using Ptr = std::shared_ptr<SensorManager>;
 
-  SensorManager(ros::NodeHandle& ros_nh) : nh_(ros_nh){};
+  explicit SensorManager(ros::NodeHandle& ros_nh) : nh_(ros_nh){};
 
   ~SensorManager();
 
-  // 添加传感器
+  /**
+   * @brief 添加传感器
+   * @param sensor
+   */
   void add_sensor(dev::Sensor::Ptr& sensor);
 
-  // ui
+  /**
+  * @brief 画ui
+  */
   void draw_ui();
 
  private:
-  // 检查并清楚需要删除的传感器
+  /// 检查并清楚需要删除的传感器
   void check_and_clear_sensors();
+
+  /// 调用所有传感器的draw_ui
+  void call_sensors_draw_ui();
 
  private:
   // ros 句柄

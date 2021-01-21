@@ -11,7 +11,6 @@
 namespace AprilTags {
 
 struct TagDetection {
-
   //! Constructor
   TagDetection();
 
@@ -32,7 +31,7 @@ struct TagDetection {
 
   //! The hamming distance between the detected code and the true code
   int hammingDistance;
-  
+
   //! How many 90 degree rotations were required to align the code (internal use only)
   int rotation;
 
@@ -41,10 +40,10 @@ struct TagDetection {
   /*  The points travel counter-clockwise around the target, always
    *  starting from the same corner of the tag.
    */
-  std::pair<float,float> p[4];
+  std::pair<float, float> p[4];
 
   //! Center of tag in pixel coordinates.
-  std::pair<float,float> cxy;
+  std::pair<float, float> cxy;
 
   //! Measured in pixels, how long was the observed perimeter.
   /*! Observed perimeter excludes the inferred perimeter which is used to connect incomplete quads. */
@@ -62,13 +61,13 @@ struct TagDetection {
   float getXYOrientation() const;
 
   //! The homography is relative to image center, whose coordinates are below.
-  std::pair<float,float> hxy;
+  std::pair<float, float> hxy;
 
   //! Interpolate point given (x,y) is in tag coordinate space from (-1,-1) to (1,1).
-  std::pair<float,float> interpolate(float x, float y) const;
+  std::pair<float, float> interpolate(float x, float y) const;
 
   //! Used to eliminate redundant tags
-  bool overlapsTooMuch(const TagDetection &other) const;
+  bool overlapsTooMuch(const TagDetection& other) const;
 
   //! Relative pose of tag with respect to the camera
   /* Returns the relative location and orientation of the tag using a
@@ -78,8 +77,7 @@ struct TagDetection {
      calibration (focal length and principal point); Result is in
      camera frame (z forward, x right, y down)
   */
-  Eigen::Matrix4d getRelativeTransform(double tag_size, double fx, double fy,
-                                       double px, double py) const;
+  Eigen::Matrix4d getRelativeTransform(double tag_size, double fx, double fy, double px, double py) const;
 
   //! Recover rotation matrix and translation vector of April tag relative to camera.
   // Result is in object frame (x forward, y left, z up)
@@ -90,10 +88,9 @@ struct TagDetection {
   void draw(cv::Mat& image) const;
 
   //! Compare function to sort detections by std::sort
-  static bool sortByIdCompare (const TagDetection &a, const TagDetection &b) { return (a.id<b.id); }
-
+  static bool sortByIdCompare(const TagDetection& a, const TagDetection& b) { return (a.id < b.id); }
 };
 
-} // namespace
+}  // namespace AprilTags
 
 #endif

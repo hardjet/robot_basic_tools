@@ -40,6 +40,14 @@ void SensorManager::check_and_clear_sensors() {
   }
 }
 
+void SensorManager::call_sensors_draw_ui() {
+  for (auto &sensors : sensors_map_) {
+    for (auto &sensor : sensors.second) {
+      sensor->draw_ui();
+    }
+  }
+}
+
 void SensorManager::draw_ui() {
   // 需要执行删除操作
   static bool need_to_delete = false;
@@ -50,7 +58,7 @@ void SensorManager::draw_ui() {
   ImGui::SetNextWindowPos(ImVec2(2, 22), ImGuiCond_Always);
   ImGui::SetNextWindowSize(ImVec2(200, 400), ImGuiCond_FirstUseEver);
 
-  ImGui::Begin("devices list", nullptr, ImGuiWindowFlags_None);
+  ImGui::Begin("Devices", nullptr, ImGuiWindowFlags_None);
   if (ImGui::Button("Add +")) {
     ImGui::OpenPopup("add_devices_popup");
   }
@@ -101,9 +109,9 @@ void SensorManager::draw_ui() {
         // 提示设备状态
         if (ImGui::IsItemHovered()) {
           if (sensor->is_sensor_online()) {
-            ImGui::SetTooltip("%s online", sensor->sensor_name.c_str());
+            ImGui::SetTooltip("[%s] online", sensor->sensor_name.c_str());
           } else {
-            ImGui::SetTooltip("%s offline", sensor->sensor_name.c_str());
+            ImGui::SetTooltip("[%s] offline", sensor->sensor_name.c_str());
           }
         }
 
@@ -142,6 +150,7 @@ void SensorManager::draw_ui() {
     }
   }
 
+  // 清理标记删除的传感器
   if (need_to_delete) {
     check_and_clear_sensors();
     need_to_delete = false;
@@ -152,6 +161,9 @@ void SensorManager::draw_ui() {
   }
 
   ImGui::End();
+
+  // 显示传感器ui
+  call_sensors_draw_ui();
 }
 
 SensorManager::~SensorManager() { sensors_map_.clear(); }

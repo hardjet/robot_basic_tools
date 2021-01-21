@@ -1,0 +1,18 @@
+%YAML:1.0
+---
+model_type: MEI
+camera_name: new camere 2
+image_width: 640
+image_height: 480
+mirror_parameters:
+   xi: 0.
+distortion_parameters:
+   k1: 0.
+   k2: 0.
+   p1: 0.
+   p2: 0.
+projection_parameters:
+   gamma1: 0.
+   gamma2: 0.
+   u0: 0.
+   v0: 0.

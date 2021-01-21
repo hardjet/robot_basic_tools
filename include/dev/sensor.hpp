@@ -15,6 +15,9 @@ class NodeHandle;
 
 namespace dev {
 
+// sensor unique id
+static uint32_t sensors_unique_id = 0;
+
 enum SENSOR_TYPE { UNDEF = 0, CAMERA = 1, LASER, LIDAR, IMU };
 
 /**
@@ -34,7 +37,7 @@ class Sensor {
   */
   Sensor(const std::string& name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF,
          std::string type_str = "undef")
-      : sensor_name(name), nh_(ros_nh), sensor_type(type), sensor_type_str(std::move(type_str)) {}
+      : sensor_name(name), nh_(ros_nh), sensor_id(sensors_unique_id++), sensor_type(type), sensor_type_str(std::move(type_str)) {}
 
   /**
    * @brief 虚析构函数
@@ -85,11 +88,13 @@ class Sensor {
   /**
   * @brief imgui绘图
   */
-  virtual void draw_ul() = 0;
+  virtual void draw_ui() = 0;
 
  public:
   // 设备名称
   std::string sensor_name;
+  // 设备唯一id
+  const uint32_t sensor_id;
   // 设备类型
   const SENSOR_TYPE sensor_type;
   // 设备名称

@@ -17,9 +17,9 @@ class Camera : public Sensor {
 
   ~Camera() override = default;
 
-  // opengl渲染
+  /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
-  // imgui绘图
+  /// imgui绘图
   void draw_ul() override;
 
 };

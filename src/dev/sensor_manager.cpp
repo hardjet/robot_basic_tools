@@ -22,8 +22,8 @@ void SensorManager::add_sensor(dev::Sensor::Ptr &sensor) {
 }
 
 void SensorManager::check_and_clear_sensors() {
-  for(auto sensors_it = sensors_map_.begin(); sensors_it != sensors_map_.end();) {
-    for(auto sensor_it = sensors_it->second.begin(); sensor_it != sensors_it->second.end();) {
+  for (auto sensors_it = sensors_map_.begin(); sensors_it != sensors_map_.end();) {
+    for (auto sensor_it = sensors_it->second.begin(); sensor_it != sensors_it->second.end();) {
       // 检查是否需要删除
       if ((*sensor_it)->is_to_be_deleted()) {
         sensor_it = sensors_it->second.erase(sensor_it);
@@ -32,7 +32,7 @@ void SensorManager::check_and_clear_sensors() {
       }
     }
     // 检查当前类型的传感器是否为空
-    if(sensors_it->second.empty()) {
+    if (sensors_it->second.empty()) {
       sensors_it = sensors_map_.erase(sensors_it);
     } else {
       ++sensors_it;
@@ -47,8 +47,8 @@ void SensorManager::draw_ui() {
   int sensor_id = 0;
 
   // 设置窗口位置和大小
-  ImGui::SetNextWindowPos(ImVec2(2, 22), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(200, 300), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2(2, 22), ImGuiCond_Always);
+  ImGui::SetNextWindowSize(ImVec2(200, 400), ImGuiCond_FirstUseEver);
 
   ImGui::Begin("devices list", nullptr, ImGuiWindowFlags_None);
   if (ImGui::Button("Add +")) {
@@ -92,6 +92,8 @@ void SensorManager::draw_ui() {
         // }
         // select_cnt++;
         // ImGui::SameLine();
+
+        // 显示当前设备状态
         sensor->draw_status();
         ImGui::SameLine();
         // 显示设备名称
@@ -104,9 +106,23 @@ void SensorManager::draw_ui() {
             ImGui::SetTooltip("%s offline", sensor->sensor_name.c_str());
           }
         }
+
+        // 编辑按钮
         ImGui::SameLine();
         ImGui::PushID(sensor_id);
+        if (ImGui::SmallButton("edit")) {
+          // 启动ui显示
+          sensor->show();
+        }
+        ImGui::PopID();
+        sensor_id++;
+
         // 删除按钮
+        ImGui::SameLine();
+        ImGui::PushID(sensor_id);
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.9444, 1.0000, 0.6000));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0,0.75,0.8));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0,0.75,0.8));
         if (ImGui::SmallButton("del")) {
           std::string msg = "are you sure to delete [" + sensor->sensor_name + "] ?";
           pfd::message message("sensor delete", msg, pfd::choice::ok_cancel);
@@ -119,6 +135,7 @@ void SensorManager::draw_ui() {
             need_to_delete = true;
           }
         }
+        ImGui::PopStyleColor(3);
         ImGui::PopID();
         sensor_id++;
       }

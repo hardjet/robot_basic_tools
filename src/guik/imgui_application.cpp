@@ -31,6 +31,7 @@ Application::~Application() {
 std::unordered_map<GLFWwindow *, Application *> appmap;
 
 void fb_size_callback(GLFWwindow *window, int width, int height) {
+  // std::cout << "fb_size_callback" << std::endl;
   appmap[window]->framebuffer_size_callback(Eigen::Vector2i(width, height));
 }
 

@@ -81,8 +81,13 @@ class TestApplication : public guik::Application {
     }
 
     // show basic graph statistics and FPS
-    ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground;
+    // 设置窗口位置和大小
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    ImGui::SetNextWindowPos(ImVec2(float(width) - 150, 22), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(145, 100), ImGuiCond_Always);
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
     ImGui::Begin("##stats", nullptr, flags);
 
     // 计算3D坐标
@@ -93,8 +98,10 @@ class TestApplication : public guik::Application {
       pos_3d = main_canvas_ptr->unproject(cur_mouse_pos, depth);
     }
     // 显示
-    ImGui::Text("(%d, %d)-(%.2f, %.2f, %.2f)", cur_mouse_pos.x(), cur_mouse_pos.y(), pos_3d.x(), pos_3d.y(),
-                pos_3d.z());
+    ImGui::Text("mouse:(%d, %d)", cur_mouse_pos.x(), cur_mouse_pos.y());
+    ImGui::Text("x:%.2f", pos_3d.x());
+    ImGui::Text("y:%.2f", pos_3d.y());
+    ImGui::Text("z:%.2f", pos_3d.z());
 
     // 判断热键是否按下
     ImGuiIO &io = ImGui::GetIO();
@@ -110,20 +117,20 @@ class TestApplication : public guik::Application {
     ImGui::Text("FPS: %.3f fps", io.Framerate);
     ImGui::End();
 
-    ImGui::Begin("##messages", nullptr,
-                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground);
-    ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "%c %s", "|/-\\"[(int)(ImGui::GetTime() / 0.05f) & 3],
-                       "running");
-
-    // optimization progress messages
-    ImGui::BeginChild("##messages", ImVec2(100 + 30.0f, ImGui::GetFontSize() * 5), true,
-                      ImGuiWindowFlags_AlwaysAutoResize);
-
-    ImGui::Text("content--------\n----------");
-    ImGui::SetScrollHere();
-    ImGui::EndChild();
-
-    ImGui::End();
+    // message 重新做
+    // ImGui::Begin("##messages", nullptr,
+    //              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground);
+    // ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "%c %s", "|/-\\"[(int)(ImGui::GetTime() / 0.05f) & 3],
+    //                    "running");
+    //
+    // // optimization progress messages
+    // ImGui::BeginChild("##messages", ImVec2(100 + 30.0f, ImGui::GetFontSize() * 5), true,
+    //                   ImGuiWindowFlags_AlwaysAutoResize);
+    //
+    // ImGui::Text("content--------\n----------");
+    // ImGui::SetScrollHere();
+    // ImGui::EndChild();
+    // ImGui::End();
 
     // draw windows
     main_canvas_ptr->draw_ui();
@@ -132,8 +139,6 @@ class TestApplication : public guik::Application {
     context_menu();
     mouse_control();
   }
-
-
 
   /**
    * @brief draw OpenGL related stuffs on the main canvas
@@ -147,8 +152,8 @@ class TestApplication : public guik::Application {
 
       // draw coordinate system
       main_canvas_ptr->shader->set_uniform("color_mode", 2);
-      main_canvas_ptr->shader->set_uniform("model_matrix",
-                                       (Eigen::UniformScaling<float>(1.0f) * Eigen::Isometry3f::Identity()).matrix());
+      main_canvas_ptr->shader->set_uniform(
+          "model_matrix", (Eigen::UniformScaling<float>(1.0f) * Eigen::Isometry3f::Identity()).matrix());
       const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
       coord.draw(*main_canvas_ptr->shader);
 
@@ -353,7 +358,6 @@ class TestApplication : public guik::Application {
 
   // 传感器管理器
   std::unique_ptr<dev::SensorManager> sensor_manager_ptr;
-
 };
 
 int main(int argc, char **argv) {
@@ -371,7 +375,8 @@ int main(int argc, char **argv) {
 
   std::string glsl_version = "#version 330";
 
-  auto path = ros::package::getPath("robot_basic_tools") + "/imgui.ini";
+  // auto path = ros::package::getPath("robot_basic_tools") + "/imgui.ini";
+  std::string path = "imgui.ini";
 
   if (!app->init("Robot Basic Tools", path.c_str(), Eigen::Vector2i(1280, 720), glsl_version.c_str())) {
     return 1;

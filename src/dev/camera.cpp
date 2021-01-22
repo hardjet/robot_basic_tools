@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ros/master.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
@@ -7,8 +8,9 @@
 
 namespace dev {
 
-Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh)
-    : Sensor(name, ros_nh, SENSOR_TYPE::CAMERA, "CAMERA") {}
+Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::CAMERA, "CAMERA") {
+  topic_list_.resize(2);
+}
 
 void Camera::draw_gl(glk::GLSLShader& shader) {}
 
@@ -33,28 +35,205 @@ void Camera::creat_instance(int current_camera_type) {
   inst_ptr_->writeParameters(inst_params_);
 }
 
-void Camera::draw_ui_parms() {
-  if (!inst_ptr_) {
-    return;
+static void HelpMarker(const char* desc) {
+  ImGui::TextDisabled("(?)");
+  if (ImGui::IsItemHovered()) {
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextUnformatted(desc);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
   }
+}
 
+void Camera::draw_ui_parms() {
+  static double const_0 = 0.0;
+
+  ImGui::BeginGroup();
+  ImGui::Text("width:%d", inst_ptr_->imageWidth());
+  ImGui::SameLine();
+  ImGui::Text("height:%d", inst_ptr_->imageHeight());
+  ImGui::SameLine();
+  HelpMarker("image size will be modified \nafter received image topic.");
+
+  ImGui::Separator();
+  ImGui::Text("params:");
+
+  // 设定宽度
+  ImGui::PushItemWidth(80);
   switch (inst_ptr_->modelType()) {
     case camera_model::Camera::ModelType::KANNALA_BRANDT:
+      ImGui::DragScalar("mu", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("mv", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("u0", ImGuiDataType_Double, &inst_params_[6], 1.0, nullptr, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("v0", ImGuiDataType_Double, &inst_params_[7], 1.0, nullptr, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k3", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k4", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k5", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
       break;
     case camera_model::Camera::ModelType::MEI:
+      ImGui::DragScalar("xi", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      // 新行
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("gamma1", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      // 新行
+      ImGui::DragScalar("gamma2", ImGuiDataType_Double, &inst_params_[6], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("u0", ImGuiDataType_Double, &inst_params_[7], 0.001, nullptr, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("v0", ImGuiDataType_Double, &inst_params_[8], 0.001, nullptr, nullptr, "%.2f");
       break;
     case camera_model::Camera::ModelType::PINHOLE:
-      ImGui::Text("cx:");
+
+      ImGui::DragScalar("fx", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
       ImGui::SameLine();
-      ImGui::InputDouble("##cx", &inst_params_[0], 1.0f, 10.f, "%.6f");
+      ImGui::DragScalar("fy", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
       ImGui::SameLine();
-      ImGui::Text("cy:");
+      ImGui::DragScalar("cx", ImGuiDataType_Double, &inst_params_[6], 1.0, &const_0, nullptr, "%.2f");
       ImGui::SameLine();
-      ImGui::InputDouble("##cy", &inst_params_[2], 1.0f, 10.f, "%.6f");
+      ImGui::DragScalar("cy", ImGuiDataType_Double, &inst_params_[7], 1.0, &const_0, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+
       break;
     default:
       break;
   }
+
+  ImGui::PopItemWidth();
+
+  ImGui::EndGroup();
+}
+
+static void get_topic_name_from_list(const std::string& target_topic_type, std::vector<std::string>& candidates) {
+  ros::master::V_TopicInfo master_topics;
+  ros::master::getTopics(master_topics);
+
+  candidates.clear();
+
+  for (auto& info : master_topics) {
+    if (info.datatype == target_topic_type) {
+      candidates.push_back(info.name);
+    }
+  }
+}
+
+void Camera::draw_ui_topic_name() {
+  // 名称控件变量
+  static char image_topic_name_char[128]{""};
+  static char points_topic_name_char[128]{""};
+  static std::vector<std::string> topic_name_list;
+
+  ImVec2 size = ImGui::GetItemRectSize();
+  // ros话题
+  ImGui::BeginGroup();
+  ImGui::Separator();
+
+  // ---- 修改image topic名称
+  ImGui::Text("image topic name:");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(size.x * 0.6f);
+  // 只有按回车才保存
+  if (ImGui::InputText("##image topic name", image_topic_name_char, IM_ARRAYSIZE(image_topic_name_char),
+                       ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
+      topic_list_[0] = image_topic_name_char;
+    }
+  } else {
+    // 恢复名称
+    memcpy(image_topic_name_char, topic_list_[0].c_str(), topic_list_[0].length());
+  }
+  ImGui::SameLine();
+  // 从ros系统中选择话题
+  int selected_id = -1;
+  if (ImGui::Button("...##image")) {
+    get_topic_name_from_list("sensor_msgs/Image", topic_name_list);
+    ImGui::OpenPopup("popup##image");
+  }
+  if (ImGui::BeginPopup("popup##image")) {
+    if (topic_name_list.empty()) {
+      ImGui::Text("no sensor_msgs/Image msgs available.");
+    } else {
+      ImGui::Text("[topic list]");
+      ImGui::Separator();
+      for (int i = 0; i < topic_name_list.size(); i++) {
+        // 按下
+        if (ImGui::Selectable(topic_name_list[i].c_str())) {
+          selected_id = i;
+        }
+      }
+    }
+    // 变更话题名称
+    if (selected_id != -1) {
+      topic_list_[0] = topic_name_list[selected_id];
+    }
+
+    ImGui::EndPopup();
+  }
+
+  // ---- 修改depth points topic名称
+  ImGui::Text("depth points topic:");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.86f);
+  // 只有按回车才保存
+  if (ImGui::InputText("##depth points topic", points_topic_name_char, IM_ARRAYSIZE(points_topic_name_char),
+                       ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
+      topic_list_[1] = points_topic_name_char;
+    }
+  } else {
+    // 恢复名称
+    memcpy(points_topic_name_char, topic_list_[1].c_str(), topic_list_[1].length());
+  }
+  ImGui::SameLine();
+  // 从ros系统中选择话题
+  selected_id = -1;
+  if (ImGui::Button("...##depth")) {
+    get_topic_name_from_list("sensor_msgs/PointCloud2", topic_name_list);
+    ImGui::OpenPopup("popup##depth");
+  }
+  if (ImGui::BeginPopup("popup##depth")) {
+    if (topic_name_list.empty()) {
+      ImGui::Text("no sensor_msgs/Image msgs available.");
+    } else {
+      ImGui::Text("[topic list]");
+      ImGui::Separator();
+      for (int i = 0; i < topic_name_list.size(); i++) {
+        // 按下
+        if (ImGui::Selectable(topic_name_list[i].c_str())) {
+          selected_id = i;
+        }
+      }
+    }
+    // 变更话题名称
+    if (selected_id != -1) {
+      topic_list_[1] = topic_name_list[selected_id];
+    }
+
+    ImGui::EndPopup();
+  }
+  ImGui::EndGroup();
 }
 
 void Camera::draw_ui() {
@@ -78,6 +257,8 @@ void Camera::draw_ui() {
 
   std::string win_name = sensor_name + "##" + std::to_string(sensor_id);
   ImGui::Begin(win_name.c_str(), &is_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
+
+  ImGui::BeginGroup();
 
   // 保证控件中文字对齐
   ImGui::AlignTextToFramePadding();
@@ -159,10 +340,14 @@ void Camera::draw_ui() {
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("create a new type camera");
     }
+    ImGui::EndGroup();
+  } else {
+    ImGui::EndGroup();
+    // 展示当前相机参数
+    draw_ui_parms();
+    // 选择相机话题
+    draw_ui_topic_name();
   }
-
-  // 展示当前相机参数
-  draw_ui_parms();
 
   ImGui::End();
 }

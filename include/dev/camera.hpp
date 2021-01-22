@@ -33,8 +33,10 @@ class Camera : public Sensor {
  private:
   /// 创建指定类型的相机
   void creat_instance(int current_camera_type);
-
+  /// 绘制参数ui
   void draw_ui_parms();
+  /// 绘制话题ui
+  void draw_ui_topic_name();
 };
 
 }  // namespace dev

@@ -1,0 +1,16 @@
+%YAML:1.0
+---
+model_type: PINHOLE
+camera_name: realsense_d415
+image_width: 1280
+image_height: 720
+distortion_parameters:
+   k1: 0.
+   k2: 0.
+   p1: 0.
+   p2: 0.
+projection_parameters:
+   fx: 9.2012353515625000e+02
+   fy: 9.1949969482421875e+02
+   cx: 6.3931634521484375e+02
+   cy: 3.5519702148437500e+02

@@ -66,6 +66,7 @@ class PinholeCamera : public Camera {
 
   Camera::ModelType modelType() const override;
   const std::string& cameraName() const override;
+  std::string& cameraName() override {mParameters.cameraName();}
   int imageWidth() const override;
   int imageHeight() const override;
   cv::Size imageSize() const override { return cv::Size{imageWidth(), imageHeight()}; }

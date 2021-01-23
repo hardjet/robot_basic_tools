@@ -72,6 +72,7 @@ class Camera {
   };
 
   virtual ModelType modelType() const = 0;
+  virtual std::string& cameraName() = 0;
   virtual const std::string& cameraName() const = 0;
   virtual int imageWidth() const = 0;
   virtual int imageHeight() const = 0;

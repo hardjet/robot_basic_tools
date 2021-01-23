@@ -25,22 +25,22 @@ class OCAMCamera : public Camera {
    public:
     Parameters();
 
-    double& C(void) { return m_C; }
-    double& D(void) { return m_D; }
-    double& E(void) { return m_E; }
+    double& C(){ return m_C; }
+    double& D(){ return m_D; }
+    double& E(){ return m_E; }
 
-    double& center_x(void) { return m_center_x; }
-    double& center_y(void) { return m_center_y; }
+    double& center_x(){ return m_center_x; }
+    double& center_y(){ return m_center_y; }
 
     double& poly(int idx) { return m_poly[idx]; }
     double& inv_poly(int idx) { return m_inv_poly[idx]; }
 
-    double C(void) const { return m_C; }
-    double D(void) const { return m_D; }
-    double E(void) const { return m_E; }
+    double C()const { return m_C; }
+    double D()const { return m_D; }
+    double E()const { return m_E; }
 
-    double center_x(void) const { return m_center_x; }
-    double center_y(void) const { return m_center_y; }
+    double center_x()const { return m_center_x; }
+    double center_y()const { return m_center_y; }
 
     double poly(int idx) const { return m_poly[idx]; }
     double inv_poly(int idx) const { return m_inv_poly[idx]; }
@@ -68,10 +68,11 @@ class OCAMCamera : public Camera {
    */
   OCAMCamera(const Parameters& params);
 
-  Camera::ModelType modelType(void) const;
-  const std::string& cameraName(void) const;
-  int imageWidth(void) const;
-  int imageHeight(void) const;
+  Camera::ModelType modelType()const;
+  const std::string& cameraName()const;
+  std::string& cameraName() override {mParameters.cameraName();}
+  int imageWidth()const;
+  int imageHeight()const;
   cv::Size imageSize() const { return cv::Size(imageWidth(), imageHeight()); }
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.center_x(), mParameters.center_y()); }
 
@@ -127,9 +128,9 @@ class OCAMCamera : public Camera {
                                   cv::Size imageSize = cv::Size(0, 0), float cx = -1.0f, float cy = -1.0f,
                                   cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const;
 
-  int parameterCount(void) const;
+  int parameterCount()const;
 
-  const Parameters& getParameters(void) const;
+  const Parameters& getParameters()const;
   void setParameters(const Parameters& parameters);
 
   void readParameters(const std::vector<double>& parameterVec);
@@ -137,7 +138,7 @@ class OCAMCamera : public Camera {
 
   void writeParametersToYamlFile(const std::string& filename) const;
 
-  std::string parametersToString(void) const;
+  std::string parametersToString()const;
 
  private:
   Parameters mParameters;

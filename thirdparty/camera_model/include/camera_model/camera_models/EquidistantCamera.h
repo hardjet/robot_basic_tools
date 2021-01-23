@@ -73,6 +73,7 @@ class EquidistantCamera : public Camera {
 
   Camera::ModelType modelType(void) const;
   const std::string& cameraName(void) const;
+  std::string& cameraName() override {mParameters.cameraName();}
   int imageWidth(void) const;
   int imageHeight(void) const;
   cv::Size imageSize() const;

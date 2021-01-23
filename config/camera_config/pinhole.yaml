@@ -1,7 +1,7 @@
 %YAML:1.0
 ---
 model_type: PINHOLE
-camera_name: new camere 0
+camera_name: test
 image_width: 640
 image_height: 480
 distortion_parameters:
@@ -10,7 +10,7 @@ distortion_parameters:
    p1: 0.
    p2: 0.
 projection_parameters:
-   fx: 0.
-   fy: 0.
-   cx: 0.
-   cy: 0.
+   fx: 988.
+   fy: 996.
+   cx: 630.
+   cy: 335.

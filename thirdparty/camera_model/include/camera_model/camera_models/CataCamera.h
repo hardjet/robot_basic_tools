@@ -32,15 +32,15 @@ class CataCamera : public Camera {
     double& u0(void);
     double& v0(void);
 
-    double xi(void) const;
-    double k1(void) const;
-    double k2(void) const;
-    double p1(void) const;
-    double p2(void) const;
-    double gamma1(void) const;
-    double gamma2(void) const;
-    double u0(void) const;
-    double v0(void) const;
+    double xi()const;
+    double k1()const;
+    double k2()const;
+    double p1()const;
+    double p2()const;
+    double gamma1()const;
+    double gamma2()const;
+    double u0()const;
+    double v0()const;
 
     bool readFromYamlFile(const std::string& filename);
     void writeToYamlFile(const std::string& filename) const;
@@ -72,10 +72,11 @@ class CataCamera : public Camera {
    */
   CataCamera(const Parameters& params);
 
-  Camera::ModelType modelType(void) const;
-  const std::string& cameraName(void) const;
-  int imageWidth(void) const;
-  int imageHeight(void) const;
+  Camera::ModelType modelType()const;
+  const std::string& cameraName()const;
+  std::string& cameraName() override {mParameters.cameraName();}
+  int imageWidth()const;
+  int imageHeight()const;
   cv::Size imageSize() const;
 
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.u0(), mParameters.v0()); }
@@ -151,9 +152,9 @@ class CataCamera : public Camera {
                                   cv::Size imageSize = cv::Size(0, 0), float cx = -1.0f, float cy = -1.0f,
                                   cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const;
 
-  int parameterCount(void) const;
+  int parameterCount()const;
 
-  const Parameters& getParameters(void) const;
+  const Parameters& getParameters()const;
   void setParameters(const Parameters& parameters);
 
   void readParameters(const std::vector<double>& parameterVec);
@@ -161,7 +162,7 @@ class CataCamera : public Camera {
 
   void writeParametersToYamlFile(const std::string& filename) const;
 
-  std::string parametersToString(void) const;
+  std::string parametersToString()const;
 
  private:
   Parameters mParameters;

@@ -1,13 +1,19 @@
 #pragma once
 
-#include "dev/sensor.hpp"
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <boost/shared_ptr.hpp>
+#include "dev/sensor.hpp"
+
 
 namespace camera_model {
 class Camera;
 }
 
 namespace dev {
+
+template <class M>
+class SensorData;
 
 /**
  * @brief Camera object
@@ -27,8 +33,16 @@ class Camera : public Sensor {
   void draw_ui() override;
 
  private:
+  // 相机对象
   boost::shared_ptr<camera_model::Camera> inst_ptr_{nullptr};
+  // 相机内参
   std::vector<double> inst_params_;
+  // ros topic 使能
+  bool enable_topic_[2]{false, false};
+  // 图像数据
+  std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_;
+  // 图像数据
+  std::shared_ptr<SensorData<sensor_msgs::PointCloud2>> points_data_;
 
  private:
   /// 创建指定类型的相机

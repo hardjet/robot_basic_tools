@@ -19,17 +19,17 @@ class FovCamera : public Camera {
     Parameters();
     Parameters(const std::string& cameraName, int w, int h, double omg, double fx, double fy, double u0, double v0);
 
-    double& omg(void);
-    double& fx(void);
-    double& fy(void);
-    double& u0(void);
-    double& v0(void);
+    double& omg();
+    double& fx();
+    double& fy();
+    double& u0();
+    double& v0();
 
-    double omg(void) const;
-    double fx(void) const;
-    double fy(void) const;
-    double u0(void) const;
-    double v0(void) const;
+    double omg() const;
+    double fx() const;
+    double fy() const;
+    double u0() const;
+    double v0() const;
 
     bool readFromYamlFile(const std::string& filename);
 
@@ -55,11 +55,12 @@ class FovCamera : public Camera {
 
   FovCamera(const Parameters& params);
 
-  Camera::ModelType modelType(void) const;
-  const std::string& cameraName(void) const;
+  Camera::ModelType modelType() const;
+  const std::string& cameraName() const;
+  std::string& cameraName() override {mParameters.cameraName();}
 
-  int imageWidth(void) const;
-  int imageHeight(void) const;
+  int imageWidth() const;
+  int imageHeight() const;
   cv::Size imageSize() const { return cv::Size(imageWidth(), imageHeight()); }
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.u0(), mParameters.v0()); }
 
@@ -98,9 +99,9 @@ class FovCamera : public Camera {
                                   cv::Size imageSize = cv::Size(0, 0), float cx = -1.0f, float cy = -1.0f,
                                   cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const;
 
-  int parameterCount(void) const;
+  int parameterCount() const;
 
-  const Parameters& getParameters(void) const;
+  const Parameters& getParameters() const;
 
   void setParameters(const Parameters& parameters);
 
@@ -110,7 +111,7 @@ class FovCamera : public Camera {
 
   void writeParametersToYamlFile(const std::string& filename) const;
 
-  std::string parametersToString(void) const;
+  std::string parametersToString() const;
 
   double getInv_K11() const;
   double getInv_K12() const;

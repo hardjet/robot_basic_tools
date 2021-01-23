@@ -38,41 +38,41 @@ CataCamera::Parameters::Parameters(const std::string& cameraName, int w, int h, 
       m_u0(u0),
       m_v0(v0) {}
 
-double& CataCamera::Parameters::xi(void) { return m_xi; }
+double& CataCamera::Parameters::xi() { return m_xi; }
 
-double& CataCamera::Parameters::k1(void) { return m_k1; }
+double& CataCamera::Parameters::k1() { return m_k1; }
 
-double& CataCamera::Parameters::k2(void) { return m_k2; }
+double& CataCamera::Parameters::k2() { return m_k2; }
 
-double& CataCamera::Parameters::p1(void) { return m_p1; }
+double& CataCamera::Parameters::p1() { return m_p1; }
 
-double& CataCamera::Parameters::p2(void) { return m_p2; }
+double& CataCamera::Parameters::p2() { return m_p2; }
 
-double& CataCamera::Parameters::gamma1(void) { return m_gamma1; }
+double& CataCamera::Parameters::gamma1() { return m_gamma1; }
 
-double& CataCamera::Parameters::gamma2(void) { return m_gamma2; }
+double& CataCamera::Parameters::gamma2() { return m_gamma2; }
 
-double& CataCamera::Parameters::u0(void) { return m_u0; }
+double& CataCamera::Parameters::u0() { return m_u0; }
 
-double& CataCamera::Parameters::v0(void) { return m_v0; }
+double& CataCamera::Parameters::v0() { return m_v0; }
 
-double CataCamera::Parameters::xi(void) const { return m_xi; }
+double CataCamera::Parameters::xi() const { return m_xi; }
 
-double CataCamera::Parameters::k1(void) const { return m_k1; }
+double CataCamera::Parameters::k1() const { return m_k1; }
 
-double CataCamera::Parameters::k2(void) const { return m_k2; }
+double CataCamera::Parameters::k2() const { return m_k2; }
 
-double CataCamera::Parameters::p1(void) const { return m_p1; }
+double CataCamera::Parameters::p1() const { return m_p1; }
 
-double CataCamera::Parameters::p2(void) const { return m_p2; }
+double CataCamera::Parameters::p2() const { return m_p2; }
 
-double CataCamera::Parameters::gamma1(void) const { return m_gamma1; }
+double CataCamera::Parameters::gamma1() const { return m_gamma1; }
 
-double CataCamera::Parameters::gamma2(void) const { return m_gamma2; }
+double CataCamera::Parameters::gamma2() const { return m_gamma2; }
 
-double CataCamera::Parameters::u0(void) const { return m_u0; }
+double CataCamera::Parameters::u0() const { return m_u0; }
 
-double CataCamera::Parameters::v0(void) const { return m_v0; }
+double CataCamera::Parameters::v0() const { return m_v0; }
 
 bool CataCamera::Parameters::readFromYamlFile(const std::string& filename) {
   cv::FileStorage fs(filename, cv::FileStorage::READ);
@@ -225,13 +225,13 @@ CataCamera::CataCamera(const CataCamera::Parameters& params) : mParameters(param
   m_inv_K23 = -mParameters.v0() / mParameters.gamma2();
 }
 
-Camera::ModelType CataCamera::modelType(void) const { return mParameters.modelType(); }
+Camera::ModelType CataCamera::modelType() const { return mParameters.modelType(); }
 
-const std::string& CataCamera::cameraName(void) const { return mParameters.cameraName(); }
+const std::string& CataCamera::cameraName() const { return mParameters.cameraName(); }
 
-int CataCamera::imageWidth(void) const { return mParameters.imageWidth(); }
+int CataCamera::imageWidth() const { return mParameters.imageWidth(); }
 
-int CataCamera::imageHeight(void) const { return mParameters.imageHeight(); }
+int CataCamera::imageHeight() const { return mParameters.imageHeight(); }
 
 void CataCamera::estimateIntrinsics(const cv::Size& boardSize,
                                     const std::vector<std::vector<cv::Point3f> >& objectPoints,
@@ -714,9 +714,9 @@ cv::Mat CataCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2, float 
   return K_rect_cv;
 }
 
-int CataCamera::parameterCount(void) const { return 9; }
+int CataCamera::parameterCount() const { return 9; }
 
-const CataCamera::Parameters& CataCamera::getParameters(void) const { return mParameters; }
+const CataCamera::Parameters& CataCamera::getParameters() const { return mParameters; }
 
 void CataCamera::setParameters(const CataCamera::Parameters& parameters) {
   mParameters = parameters;
@@ -769,7 +769,7 @@ void CataCamera::writeParameters(std::vector<double>& parameterVec) const {
 
 void CataCamera::writeParametersToYamlFile(const std::string& filename) const { mParameters.writeToYamlFile(filename); }
 
-std::string CataCamera::parametersToString(void) const {
+std::string CataCamera::parametersToString() const {
   std::ostringstream oss;
   oss << mParameters;
 

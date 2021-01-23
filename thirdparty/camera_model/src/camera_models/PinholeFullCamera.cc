@@ -44,9 +44,9 @@ PinholeFullCamera::Parameters::Parameters(const std::string& cameraName,  //
       m_cx(cx),
       m_cy(cy) {}
 
-double& PinholeFullCamera::Parameters::k1(void) { return m_k1; }
+double& PinholeFullCamera::Parameters::k1() { return m_k1; }
 
-double& PinholeFullCamera::Parameters::k2(void) { return m_k2; }
+double& PinholeFullCamera::Parameters::k2() { return m_k2; }
 
 double& PinholeFullCamera::Parameters::k3() { return m_k3; }
 
@@ -56,33 +56,33 @@ double& PinholeFullCamera::Parameters::k5() { return m_k5; }
 
 double& PinholeFullCamera::Parameters::k6() { return m_k6; }
 
-double& PinholeFullCamera::Parameters::p1(void) { return m_p1; }
+double& PinholeFullCamera::Parameters::p1() { return m_p1; }
 
-double& PinholeFullCamera::Parameters::p2(void) { return m_p2; }
+double& PinholeFullCamera::Parameters::p2() { return m_p2; }
 
-double& PinholeFullCamera::Parameters::fx(void) { return m_fx; }
+double& PinholeFullCamera::Parameters::fx() { return m_fx; }
 
-double& PinholeFullCamera::Parameters::fy(void) { return m_fy; }
+double& PinholeFullCamera::Parameters::fy() { return m_fy; }
 
-double& PinholeFullCamera::Parameters::cx(void) { return m_cx; }
+double& PinholeFullCamera::Parameters::cx() { return m_cx; }
 
-double& PinholeFullCamera::Parameters::cy(void) { return m_cy; }
+double& PinholeFullCamera::Parameters::cy() { return m_cy; }
 
-double PinholeFullCamera::Parameters::k1(void) const { return m_k1; }
+double PinholeFullCamera::Parameters::k1() const { return m_k1; }
 
-double PinholeFullCamera::Parameters::k2(void) const { return m_k2; }
+double PinholeFullCamera::Parameters::k2() const { return m_k2; }
 
-double PinholeFullCamera::Parameters::p1(void) const { return m_p1; }
+double PinholeFullCamera::Parameters::p1() const { return m_p1; }
 
-double PinholeFullCamera::Parameters::p2(void) const { return m_p2; }
+double PinholeFullCamera::Parameters::p2() const { return m_p2; }
 
-double PinholeFullCamera::Parameters::fx(void) const { return m_fx; }
+double PinholeFullCamera::Parameters::fx() const { return m_fx; }
 
-double PinholeFullCamera::Parameters::fy(void) const { return m_fy; }
+double PinholeFullCamera::Parameters::fy() const { return m_fy; }
 
-double PinholeFullCamera::Parameters::cx(void) const { return m_cx; }
+double PinholeFullCamera::Parameters::cx() const { return m_cx; }
 
-double PinholeFullCamera::Parameters::cy(void) const { return m_cy; }
+double PinholeFullCamera::Parameters::cy() const { return m_cy; }
 
 double PinholeFullCamera::Parameters::k3() const { return m_k3; }
 
@@ -245,13 +245,13 @@ PinholeFullCamera::PinholeFullCamera(const PinholeFullCamera::Parameters& params
   m_inv_K23 = -mParameters.cy() / mParameters.fy();
 }
 
-Camera::ModelType PinholeFullCamera::modelType(void) const { return mParameters.modelType(); }
+Camera::ModelType PinholeFullCamera::modelType() const { return mParameters.modelType(); }
 
-const std::string& PinholeFullCamera::cameraName(void) const { return mParameters.cameraName(); }
+const std::string& PinholeFullCamera::cameraName() const { return mParameters.cameraName(); }
 
-int PinholeFullCamera::imageWidth(void) const { return mParameters.imageWidth(); }
+int PinholeFullCamera::imageWidth() const { return mParameters.imageWidth(); }
 
-int PinholeFullCamera::imageHeight(void) const { return mParameters.imageHeight(); }
+int PinholeFullCamera::imageHeight() const { return mParameters.imageHeight(); }
 
 void PinholeFullCamera::estimateIntrinsics(const cv::Size& boardSize,
                                            const std::vector<std::vector<cv::Point3f> >& objectPoints,
@@ -683,9 +683,9 @@ cv::Mat PinholeFullCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
   return K_rect_cv;
 }
 
-int PinholeFullCamera::parameterCount(void) const { return 12; }
+int PinholeFullCamera::parameterCount() const { return 12; }
 
-const PinholeFullCamera::Parameters& PinholeFullCamera::getParameters(void) const { return mParameters; }
+const PinholeFullCamera::Parameters& PinholeFullCamera::getParameters() const { return mParameters; }
 
 void PinholeFullCamera::setParameters(const PinholeFullCamera::Parameters& parameters) {
   mParameters = parameters;
@@ -746,7 +746,7 @@ void PinholeFullCamera::writeParametersToYamlFile(const std::string& filename) c
   mParameters.writeToYamlFile(filename);
 }
 
-std::string PinholeFullCamera::parametersToString(void) const {
+std::string PinholeFullCamera::parametersToString() const {
   std::ostringstream oss;
   oss << mParameters;
 

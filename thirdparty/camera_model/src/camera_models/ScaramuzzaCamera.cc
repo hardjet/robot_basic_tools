@@ -170,13 +170,13 @@ OCAMCamera::OCAMCamera(const OCAMCamera::Parameters& params) : mParameters(param
   m_inv_scale = 1.0 / (params.C() - params.D() * params.E());
 }
 
-Camera::ModelType OCAMCamera::modelType(void) const { return mParameters.modelType(); }
+Camera::ModelType OCAMCamera::modelType() const { return mParameters.modelType(); }
 
-const std::string& OCAMCamera::cameraName(void) const { return mParameters.cameraName(); }
+const std::string& OCAMCamera::cameraName() const { return mParameters.cameraName(); }
 
-int OCAMCamera::imageWidth(void) const { return mParameters.imageWidth(); }
+int OCAMCamera::imageWidth() const { return mParameters.imageWidth(); }
 
-int OCAMCamera::imageHeight(void) const { return mParameters.imageHeight(); }
+int OCAMCamera::imageHeight() const { return mParameters.imageHeight(); }
 
 void OCAMCamera::estimateIntrinsics(const cv::Size& boardSize,
                                     const std::vector<std::vector<cv::Point3f> >& objectPoints,
@@ -714,9 +714,9 @@ cv::Mat OCAMCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2, float 
   return K_rect_cv;
 }
 
-int OCAMCamera::parameterCount(void) const { return SCARAMUZZA_CAMERA_NUM_PARAMS; }
+int OCAMCamera::parameterCount() const { return SCARAMUZZA_CAMERA_NUM_PARAMS; }
 
-const OCAMCamera::Parameters& OCAMCamera::getParameters(void) const { return mParameters; }
+const OCAMCamera::Parameters& OCAMCamera::getParameters() const { return mParameters; }
 
 void OCAMCamera::setParameters(const OCAMCamera::Parameters& parameters) {
   mParameters = parameters;
@@ -756,7 +756,7 @@ void OCAMCamera::writeParameters(std::vector<double>& parameterVec) const {
 
 void OCAMCamera::writeParametersToYamlFile(const std::string& filename) const { mParameters.writeToYamlFile(filename); }
 
-std::string OCAMCamera::parametersToString(void) const {
+std::string OCAMCamera::parametersToString() const {
   std::ostringstream oss;
   oss << mParameters;
 

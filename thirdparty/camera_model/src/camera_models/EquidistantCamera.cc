@@ -36,37 +36,37 @@ EquidistantCamera::Parameters::Parameters(const std::string& cameraName, int w, 
       m_u0(u0),
       m_v0(v0) {}
 
-double& EquidistantCamera::Parameters::k2(void) { return m_k2; }
+double& EquidistantCamera::Parameters::k2() { return m_k2; }
 
-double& EquidistantCamera::Parameters::k3(void) { return m_k3; }
+double& EquidistantCamera::Parameters::k3() { return m_k3; }
 
-double& EquidistantCamera::Parameters::k4(void) { return m_k4; }
+double& EquidistantCamera::Parameters::k4() { return m_k4; }
 
-double& EquidistantCamera::Parameters::k5(void) { return m_k5; }
+double& EquidistantCamera::Parameters::k5() { return m_k5; }
 
-double& EquidistantCamera::Parameters::mu(void) { return m_mu; }
+double& EquidistantCamera::Parameters::mu() { return m_mu; }
 
-double& EquidistantCamera::Parameters::mv(void) { return m_mv; }
+double& EquidistantCamera::Parameters::mv() { return m_mv; }
 
-double& EquidistantCamera::Parameters::u0(void) { return m_u0; }
+double& EquidistantCamera::Parameters::u0() { return m_u0; }
 
-double& EquidistantCamera::Parameters::v0(void) { return m_v0; }
+double& EquidistantCamera::Parameters::v0() { return m_v0; }
 
-double EquidistantCamera::Parameters::k2(void) const { return m_k2; }
+double EquidistantCamera::Parameters::k2() const { return m_k2; }
 
-double EquidistantCamera::Parameters::k3(void) const { return m_k3; }
+double EquidistantCamera::Parameters::k3() const { return m_k3; }
 
-double EquidistantCamera::Parameters::k4(void) const { return m_k4; }
+double EquidistantCamera::Parameters::k4() const { return m_k4; }
 
-double EquidistantCamera::Parameters::k5(void) const { return m_k5; }
+double EquidistantCamera::Parameters::k5() const { return m_k5; }
 
-double EquidistantCamera::Parameters::mu(void) const { return m_mu; }
+double EquidistantCamera::Parameters::mu() const { return m_mu; }
 
-double EquidistantCamera::Parameters::mv(void) const { return m_mv; }
+double EquidistantCamera::Parameters::mv() const { return m_mv; }
 
-double EquidistantCamera::Parameters::u0(void) const { return m_u0; }
+double EquidistantCamera::Parameters::u0() const { return m_u0; }
 
-double EquidistantCamera::Parameters::v0(void) const { return m_v0; }
+double EquidistantCamera::Parameters::v0() const { return m_v0; }
 
 bool EquidistantCamera::Parameters::readFromYamlFile(const std::string& filename) {
   cv::FileStorage fs(filename, cv::FileStorage::READ);
@@ -181,13 +181,13 @@ EquidistantCamera::EquidistantCamera(const EquidistantCamera::Parameters& params
   m_inv_K23 = -mParameters.v0() / mParameters.mv();
 }
 
-Camera::ModelType EquidistantCamera::modelType(void) const { return mParameters.modelType(); }
+Camera::ModelType EquidistantCamera::modelType() const { return mParameters.modelType(); }
 
-const std::string& EquidistantCamera::cameraName(void) const { return mParameters.cameraName(); }
+const std::string& EquidistantCamera::cameraName() const { return mParameters.cameraName(); }
 
-int EquidistantCamera::imageWidth(void) const { return mParameters.imageWidth(); }
+int EquidistantCamera::imageWidth() const { return mParameters.imageWidth(); }
 
-int EquidistantCamera::imageHeight(void) const { return mParameters.imageHeight(); }
+int EquidistantCamera::imageHeight() const { return mParameters.imageHeight(); }
 
 void EquidistantCamera::estimateIntrinsics(const cv::Size& boardSize,
                                            const std::vector<std::vector<cv::Point3f> >& objectPoints,
@@ -453,9 +453,9 @@ cv::Mat EquidistantCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
   return K_rect_cv;
 }
 
-int EquidistantCamera::parameterCount(void) const { return 8; }
+int EquidistantCamera::parameterCount() const { return 8; }
 
-const EquidistantCamera::Parameters& EquidistantCamera::getParameters(void) const { return mParameters; }
+const EquidistantCamera::Parameters& EquidistantCamera::getParameters() const { return mParameters; }
 
 void EquidistantCamera::setParameters(const EquidistantCamera::Parameters& parameters) {
   mParameters = parameters;
@@ -502,7 +502,7 @@ void EquidistantCamera::writeParametersToYamlFile(const std::string& filename) c
   mParameters.writeToYamlFile(filename);
 }
 
-std::string EquidistantCamera::parametersToString(void) const {
+std::string EquidistantCamera::parametersToString() const {
   std::ostringstream oss;
   oss << mParameters;
 

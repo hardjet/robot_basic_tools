@@ -395,7 +395,7 @@ boost::shared_ptr<CostFunctionFactory> CostFunctionFactory::m_instance;
 
 CostFunctionFactory::CostFunctionFactory() {}
 
-boost::shared_ptr<CostFunctionFactory> CostFunctionFactory::instance(void) {
+boost::shared_ptr<CostFunctionFactory> CostFunctionFactory::instance() {
   if (m_instance.get() == 0) {
     m_instance.reset(new CostFunctionFactory);
   }

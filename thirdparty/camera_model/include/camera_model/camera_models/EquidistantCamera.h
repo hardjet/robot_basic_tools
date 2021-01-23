@@ -22,23 +22,23 @@ class EquidistantCamera : public Camera {
     Parameters(const std::string& cameraName, int w, int h, double k2, double k3, double k4, double k5, double mu,
                double mv, double u0, double v0);
 
-    double& k2(void);
-    double& k3(void);
-    double& k4(void);
-    double& k5(void);
-    double& mu(void);
-    double& mv(void);
-    double& u0(void);
-    double& v0(void);
+    double& k2();
+    double& k3();
+    double& k4();
+    double& k5();
+    double& mu();
+    double& mv();
+    double& u0();
+    double& v0();
 
-    double k2(void) const;
-    double k3(void) const;
-    double k4(void) const;
-    double k5(void) const;
-    double mu(void) const;
-    double mv(void) const;
-    double u0(void) const;
-    double v0(void) const;
+    double k2() const;
+    double k3() const;
+    double k4() const;
+    double k5() const;
+    double mu() const;
+    double mv() const;
+    double u0() const;
+    double v0() const;
 
     bool readFromYamlFile(const std::string& filename);
     void writeToYamlFile(const std::string& filename) const;
@@ -71,11 +71,11 @@ class EquidistantCamera : public Camera {
    */
   EquidistantCamera(const Parameters& params);
 
-  Camera::ModelType modelType(void) const;
-  const std::string& cameraName(void) const;
+  Camera::ModelType modelType() const;
+  const std::string& cameraName() const;
   std::string& cameraName() override {mParameters.cameraName();}
-  int imageWidth(void) const;
-  int imageHeight(void) const;
+  int imageWidth() const;
+  int imageHeight() const;
   cv::Size imageSize() const;
 
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.u0(), mParameters.v0()); }
@@ -124,9 +124,9 @@ class EquidistantCamera : public Camera {
                                   cv::Size imageSize = cv::Size(0, 0), float cx = -1.0f, float cy = -1.0f,
                                   cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const;
 
-  int parameterCount(void) const;
+  int parameterCount() const;
 
-  const Parameters& getParameters(void) const;
+  const Parameters& getParameters() const;
   void setParameters(const Parameters& parameters);
 
   void readParameters(const std::vector<double>& parameterVec);
@@ -134,7 +134,7 @@ class EquidistantCamera : public Camera {
 
   void writeParametersToYamlFile(const std::string& filename) const;
 
-  std::string parametersToString(void) const;
+  std::string parametersToString() const;
 
  private:
   template <typename T>

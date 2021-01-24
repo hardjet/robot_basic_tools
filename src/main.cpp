@@ -369,13 +369,11 @@ int main(int argc, char **argv) {
 #endif
 
   ros::init(argc, argv, "robot_basic_tools");
-
   ros::NodeHandle nh("~");
 
   std::unique_ptr<guik::Application> app(new TestApplication(nh));
 
   std::string glsl_version = "#version 330";
-
   // auto path = ros::package::getPath("robot_basic_tools") + "/imgui.ini";
   std::string path = "imgui.ini";
 

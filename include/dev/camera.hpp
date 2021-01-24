@@ -2,9 +2,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <boost/shared_ptr.hpp>
 #include "dev/sensor.hpp"
-
 
 namespace camera_model {
 class Camera;
@@ -14,6 +12,8 @@ namespace dev {
 
 template <class M>
 class SensorData;
+
+class ImageShow;
 
 /**
  * @brief Camera object
@@ -43,6 +43,9 @@ class Camera : public Sensor {
   std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_;
   // 图像数据
   std::shared_ptr<SensorData<sensor_msgs::PointCloud2>> points_data_;
+  // 是否显示图像
+  bool is_show_image_{false};
+  std::shared_ptr<dev::ImageShow> im_show_ptr_{nullptr};
 
  private:
   /// 创建指定类型的相机

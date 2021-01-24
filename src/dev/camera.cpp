@@ -5,6 +5,7 @@
 #include "portable-file-dialogs.h"
 #include "dev/camera.hpp"
 #include "dev/sensor_data.hpp"
+#include "dev/image_show.hpp"
 #include "camera_model/camera_models/CameraFactory.h"
 
 namespace dev {
@@ -14,12 +15,15 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
   // 设置图像数据接收
   image_data_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);
   // 频率/2
-  image_data_->set_data_rate(10);
+  image_data_->set_data_rate(2);
 
   // 设置深度点云数据接收
   points_data_ = std::make_shared<SensorData<sensor_msgs::PointCloud2>>(nh_, 10);
   // 频率/2
   points_data_->set_data_rate(2);
+
+  // 图像显示
+  im_show_ptr_ = std::make_shared<dev::ImageShow>();
 }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {}
@@ -34,6 +38,8 @@ void Camera::check_online_status() {
     if (ros::Time::now().sec - image_data_ptr->header.stamp.sec < 2) {
       online = true;
     }
+    // 设置图像数据
+    im_show_ptr_->update_image(image_data_ptr);
   }
 
   // 获取深度点云最新数据
@@ -218,8 +224,9 @@ void Camera::draw_ui_topic_name() {
   ImGui::SameLine();
   ImGui::SetNextItemWidth(size.x * 0.6f);
   // 只有按回车才保存
-  if (ImGui::InputText("##image topic name", image_topic_name_char, IM_ARRAYSIZE(image_topic_name_char),
-                       ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+  if (ImGui::InputTextWithHint("##image_topic_name", "press 'ENTER' to save", image_topic_name_char,
+                               IM_ARRAYSIZE(image_topic_name_char),
+                               ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
       topic_list_[0] = image_topic_name_char;
       // 暂停接收
@@ -263,7 +270,7 @@ void Camera::draw_ui_topic_name() {
   }
 
   // ---- 修改depth points topic名称
-  if (ImGui::Checkbox("##depth_topic", &enable_topic_[1])){
+  if (ImGui::Checkbox("##depth_topic", &enable_topic_[1])) {
     // 选中状态
     if (enable_topic_[1]) {
       // 如果topic有效才启用数据接收
@@ -289,8 +296,9 @@ void Camera::draw_ui_topic_name() {
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.86f);
   // 只有按回车才保存
-  if (ImGui::InputText("##depth points topic", points_topic_name_char, IM_ARRAYSIZE(points_topic_name_char),
-                       ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+  if (ImGui::InputTextWithHint("##depth_topic_name", "press 'ENTER' to save", points_topic_name_char,
+                               IM_ARRAYSIZE(points_topic_name_char),
+                               ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
       topic_list_[1] = points_topic_name_char;
       // 暂停接收
@@ -341,6 +349,7 @@ void Camera::draw_ui() {
   // 相机类型控件变量
   const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
   static int current_camera_type = 2;
+  static bool is_show_image{false};
 
   // ------ test
   static std::string default_path{"/home/anson/catkin_map/src/robot_basic_tools/config/camera_config"};
@@ -472,6 +481,15 @@ void Camera::draw_ui() {
     }
     ImGui::EndGroup();
   } else {
+    ImGui::SameLine();
+    // 选择是否显示图像
+    if (ImGui::Checkbox("show image", &is_show_image)) {
+      if (is_show_image) {
+        im_show_ptr_->enable(sensor_name);
+      } else {
+        im_show_ptr_->disable();
+      }
+    }
     ImGui::EndGroup();
     // 展示当前相机参数
     draw_ui_parms();

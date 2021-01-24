@@ -98,6 +98,7 @@ find_package(catkin REQUIRED COMPONENTS
         roslib
         message_filters
         sensor_msgs
+        cv_bridge_opencv4
         )
 message(STATUS "catkin_INCLUDE_DIRS: ${catkin_INCLUDE_DIRS}")
 message(STATUS "catkin_LIBRARIES: ${catkin_LIBRARIES}")
@@ -116,6 +117,7 @@ message("${Magenta}-------------- build thirdparty lib end ------------${ColourR
 
 
 # ----- find package -----
+# GLM
 find_package(GLM REQUIRED)
 
 if (POLICY CMP0072)
@@ -123,6 +125,7 @@ if (POLICY CMP0072)
     # set(OpenGL_GL_PREFERENCE LEGACY)
 endif ()
 
+# openGL
 find_package(OpenGL REQUIRED)
 message(STATUS "OPENGL_LIBRARIES: ${OPENGL_LIBRARIES}")
 
@@ -139,9 +142,24 @@ message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #message(STATUS "PCL_LIBRARIES: ${PCL_LIBRARIES}")
 
 # boost
-#find_package(Boost 1.54 REQUIRED COMPONENTS
+#find_package(Boost REQUIRED COMPONENTS
 #        system
 #        thread)
+
+# OpenCV
+find_package(OpenCV 4.3 PATHS "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" NO_DEFAULT_PATH REQUIRED
+        COMPONENTS
+        core
+        imgproc
+        calib3d
+        highgui
+        )
+if (NOT OpenCV_FOUND)
+    message(FATAL_ERROR "OpenCV == 4.3 or higher not found")
+endif ()
+message(STATUS "Use OpenCV ${OpenCV_VERSION}")
+message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "OpenCV_LIBRARIES: ${OpenCV_LIBRARIES}")
 
 # ----- catking config -----
 catkin_package(
@@ -212,6 +230,7 @@ add_executable(${PROJECT_NAME}
         src/dev/sensor.cpp
         src/dev/camera.cpp
         src/dev/sensor_manager.cpp
+        src/dev/image_show.cpp
         src/main.cpp
         )
 
@@ -223,6 +242,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
+        ${OpenCV_LIBRARIES}
         guik
         camera_model
         glog

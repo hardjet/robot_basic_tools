@@ -14,7 +14,7 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
   // 设置图像数据接收
   image_data_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);
   // 频率/2
-  image_data_->set_data_rate(2);
+  image_data_->set_data_rate(10);
 
   // 设置深度点云数据接收
   points_data_ = std::make_shared<SensorData<sensor_msgs::PointCloud2>>(nh_, 10);
@@ -23,6 +23,29 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {}
+
+void Camera::check_online_status() {
+  bool online = false;
+
+  // 获取图像最新数据
+  auto image_data_ptr = image_data_->data();
+  // 如果有数据
+  if (image_data_ptr) {
+    if (ros::Time::now().sec - image_data_ptr->header.stamp.sec < 2) {
+      online = true;
+    }
+  }
+
+  // 获取深度点云最新数据
+  auto depth_data_ptr = points_data_->data();
+  if (depth_data_ptr) {
+    if (ros::Time::now().sec - depth_data_ptr->header.stamp.sec < 2) {
+      online = true;
+    }
+  }
+
+  is_online_ = online;
+}
 
 void Camera::creat_instance(int current_camera_type) {
   inst_ptr_ = nullptr;
@@ -150,6 +173,13 @@ static void get_topic_name_from_list(const std::string& target_topic_type, std::
   }
 }
 
+static void show_pfd_info(const std::string& title, const std::string& msg) {
+  pfd::message message(title, msg, pfd::choice::ok);
+  while (!message.ready()) {
+    usleep(1000);
+  }
+}
+
 void Camera::draw_ui_topic_name() {
   // 名称控件变量
   static char image_topic_name_char[128]{""};
@@ -162,20 +192,24 @@ void Camera::draw_ui_topic_name() {
   ImGui::Separator();
 
   // ---- 修改image topic名称
-  if (ImGui::Checkbox("##image_topic", &enable_topic_[0])){
-    // 如果topic有效启用数据接收
-    if (topic_list_[0].empty()){
-      pfd::message message("warning", "please set topic name first!", pfd::choice::ok);
-      while (!message.ready()) {
-        usleep(1000);
+  if (ImGui::Checkbox("##image_topic", &enable_topic_[0])) {
+    // 选中状态
+    if (enable_topic_[0]) {
+      // 如果topic有效才启用数据接收
+      if (topic_list_[0].empty()) {
+        show_pfd_info("warning", "please set topic name first!");
+        enable_topic_[0] = false;
+      } else {
+        image_data_->subscribe(topic_list_[0], 5);
       }
     } else {
-      image_data_->subscribe(topic_list_[0], 5);
+      // 暂停接收
+      image_data_->unsubscribe();
     }
   }
   // 提示设备状态
   if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("pick to enable image receive");
+    ImGui::SetTooltip("pick to enable image receive");
   }
   ImGui::SameLine();
   // 保证控件中文字对齐
@@ -188,6 +222,9 @@ void Camera::draw_ui_topic_name() {
                        ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
       topic_list_[0] = image_topic_name_char;
+      // 暂停接收
+      image_data_->unsubscribe();
+      enable_topic_[0] = false;
     }
   } else {
     // 恢复名称
@@ -217,13 +254,30 @@ void Camera::draw_ui_topic_name() {
     // 变更话题名称
     if (selected_id != -1) {
       topic_list_[0] = topic_name_list[selected_id];
+      // 暂停接收
+      image_data_->unsubscribe();
+      enable_topic_[0] = false;
     }
 
     ImGui::EndPopup();
   }
 
   // ---- 修改depth points topic名称
-  ImGui::Checkbox("##depth_topic", &enable_topic_[1]);
+  if (ImGui::Checkbox("##depth_topic", &enable_topic_[1])){
+    // 选中状态
+    if (enable_topic_[1]) {
+      // 如果topic有效才启用数据接收
+      if (topic_list_[1].empty()) {
+        show_pfd_info("warning", "please set topic name first!");
+        enable_topic_[1] = false;
+      } else {
+        points_data_->subscribe(topic_list_[1], 5);
+      }
+    } else {
+      // 暂停接收
+      points_data_->unsubscribe();
+    }
+  }
   // 提示设备状态
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("pick to enable points receive");
@@ -239,6 +293,9 @@ void Camera::draw_ui_topic_name() {
                        ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
       topic_list_[1] = points_topic_name_char;
+      // 暂停接收
+      points_data_->unsubscribe();
+      enable_topic_[1] = false;
     }
   } else {
     // 恢复名称
@@ -268,6 +325,9 @@ void Camera::draw_ui_topic_name() {
     // 变更话题名称
     if (selected_id != -1) {
       topic_list_[1] = topic_name_list[selected_id];
+      // 暂停接收
+      points_data_->unsubscribe();
+      enable_topic_[1] = false;
     }
 
     ImGui::EndPopup();
@@ -344,10 +404,7 @@ void Camera::draw_ui() {
                   << "], params size: " << inst_params_.size() << std::endl;
       } else {
         std::string msg = "load camera from [" + file_paths[0] + "] failed!";
-        pfd::message message("load from yaml", msg, pfd::choice::ok);
-        while (!message.ready()) {
-          usleep(1000);
-        }
+        show_pfd_info("load from yaml", msg);
       }
     }
   }
@@ -423,6 +480,9 @@ void Camera::draw_ui() {
   }
 
   ImGui::End();
+
+  // 检查设备在线状态
+  check_online_status();
 }
 
 }  // namespace dev

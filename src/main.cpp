@@ -22,6 +22,7 @@
 #include <ros/package.h>
 #include <ros/node_handle.h>
 #include <ros/init.h>
+#include <ros/spinner.h>
 
 // debug
 #ifdef USE_STACK_TRACE_LOGGER
@@ -382,7 +383,16 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  //ros异步spinner
+  ros::AsyncSpinner async_spinner(4);
+  // 启动
+  async_spinner.start();
+
+  // 主逻辑
   app->run();
+
+  // 关闭异步spinner线程
+  async_spinner.stop();
 
   return 0;
 }

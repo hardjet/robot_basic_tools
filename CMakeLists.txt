@@ -96,9 +96,13 @@ endif ()
 find_package(catkin REQUIRED COMPONENTS
         roscpp
         roslib
+        message_filters
+        sensor_msgs
         )
+message(STATUS "catkin_INCLUDE_DIRS: ${catkin_INCLUDE_DIRS}")
+message(STATUS "catkin_LIBRARIES: ${catkin_LIBRARIES}")
 
-# ----- 设置thirdpart .so path -----
+# ----- 设置生成thirdpart .so的路径 -----
 set(RDPARTY_SO_PATH ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME}/lib)
 message(STATUS "RDPARTY_SO_PATH: ${RDPARTY_SO_PATH}")
 
@@ -128,11 +132,16 @@ find_package(PCL 1.7 REQUIRED
         common
         io
         )
-message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
+#message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
 
 add_definitions(${PCL_DEFINITIONS})
 message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #message(STATUS "PCL_LIBRARIES: ${PCL_LIBRARIES}")
+
+# boost
+#find_package(Boost 1.54 REQUIRED COMPONENTS
+#        system
+#        thread)
 
 # ----- catking config -----
 catkin_package(

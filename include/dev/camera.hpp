@@ -51,6 +51,8 @@ class Camera : public Sensor {
   void draw_ui_parms();
   /// 绘制话题ui
   void draw_ui_topic_name();
+  /// 检查当前设备在线状态
+  void check_online_status();
 };
 
 }  // namespace dev

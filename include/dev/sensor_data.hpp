@@ -4,7 +4,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <message_filters/simple_filter.h>
 #include <message_filters/subscriber.h>
 
 namespace dev {
@@ -34,9 +33,11 @@ class SensorData {
     } else {
       sub_ = nullptr;
       // 新建订阅对象
-      sub_ = boost::make_shared<message_filters::Subscriber<M>>(nh_, topic, queue_size, ros::TransportHints().tcpNoDelay());
+      sub_ = boost::make_shared<message_filters::Subscriber<M>>(nh_, topic, queue_size,
+                                                                ros::TransportHints().tcpNoDelay());
       // 注册回调函数
-      sub_->registerCallback(typename message_filters::SimpleFilter<M>::EventCallback(boost::bind(&SensorData::callback, this)));
+      sub_->registerCallback(
+          typename message_filters::SimpleFilter<M>::Callback(boost::bind(&SensorData::callback, this, _1)));
       // 更新当前话题名称
       cur_topic_name_ = topic;
     }
@@ -70,7 +71,11 @@ class SensorData {
 
   MConstPtr data() {
     boost::mutex::scoped_lock lock(msgs_lock_);
-    return msgs_.back();
+    if (msgs_.empty()) {
+      return nullptr;
+    } else {
+      return msgs_.back();
+    }
   }
 
  private:
@@ -96,7 +101,7 @@ class SensorData {
 
   /// ros::NodeHandle
   ros::NodeHandle& nh_;
-  /// 消息订阅对象
+  /// 消息订阅对象指针
   boost::shared_ptr<message_filters::Subscriber<M>> sub_{nullptr};
   /// 当前订阅的话题
   std::string cur_topic_name_;

@@ -33,6 +33,13 @@ class Camera : public Sensor {
   void draw_ui() override;
 
  private:
+  // 当前类型
+  int current_camera_type_{2};
+  // 是否显示图像
+  bool is_show_image_{false};
+  // 用于保存当前ros topic列表
+  std::vector<std::string> ros_topic_list_;
+
   // 相机对象
   boost::shared_ptr<camera_model::Camera> inst_ptr_{nullptr};
   // 相机内参
@@ -43,8 +50,6 @@ class Camera : public Sensor {
   std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_;
   // 图像数据
   std::shared_ptr<SensorData<sensor_msgs::PointCloud2>> points_data_;
-  // 是否显示图像
-  bool is_show_image_{false};
   std::shared_ptr<dev::ImageShow> im_show_ptr_{nullptr};
 
  private:

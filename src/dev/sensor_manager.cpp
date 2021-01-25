@@ -86,7 +86,6 @@ void SensorManager::draw_ui() {
 
   // // 用于高亮当前选择
   // static int selected = -1;
-  // // 用于高亮当前选择
   // int select_cnt = 0;
   // 遍历设备 显示
   for (auto &sensors : sensors_map_) {

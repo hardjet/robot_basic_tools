@@ -88,7 +88,7 @@ static void HelpMarker(const char* desc) {
 void Camera::draw_ui_parms() {
   static double const_0 = 0.0;
 
-  ImGui::BeginGroup();
+  // ImGui::BeginGroup();
   ImGui::Text("width:%d", inst_ptr_->imageWidth());
   ImGui::SameLine();
   ImGui::Text("height:%d", inst_ptr_->imageHeight());
@@ -160,7 +160,7 @@ void Camera::draw_ui_parms() {
       break;
   }
   ImGui::PopItemWidth();
-  ImGui::EndGroup();
+  // ImGui::EndGroup();
 
   // 及时更新修改到相机参数
   inst_ptr_->readParameters(inst_params_);
@@ -188,13 +188,15 @@ static void show_pfd_info(const std::string& title, const std::string& msg) {
 
 void Camera::draw_ui_topic_name() {
   // 名称控件变量
-  static char image_topic_name_char[128]{""};
-  static char points_topic_name_char[128]{""};
-  static std::vector<std::string> topic_name_list;
+  char image_topic_name_char[128]{""};
+  char points_topic_name_char[128]{""};
 
-  ImVec2 size = ImGui::GetItemRectSize();
+  memcpy(image_topic_name_char, topic_list_[0].c_str(), topic_list_[0].length());
+  memcpy(points_topic_name_char, topic_list_[1].c_str(), topic_list_[1].length());
+
+  // ImVec2 size = ImGui::GetItemRectSize();
   // ros话题
-  ImGui::BeginGroup();
+  // ImGui::BeginGroup();
   ImGui::Separator();
 
   // ---- 修改image topic名称
@@ -222,10 +224,10 @@ void Camera::draw_ui_topic_name() {
   ImGui::AlignTextToFramePadding();
   ImGui::Text("image topic name:");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(size.x * 0.6f);
+  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.8f);
   // 只有按回车才保存
   if (ImGui::InputTextWithHint("##image_topic_name", "press 'ENTER' to save", image_topic_name_char,
-                               IM_ARRAYSIZE(image_topic_name_char),
+                               128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
       topic_list_[0] = image_topic_name_char;
@@ -242,25 +244,25 @@ void Camera::draw_ui_topic_name() {
   // 从ros系统中选择话题
   int selected_id = -1;
   if (ImGui::Button("...##image")) {
-    get_topic_name_from_list("sensor_msgs/Image", topic_name_list);
+    get_topic_name_from_list("sensor_msgs/Image", ros_topic_list_);
     ImGui::OpenPopup("popup##image");
   }
   if (ImGui::BeginPopup("popup##image")) {
-    if (topic_name_list.empty()) {
+    if (ros_topic_list_.empty()) {
       ImGui::Text("no sensor_msgs/Image msgs available.");
     } else {
       ImGui::Text("[sensor_msgs/Image list]");
       ImGui::Separator();
-      for (int i = 0; i < topic_name_list.size(); i++) {
+      for (int i = 0; i < ros_topic_list_.size(); i++) {
         // 按下
-        if (ImGui::Selectable(topic_name_list[i].c_str())) {
+        if (ImGui::Selectable(ros_topic_list_[i].c_str())) {
           selected_id = i;
         }
       }
     }
     // 变更话题名称
     if (selected_id != -1) {
-      topic_list_[0] = topic_name_list[selected_id];
+      topic_list_[0] = ros_topic_list_[selected_id];
       // 暂停接收
       image_data_->unsubscribe();
       enable_topic_[0] = false;
@@ -297,7 +299,7 @@ void Camera::draw_ui_topic_name() {
   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.86f);
   // 只有按回车才保存
   if (ImGui::InputTextWithHint("##depth_topic_name", "press 'ENTER' to save", points_topic_name_char,
-                               IM_ARRAYSIZE(points_topic_name_char),
+                               128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
       topic_list_[1] = points_topic_name_char;
@@ -314,25 +316,25 @@ void Camera::draw_ui_topic_name() {
   // 从ros系统中选择话题
   selected_id = -1;
   if (ImGui::Button("...##depth")) {
-    get_topic_name_from_list("sensor_msgs/PointCloud2", topic_name_list);
+    get_topic_name_from_list("sensor_msgs/PointCloud2", ros_topic_list_);
     ImGui::OpenPopup("popup##depth");
   }
   if (ImGui::BeginPopup("popup##depth")) {
-    if (topic_name_list.empty()) {
+    if (ros_topic_list_.empty()) {
       ImGui::Text("no sensor_msgs/Image msgs available.");
     } else {
       ImGui::Text("[sensor_msgs/PointCloud2 list]");
       ImGui::Separator();
-      for (int i = 0; i < topic_name_list.size(); i++) {
+      for (int i = 0; i < ros_topic_list_.size(); i++) {
         // 按下
-        if (ImGui::Selectable(topic_name_list[i].c_str())) {
+        if (ImGui::Selectable(ros_topic_list_[i].c_str())) {
           selected_id = i;
         }
       }
     }
     // 变更话题名称
     if (selected_id != -1) {
-      topic_list_[1] = topic_name_list[selected_id];
+      topic_list_[1] = ros_topic_list_[selected_id];
       // 暂停接收
       points_data_->unsubscribe();
       enable_topic_[1] = false;
@@ -340,36 +342,31 @@ void Camera::draw_ui_topic_name() {
 
     ImGui::EndPopup();
   }
-  ImGui::EndGroup();
+  // ImGui::EndGroup();
 }
 
 void Camera::draw_ui() {
   // 名称控件变量
-  static char name_char[128]{" "};
+  char name_char[128]{" "};
   // 相机类型控件变量
   const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
-  static int current_camera_type = 2;
-  static bool is_show_image{false};
 
   // ------ test
-  static std::string default_path{"/home/anson/catkin_map/src/robot_basic_tools/config/camera_config"};
+  const std::string default_path{"/home/anson/catkin_map/src/robot_basic_tools/config/camera_config"};
 
   if (!is_show_window_) {
     return;
   }
 
   // 初始化为设备名称
-  if (name_char[0] == ' ') {
-    memcpy(name_char, sensor_name.c_str(), sensor_name.length());
-  }
+  memcpy(name_char, sensor_name.c_str(), sensor_name.length());
 
+  // ImGui::SetNextWindowPos(ImVec2(300, 22), ImGuiCond_FirstUseEver);
   // 保证窗口名称唯一
-  ImGui::SetNextWindowPos(ImVec2(300, 22), ImGuiCond_FirstUseEver);
-
   std::string win_name = sensor_name + "##" + std::to_string(sensor_id);
   ImGui::Begin(win_name.c_str(), &is_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
-  ImGui::BeginGroup();
+  // ImGui::BeginGroup();
 
   // 保证控件中文字对齐
   ImGui::AlignTextToFramePadding();
@@ -382,13 +379,16 @@ void Camera::draw_ui() {
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (name_char[0] != '\0' && name_char[0] != ' ') {
       sensor_name = name_char;
-      inst_ptr_->cameraName() = sensor_name;
+      if (inst_ptr_) {
+        inst_ptr_->cameraName() = sensor_name;
+      }
     }
   } else {
     // 恢复名称
     memset(name_char, 0, 128);
     memcpy(name_char, sensor_name.c_str(), sensor_name.length());
   }
+
   ImGui::SameLine();
   // 从文件加载相机
   if (ImGui::Button("R")) {
@@ -452,7 +452,7 @@ void Camera::draw_ui() {
   ImGui::Text("camera type:");
   ImGui::SameLine();
 
-  if (ImGui::Combo("##camera type", &current_camera_type, camera_type, IM_ARRAYSIZE(camera_type))) {
+  if (ImGui::Combo("##camera type", &current_camera_type_, camera_type, IM_ARRAYSIZE(camera_type))) {
     // 如果状态改变 询问改变
     if (inst_ptr_) {
       std::string msg = "are you sure to change camera type ?";
@@ -462,9 +462,9 @@ void Camera::draw_ui() {
       }
       // 新建实例
       if (message.result() == pfd::button::ok) {
-        creat_instance(current_camera_type);
+        creat_instance(current_camera_type_);
       } else {
-        current_camera_type = inst_ptr_->modelType();
+        current_camera_type_ = inst_ptr_->modelType();
       }
     }
   }
@@ -473,24 +473,24 @@ void Camera::draw_ui() {
   if (!inst_ptr_) {
     ImGui::SameLine();
     if (ImGui::Button("new")) {
-      creat_instance(current_camera_type);
+      creat_instance(current_camera_type_);
     }
     // tips
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("create a new camera");
     }
-    ImGui::EndGroup();
+    // ImGui::EndGroup();
   } else {
     ImGui::SameLine();
     // 选择是否显示图像
-    if (ImGui::Checkbox("show image", &is_show_image)) {
-      if (is_show_image) {
+    if (ImGui::Checkbox("show image", &is_show_image_)) {
+      if (is_show_image_) {
         im_show_ptr_->enable(sensor_name);
       } else {
         im_show_ptr_->disable();
       }
     }
-    ImGui::EndGroup();
+    // ImGui::EndGroup();
     // 展示当前相机参数
     draw_ui_parms();
     // 选择相机话题

@@ -37,6 +37,9 @@ class ImageShow {
   // 显示图片线程
   std::thread thread_;
 
+  // 是否需要将sensor_msgs::Imaga转为cv::mat，减低系统资源占用
+  bool is_need_cv_convert_{false};
+
   // 接收到的图像数据
   sensor_msgs::ImageConstPtr image_ptr_{nullptr};
 

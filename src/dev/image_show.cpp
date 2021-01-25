@@ -16,35 +16,41 @@ void ImageShow::update_image(sensor_msgs::ImageConstPtr& image) {
   if (!image_ptr_ || image_ptr_->header.stamp.nsec != image->header.stamp.nsec) {
     std::lock_guard<std::mutex> lock(mtx_);
     image_ptr_ = image;
+    is_need_cv_convert_ = true;
   }
 }
 
 void ImageShow::show() {
   // 定义窗口
   cv::namedWindow(window_name_, cv::WINDOW_AUTOSIZE);
-  // cv::resizeWindow(window_name_, 640, 480);
+  // cv::resizeWindow(window_name_, 640, 360);
 
+  // 保存转换出的图像数据
+  cv_bridge::CvImagePtr cv_ptr;
   while (is_show_image_) {
-    cv_bridge::CvImagePtr cv_ptr;
 
     // 等待图像就绪
     if (!image_ptr_) {
-      usleep(10000);
+      usleep(50000);
       continue;
     }
 
     {
       std::lock_guard<std::mutex> lock(mtx_);
-      // 尝试换换为BGR
-      try {
-        cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::BGR8);
-      } catch (cv_bridge::Exception& e) {
-        // 尝试换换为灰度图
+      if (is_need_cv_convert_) {
+        // 尝试转换为BGR
         try {
-          cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::MONO8);
+          cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::BGR8);
+          is_need_cv_convert_ = false;
         } catch (cv_bridge::Exception& e) {
-          usleep(10000);
-          continue;
+          // 尝试转换为灰度图
+          try {
+            cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::MONO8);
+            is_need_cv_convert_ = false;
+          } catch (cv_bridge::Exception& e) {
+            usleep(50000);
+            continue;
+          }
         }
       }
     }

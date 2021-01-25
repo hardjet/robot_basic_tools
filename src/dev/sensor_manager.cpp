@@ -128,8 +128,8 @@ void SensorManager::draw_ui() {
         ImGui::SameLine();
         ImGui::PushID(sensor_id);
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.9444, 1.0000, 0.6000));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0,0.75,0.8));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0,0.75,0.8));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0, 0.75, 0.8));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0, 0.75, 0.8));
         if (ImGui::SmallButton("del")) {
           std::string msg = "are you sure to delete [" + sensor->sensor_name + "] ?";
           pfd::message message("sensor delete", msg, pfd::choice::ok_cancel);

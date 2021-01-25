@@ -11,12 +11,12 @@ namespace glk {
  * @note  if it fails to read a file, the members become empty
  */
 class PLYLoader {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   explicit PLYLoader(const std::string& filename);
 
-public:
+ public:
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> normals;
   std::vector<int> indices;

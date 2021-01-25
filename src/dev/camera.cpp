@@ -226,8 +226,7 @@ void Camera::draw_ui_topic_name() {
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.8f);
   // 只有按回车才保存
-  if (ImGui::InputTextWithHint("##image_topic_name", "press 'ENTER' to save", image_topic_name_char,
-                               128,
+  if (ImGui::InputTextWithHint("##image_topic_name", "press 'ENTER' to save", image_topic_name_char, 128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
       topic_list_[0] = image_topic_name_char;
@@ -298,8 +297,7 @@ void Camera::draw_ui_topic_name() {
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.86f);
   // 只有按回车才保存
-  if (ImGui::InputTextWithHint("##depth_topic_name", "press 'ENTER' to save", points_topic_name_char,
-                               128,
+  if (ImGui::InputTextWithHint("##depth_topic_name", "press 'ENTER' to save", points_topic_name_char, 128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
       topic_list_[1] = points_topic_name_char;

@@ -4,17 +4,17 @@
 #include <vector>
 #include <memory>
 
-namespace glk{
+namespace glk {
 class Drawable;
 }
 
 namespace glk {
 
 class Primitives {
-private:
+ private:
   Primitives() { meshes.resize(NUM_PRIMITIVES, nullptr); }
 
-public:
+ public:
   enum PrimitiveType { ICOSAHEDRON = 0, SPHERE, CUBE, CONE, GRID, COORDINATE_SYSTEM, BUNNY, NUM_PRIMITIVES };
 
   static Primitives *instance() {
@@ -26,7 +26,7 @@ public:
 
   const glk::Drawable &primitive(PrimitiveType type);
 
-private:
+ private:
   static Primitives *instance_;
 
   std::vector<std::shared_ptr<glk::Drawable>> meshes;

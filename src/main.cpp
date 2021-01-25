@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  //ros异步spinner
+  // ros异步spinner
   ros::AsyncSpinner async_spinner(4);
   // 启动
   async_spinner.start();

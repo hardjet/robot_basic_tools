@@ -3,7 +3,7 @@
 
 namespace dev {
 
-void Sensor::show() { is_show_window_ = true;}
+void Sensor::show() { is_show_window_ = true; }
 
 void Sensor::draw_status() {
   if (is_online_) {

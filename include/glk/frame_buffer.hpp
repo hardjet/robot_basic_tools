@@ -15,7 +15,7 @@ class Texture;
  *
  */
 class FrameBuffer {
-public:
+ public:
   explicit FrameBuffer(const Eigen::Vector2i& size);
 
   ~FrameBuffer();
@@ -29,7 +29,7 @@ public:
   const Texture& color(int i) { return *color_buffers[i]; }
   const Texture& depth() { return *depth_buffer; }
 
-private:
+ private:
   int width;
   int height;
 

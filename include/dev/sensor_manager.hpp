@@ -26,8 +26,8 @@ class SensorManager {
   void add_sensor(dev::Sensor::Ptr& sensor);
 
   /**
-  * @brief 画ui
-  */
+   * @brief 画ui
+   */
   void draw_ui();
 
  private:

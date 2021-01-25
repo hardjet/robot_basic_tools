@@ -29,15 +29,19 @@ class Sensor {
   using Ptr = std::shared_ptr<Sensor>;
 
   /**
-  *
-  * @param name 对象名称
-  * @param ros_nh ros
-  * @param type
-  * @param type_str
-  */
+   *
+   * @param name 对象名称
+   * @param ros_nh ros
+   * @param type
+   * @param type_str
+   */
   Sensor(const std::string& name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF,
          std::string type_str = "undef")
-      : sensor_name(name), nh_(ros_nh), sensor_id(sensors_unique_id++), sensor_type(type), sensor_type_str(std::move(type_str)) {}
+      : sensor_name(name),
+        nh_(ros_nh),
+        sensor_id(sensors_unique_id++),
+        sensor_type(type),
+        sensor_type_str(std::move(type_str)) {}
 
   /**
    * @brief 虚析构函数
@@ -52,42 +56,42 @@ class Sensor {
   void change_sensor_name(const std::string& name) { sensor_name = name; }
 
   /**
-  * @brief 获取当前在线状态
-  * @return 在线状态
-  */
+   * @brief 获取当前在线状态
+   * @return 在线状态
+   */
   bool is_sensor_online() const { return is_online_; }
 
   /**
-  * @brief 在ui上画当前状态
-  *
-  */
+   * @brief 在ui上画当前状态
+   *
+   */
   void draw_status();
 
   /**
-  * @brief 打开显示ui开关
-  */
+   * @brief 打开显示ui开关
+   */
   void show();
 
   /**
-  * @brief 将当前对象标记为删除状态
-  */
+   * @brief 将当前对象标记为删除状态
+   */
   void marked_to_be_deleted() { is_to_be_deleted_ = true; }
 
   /**
-  * @brief 获取当前对象删除标记
-  * @return 当前状态是否需要被删除
-  */
+   * @brief 获取当前对象删除标记
+   * @return 当前状态是否需要被删除
+   */
   bool is_to_be_deleted() const { return is_to_be_deleted_; }
 
   /**
-  * @brief opengl渲染
-  * @param shader
-  */
+   * @brief opengl渲染
+   * @param shader
+   */
   virtual void draw_gl(glk::GLSLShader& shader) = 0;
 
   /**
-  * @brief imgui绘图
-  */
+   * @brief imgui绘图
+   */
   virtual void draw_ui() = 0;
 
  public:

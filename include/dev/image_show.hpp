@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <thread>
 #include <mutex>
 #include <sensor_msgs/Image.h>
@@ -14,10 +13,10 @@ class ImageShow {
   ~ImageShow();
 
   /**
-  * @brief 更新当前实现图像
-  * @param image
-  */
-  void update_image(sensor_msgs::ImageConstPtr &image);
+   * @brief 更新当前实现图像
+   * @param image
+   */
+  void update_image(sensor_msgs::ImageConstPtr& image);
 
   /// 使能图像显示
   void enable(std::string& window_name);

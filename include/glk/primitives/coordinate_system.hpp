@@ -7,7 +7,7 @@
 namespace glk {
 
 class CoordinateSystem {
-public:
+ public:
   CoordinateSystem() {
     vertices.emplace_back(Eigen::Vector3f::Zero());
     vertices.emplace_back(Eigen::Vector3f::UnitX());
@@ -24,7 +24,7 @@ public:
     colors.emplace_back(Eigen::Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
   }
 
-public:
+ public:
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
   std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors;
 };

@@ -28,7 +28,6 @@ void ImageShow::show() {
   // 保存转换出的图像数据
   cv_bridge::CvImagePtr cv_ptr;
   while (is_show_image_) {
-
     // 等待图像就绪
     if (!image_ptr_) {
       usleep(50000);
@@ -58,11 +57,10 @@ void ImageShow::show() {
     // 显示
     cv::imshow(window_name_, cv_ptr->image);
     cv::waitKey(10);
-    usleep(50000);
+    usleep(100000);
   }
 
   cv::destroyWindow(window_name_);
-
 }
 
 void ImageShow::enable(std::string& window_name) {

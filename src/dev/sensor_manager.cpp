@@ -50,8 +50,8 @@ void SensorManager::call_sensors_draw_ui() {
 
 void SensorManager::draw_ui() {
   // 需要执行删除操作
-  static bool need_to_delete = false;
-  static int sensor_cnt = 0;
+  bool need_to_delete = false;
+  int sensor_cnt = 0;
   int sensor_id = 0;
 
   // 设置窗口位置和大小
@@ -59,6 +59,7 @@ void SensorManager::draw_ui() {
   ImGui::SetNextWindowSize(ImVec2(200, 400), ImGuiCond_FirstUseEver);
 
   ImGui::Begin("Devices", nullptr, ImGuiWindowFlags_None);
+
   if (ImGui::Button("Add +")) {
     ImGui::OpenPopup("add_devices_popup");
   }

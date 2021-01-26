@@ -129,8 +129,8 @@ endif ()
 find_package(OpenGL REQUIRED)
 message(STATUS "OPENGL_LIBRARIES: ${OPENGL_LIBRARIES}")
 
-# pcl
-find_package(PCL 1.7 REQUIRED
+# pcl >= 1.8
+find_package(PCL 1.8 REQUIRED
         COMPONENTS
         common
         io
@@ -231,6 +231,8 @@ add_executable(${PROJECT_NAME}
         src/dev/camera.cpp
         src/dev/sensor_manager.cpp
         src/dev/image_show.cpp
+        src/dev/april_board.cpp
+        src/image_loader.cpp
         src/main.cpp
         )
 

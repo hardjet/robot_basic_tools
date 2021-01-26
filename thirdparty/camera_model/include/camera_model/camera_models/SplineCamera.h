@@ -46,26 +46,26 @@ class SplineCamera : public Camera {
     double& u0(void);
     double& v0(void);
 
-    double k2()const;
-    double k3()const;
-    double k4()const;
-    double k5()const;
-    double k6()const;
-    double k7()const;
-    double p1()const;
-    double p2()const;
-    double A11()const;
-    double A12()const;
-    double A22()const;
-    double u0()const;
-    double v0()const;
+    double k2() const;
+    double k3() const;
+    double k4() const;
+    double k5() const;
+    double k6() const;
+    double k7() const;
+    double p1() const;
+    double p2() const;
+    double A11() const;
+    double A12() const;
+    double A22() const;
+    double u0() const;
+    double v0() const;
 
     int& isFast(void);
     int& numDiff(void);
     int& maxIncidentAngle(void);
-    int isFast()const;
-    int numDiff()const;
-    int maxIncidentAngle()const;
+    int isFast() const;
+    int numDiff() const;
+    int maxIncidentAngle() const;
     void setFast();
     bool readFromYamlFile(const std::string& filename);
     bool isDistortion() const;
@@ -171,12 +171,12 @@ class SplineCamera : public Camera {
 
   SplineCamera(const Parameters& params);
 
-  Camera::ModelType modelType()const;
-  const std::string& cameraName()const;
-  std::string& cameraName() override {mParameters.cameraName();}
+  Camera::ModelType modelType() const;
+  const std::string& cameraName() const;
+  std::string& cameraName() override { mParameters.cameraName(); }
 
-  int imageWidth()const;
-  int imageHeight()const;
+  int imageWidth() const;
+  int imageHeight() const;
   cv::Size imageSize() const { return cv::Size(imageWidth(), imageHeight()); }
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.u0(), mParameters.v0()); }
 
@@ -238,9 +238,9 @@ class SplineCamera : public Camera {
                                   cv::Size imageSize = cv::Size(0, 0), float cx = -1.0f, float cy = -1.0f,
                                   cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const;
 
-  int parameterCount()const;
+  int parameterCount() const;
 
-  const Parameters& getParameters()const;
+  const Parameters& getParameters() const;
 
   void setParameters(const Parameters& parameters);
 
@@ -250,7 +250,7 @@ class SplineCamera : public Camera {
 
   void writeParametersToYamlFile(const std::string& filename) const;
 
-  std::string parametersToString()const;
+  std::string parametersToString() const;
 
   math_utils::Polynomial* getPoly() const;
   void setPoly(math_utils::Polynomial* value);

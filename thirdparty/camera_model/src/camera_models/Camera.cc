@@ -128,7 +128,7 @@ double Camera::reprojectionError(const std::vector<std::vector<cv::Point3f> >& o
   }
 
   int i = 0;
-#pragma omp parallel for private(i)
+  // #pragma omp parallel for private(i)
   for (i = 0; i < imageCount; ++i) {
     size_t pointCount = imagePoints.at(i).size();
 

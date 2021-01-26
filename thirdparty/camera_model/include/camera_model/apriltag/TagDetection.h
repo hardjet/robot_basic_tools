@@ -11,6 +11,7 @@
 namespace AprilTags {
 
 struct TagDetection {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   //! Constructor
   TagDetection();
 

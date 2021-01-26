@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
   std::vector<bool> chessboardFound(imageFilenames.size(), false);
 
   size_t image_index;
-#pragma omp parallel for private(image_index)
+  // #pragma omp parallel for private(image_index)
   for (image_index = 0; image_index < imageFilenames.size(); ++image_index) {
     std::string image_name = imageFilenames.at(image_index);
 

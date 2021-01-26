@@ -1,7 +1,8 @@
 project(camera_model)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11 -march=native")
+#set(CMAKE_CXX_FLAGS "-std=c++11 -march=native")
+set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC -fopenmp -Wno-all")
 
 find_package(Boost REQUIRED COMPONENTS
@@ -68,5 +69,13 @@ target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS}
         ${CERES_LIBRARIES})
 
+
+#add_executable(april_calib
+#        src/april_calib.cc
+#        )
+#
+#target_link_libraries(april_calib
+#        ${PROJECT_NAME}
+#        )
 
 

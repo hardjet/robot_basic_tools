@@ -28,9 +28,10 @@ namespace cameras {
  */
 class GridCalibrationTargetBase {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   /// \brief initialize base class
   GridCalibrationTargetBase(size_t rows, size_t cols);
-  virtual ~GridCalibrationTargetBase() {}
+  virtual ~GridCalibrationTargetBase() = default;
 
  public:
   typedef boost::shared_ptr<GridCalibrationTargetBase> Ptr;
@@ -49,8 +50,8 @@ class GridCalibrationTargetBase {
   Eigen::Vector3d point(size_t i) const;
 
   /// \brief get all points from the target expressed in the target frame
-  Eigen::MatrixXd points(void) const;
-  std::vector<cv::Point3f> points3d(void) const;
+  Eigen::MatrixXd points() const;
+  std::vector<cv::Point3f> points3d() const;
 
   /// \brief get the grid coordinates for a point
   std::pair<size_t, size_t> pointToGridCoordinates(size_t i) const;

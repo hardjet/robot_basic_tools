@@ -15,27 +15,27 @@ class CameraCalibration {
   CameraCalibration(const Camera::ModelType modelType, const std::string& cameraName, const cv::Size& imageSize,
                     const cv::Size& boardSize, float squareSize);
 
-  void clear(void);
+  void clear();
 
   void addChessboardData(const std::vector<cv::Point2f>& corners);
   void addChessboardData(const std::vector<cv::Point2f>& corners, const std::vector<cv::Point3f>& scene_pts);
   void addImage(const cv::Mat image, const std::string name);
 
-  bool calibrate(void);
+  bool calibrate();
 
-  int sampleCount(void) const;
-  std::vector<std::vector<cv::Point2f> >& imagePoints(void);
-  const std::vector<std::vector<cv::Point2f> >& imagePoints(void) const;
-  std::vector<std::vector<cv::Point3f> >& scenePoints(void);
-  const std::vector<std::vector<cv::Point3f> >& scenePoints(void) const;
-  CameraPtr& camera(void);
-  const CameraConstPtr camera(void) const;
+  int sampleCount() const;
+  std::vector<std::vector<cv::Point2f> >& imagePoints();
+  const std::vector<std::vector<cv::Point2f> >& imagePoints() const;
+  std::vector<std::vector<cv::Point3f> >& scenePoints();
+  const std::vector<std::vector<cv::Point3f> >& scenePoints() const;
+  CameraPtr& camera();
+  const CameraConstPtr camera() const;
 
-  Eigen::Matrix2d& measurementCovariance(void);
-  const Eigen::Matrix2d& measurementCovariance(void) const;
+  Eigen::Matrix2d& measurementCovariance();
+  const Eigen::Matrix2d& measurementCovariance() const;
 
-  cv::Mat& cameraPoses(void);
-  const cv::Mat& cameraPoses(void) const;
+  cv::Mat& cameraPoses();
+  const cv::Mat& cameraPoses() const;
 
   void drawResultsInitial(std::vector<cv::Mat>& images, std::vector<std::string>& imageNames,
                           cv::Mat& DistributedImage) const;

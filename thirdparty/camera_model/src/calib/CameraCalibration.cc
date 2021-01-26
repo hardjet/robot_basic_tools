@@ -29,7 +29,7 @@ CameraCalibration::CameraCalibration(const Camera::ModelType modelType, const st
   m_camera = CameraFactory::instance()->generateCamera(modelType, cameraName, imageSize);
 }
 
-void CameraCalibration::clear(void) {
+void CameraCalibration::clear() {
   m_imagePoints.clear();
   m_scenePoints.clear();
   m_imageGoodPoints.clear();
@@ -59,7 +59,7 @@ void CameraCalibration::addChessboardData(const std::vector<cv::Point2f>& corner
   m_scenePoints.push_back(scene_pts);
 }
 
-bool CameraCalibration::calibrate(void) {
+bool CameraCalibration::calibrate() {
   // compute intrinsic camera parameters and extrinsic parameters for each of the views
   std::vector<cv::Mat> rvecs;
   std::vector<cv::Mat> tvecs;
@@ -80,7 +80,7 @@ bool CameraCalibration::calibrate(void) {
 
   // STEP 2: Estimate extrinsics
 
-#pragma omp parallel for
+  // #pragma omp parallel for
   for (size_t i = 0; i < m_scenePoints.size(); ++i) {
     m_camera->estimateExtrinsics(m_scenePoints.at(i), m_imagePoints.at(i), rvecs.at(i), tvecs.at(i));
   }
@@ -178,27 +178,27 @@ bool CameraCalibration::calibrate(void) {
   return true;
 }
 
-int CameraCalibration::sampleCount(void) const { return m_imagePoints.size(); }
+int CameraCalibration::sampleCount() const { return m_imagePoints.size(); }
 
-std::vector<std::vector<cv::Point2f> >& CameraCalibration::imagePoints(void) { return m_imagePoints; }
+std::vector<std::vector<cv::Point2f> >& CameraCalibration::imagePoints() { return m_imagePoints; }
 
-const std::vector<std::vector<cv::Point2f> >& CameraCalibration::imagePoints(void) const { return m_imagePoints; }
+const std::vector<std::vector<cv::Point2f> >& CameraCalibration::imagePoints() const { return m_imagePoints; }
 
-std::vector<std::vector<cv::Point3f> >& CameraCalibration::scenePoints(void) { return m_scenePoints; }
+std::vector<std::vector<cv::Point3f> >& CameraCalibration::scenePoints() { return m_scenePoints; }
 
-const std::vector<std::vector<cv::Point3f> >& CameraCalibration::scenePoints(void) const { return m_scenePoints; }
+const std::vector<std::vector<cv::Point3f> >& CameraCalibration::scenePoints() const { return m_scenePoints; }
 
-CameraPtr& CameraCalibration::camera(void) { return m_camera; }
+CameraPtr& CameraCalibration::camera() { return m_camera; }
 
-const CameraConstPtr CameraCalibration::camera(void) const { return m_camera; }
+const CameraConstPtr CameraCalibration::camera() const { return m_camera; }
 
-Eigen::Matrix2d& CameraCalibration::measurementCovariance(void) { return m_measurementCovariance; }
+Eigen::Matrix2d& CameraCalibration::measurementCovariance() { return m_measurementCovariance; }
 
-const Eigen::Matrix2d& CameraCalibration::measurementCovariance(void) const { return m_measurementCovariance; }
+const Eigen::Matrix2d& CameraCalibration::measurementCovariance() const { return m_measurementCovariance; }
 
-cv::Mat& CameraCalibration::cameraPoses(void) { return m_cameraPoses; }
+cv::Mat& CameraCalibration::cameraPoses() { return m_cameraPoses; }
 
-const cv::Mat& CameraCalibration::cameraPoses(void) const { return m_cameraPoses; }
+const cv::Mat& CameraCalibration::cameraPoses() const { return m_cameraPoses; }
 
 void CameraCalibration::drawResultsInitial(std::vector<cv::Mat>& images, std::vector<std::string>& imageNames,
                                            cv::Mat& DistributedImage) const {
@@ -231,7 +231,7 @@ void CameraCalibration::drawResults(std::vector<cv::Mat>& images, std::vector<st
   r_show = 5 * show_unit;
 
   size_t i;
-#pragma omp parallel for private(i)
+  // #pragma omp parallel for private(i)
   for (i = 0; i < images.size(); ++i) {
     cv::Mat& image = images.at(i);
 

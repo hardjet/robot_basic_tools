@@ -66,7 +66,7 @@ class PinholeCamera : public Camera {
 
   Camera::ModelType modelType() const override;
   const std::string& cameraName() const override;
-  std::string& cameraName() override {mParameters.cameraName();}
+  std::string& cameraName() override { mParameters.cameraName(); }
   int imageWidth() const override;
   int imageHeight() const override;
   cv::Size imageSize() const override { return cv::Size{imageWidth(), imageHeight()}; }
@@ -104,9 +104,9 @@ class PinholeCamera : public Camera {
 
   void liftProjective(const Eigen::Vector2d& p, Eigen::Vector3d& P, float image_scale) const override;
 
-  void liftProjectiveToRay(const Eigen::Vector2d& p, Ray& ray) const override{}
+  void liftProjectiveToRay(const Eigen::Vector2d& p, Ray& ray) const override {}
 
-  void rayToPlane(const Ray& ray, Eigen::Vector2d& p) const override{}
+  void rayToPlane(const Ray& ray, Eigen::Vector2d& p) const override {}
 
   // Projects 3D points to the image plane (Pi function)
   void spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p) const override;

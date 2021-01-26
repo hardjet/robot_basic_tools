@@ -15,7 +15,8 @@ class CameraFactory {
 
   static boost::shared_ptr<CameraFactory> instance();
 
-  static CameraPtr generateCamera(Camera::ModelType modelType, const std::string& cameraName, const cv::Size& imageSize) ;
+  static CameraPtr generateCamera(Camera::ModelType modelType, const std::string& cameraName,
+                                  const cv::Size& imageSize);
 
   static CameraPtr generateCameraFromYamlFile(const std::string& filename);
 

@@ -17,6 +17,7 @@
 
 //传感器设备管理
 #include "dev/sensor_manager.hpp"
+#include "dev/april_board.hpp"
 
 // ros相关
 #include <ros/package.h>
@@ -51,15 +52,17 @@ class TestApplication : public guik::Application {
 
     is_show_imgui_demo = false;
 
+    // 获取资源路径
+    std::string package_path = ros::package::getPath("robot_basic_tools");
+    std::string data_directory = package_path + "/data";
+
     right_clicked_pos.setZero();
     cur_mouse_pos.setZero();
     progress_ptr = std::make_unique<guik::ProgressModal>("progress modal");
     sensor_manager_ptr = std::make_unique<dev::SensorManager>(nh);
+    april_board_ptr = boost::make_shared<dev::AprilBoard>(data_directory);
 
     // initialize the main OpenGL canvas
-    std::string package_path = ros::package::getPath("robot_basic_tools");
-    std::string data_directory = package_path + "/data";
-
     main_canvas_ptr = std::make_unique<guik::GLCanvas>(data_directory, framebuffer_size());
     if (!main_canvas_ptr->ready()) {
       close();
@@ -136,6 +139,7 @@ class TestApplication : public guik::Application {
     // draw windows
     main_canvas_ptr->draw_ui();
     sensor_manager_ptr->draw_ui();
+    april_board_ptr->draw_ui();
 
     context_menu();
     mouse_control();
@@ -198,60 +202,9 @@ class TestApplication : public guik::Application {
     /*** File menu ***/
     // flags to open dialogs
     // this trick is necessary to open ImGUI popup modals from the menubar
-    bool open_map_only_dialog = false;
-    bool open_deepblue_map_dialog = false;
-    bool merge_map_dialog = false;
-    bool save_map_dialog = false;
-    bool save_nav_data_dialog = false;
-    bool export_map_dialog = false;
-    bool pcd2png_dialog = false;
-    if (ImGui::BeginMenu("File")) {
-      if (ImGui::BeginMenu("Open")) {
-        if (ImGui::BeginMenu("Load map")) {
-          if (ImGui::MenuItem("map")) {
-            open_map_only_dialog = true;
-          }
-          if (ImGui::MenuItem("DeepBlue map")) {
-            open_deepblue_map_dialog = true;
-          }
-          ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Merge map")) {
-          if (ImGui::MenuItem("map")) {
-            merge_map_dialog = true;
-          }
-          ImGui::EndMenu();
-        }
-        ImGui::EndMenu();
-      }
-
-      if (ImGui::BeginMenu("Save")) {
-        if (ImGui::MenuItem("Save map data")) {
-          save_map_dialog = true;
-        }
-        if (ImGui::MenuItem("Save nav data")) {
-          save_nav_data_dialog = true;
-        }
-
-        ImGui::Separator();
-        if (ImGui::MenuItem("nav setting")) {
-        }
-        ImGui::EndMenu();
-      }
-
-      if (ImGui::BeginMenu("Export")) {
-        if (ImGui::MenuItem("Export PointCloud")) {
-          export_map_dialog = true;
-        }
-
-        ImGui::Separator();
-        if (ImGui::MenuItem("export setting")) {
-        }
-        ImGui::Separator();
-        if (ImGui::MenuItem("pcd2png")) {
-          pcd2png_dialog = true;
-        }
-        ImGui::EndMenu();
+    if (ImGui::BeginMenu("Setting")) {
+      if (ImGui::MenuItem("AprilTag setting")) {
+        april_board_ptr->show();
       }
 
       ImGui::Separator();
@@ -359,6 +312,9 @@ class TestApplication : public guik::Application {
 
   // 传感器管理器
   std::unique_ptr<dev::SensorManager> sensor_manager_ptr;
+
+  // 标定板
+  boost::shared_ptr<dev::AprilBoard> april_board_ptr;
 };
 
 int main(int argc, char **argv) {

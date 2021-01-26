@@ -147,7 +147,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   FloatImage fimTheta(fimSeg.getWidth(), fimSeg.getHeight());
   FloatImage fimMag(fimSeg.getWidth(), fimSeg.getHeight());
 
-#pragma omp parallel for
+  // #pragma omp parallel for
   for (int y = 1; y < fimSeg.getHeight() - 1; y++) {
     for (int x = 1; x < fimSeg.getWidth() - 1; x++) {
       float Ix = fimSeg.get(x + 1, y) - fimSeg.get(x - 1, y);

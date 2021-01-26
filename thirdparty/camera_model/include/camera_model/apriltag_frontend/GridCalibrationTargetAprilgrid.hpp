@@ -1,7 +1,6 @@
 #ifndef ASLAM_GRID_CALIBRATION_TARGET_APRILGRID_HPP
 #define ASLAM_GRID_CALIBRATION_TARGET_APRILGRID_HPP
 
-#include "GridCalibrationTargetBase.hpp"
 #include <Eigen/Core>
 #include <boost/serialization/export.hpp>
 #include <boost/shared_ptr.hpp>
@@ -15,12 +14,14 @@
 //#include "apriltags/Tag25h9.h"
 //#include "apriltags/Tag36h9.h"
 #include "camera_model/apriltag/Tag36h11.h"
+#include "GridCalibrationTargetBase.hpp"
 
 namespace aslam {
 namespace cameras {
 
 class GridCalibrationTargetAprilgrid : public GridCalibrationTargetBase {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef boost::shared_ptr<GridCalibrationTargetAprilgrid> Ptr;
   typedef boost::shared_ptr<const GridCalibrationTargetAprilgrid> ConstPtr;
 
@@ -85,6 +86,16 @@ class GridCalibrationTargetAprilgrid : public GridCalibrationTargetBase {
   /// \brief extract the calibration target points from an image and write to an observation
   bool computeObservation(const cv::Mat& image, std::vector<cv::Point2f>& points2ds,
                           std::vector<bool>& outCornerObserved) const;
+
+ public:
+  // 设置尺寸
+  void set_params(double tagSize, double tagSpacing) {
+    _tagSize = tagSize;
+    _tagSpacing = tagSpacing;
+  }
+
+  // 更新参数
+  void updata_params() { createGridPoints(); }
 
  private:
   /// \brief initialize the object

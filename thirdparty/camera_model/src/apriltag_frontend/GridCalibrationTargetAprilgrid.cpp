@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <boost/make_shared.hpp>
 #include <camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
+// #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>

@@ -39,7 +39,9 @@ void ImageShow::show() {
       if (is_need_cv_convert_) {
         // 尝试转换为BGR
         try {
-          cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::BGR8);
+          // TODO realsense color image原本发送的就是'rgb8'格式，但是imshow显示使用BGR8格式
+          // 发现使用cv_bridge内部转换很占cpu，因此放到外面转换
+          cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::RGB8);
           is_need_cv_convert_ = false;
         } catch (cv_bridge::Exception& e) {
           // 尝试转换为灰度图
@@ -52,6 +54,10 @@ void ImageShow::show() {
           }
         }
       }
+    }
+
+    if (cv_ptr->image.channels() == 3) {
+      cv::cvtColor(cv_ptr->image, cv_ptr->image, cv::COLOR_RGB2BGR);
     }
 
     // 显示

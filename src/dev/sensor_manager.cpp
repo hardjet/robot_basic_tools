@@ -10,11 +10,11 @@ namespace dev {
 
 void SensorManager::add_sensor(dev::Sensor::Ptr &sensor) {
   //如果没有新建
-  auto rs = sensors_map_.find(sensor->sensor_type);
-  if (rs == sensors_map_.end()) {
+  auto rs = sensors_map.find(sensor->sensor_type);
+  if (rs == sensors_map.end()) {
     std::list<dev::Sensor::Ptr> sensor_list;
     sensor_list.push_back(sensor);
-    sensors_map_[sensor->sensor_type] = sensor_list;
+    sensors_map[sensor->sensor_type] = sensor_list;
   } else {
     // 有就添加
     rs->second.push_back(sensor);
@@ -22,7 +22,7 @@ void SensorManager::add_sensor(dev::Sensor::Ptr &sensor) {
 }
 
 void SensorManager::check_and_clear_sensors() {
-  for (auto sensors_it = sensors_map_.begin(); sensors_it != sensors_map_.end();) {
+  for (auto sensors_it = sensors_map.begin(); sensors_it != sensors_map.end();) {
     for (auto sensor_it = sensors_it->second.begin(); sensor_it != sensors_it->second.end();) {
       // 检查是否需要删除
       if ((*sensor_it)->is_to_be_deleted()) {
@@ -33,7 +33,7 @@ void SensorManager::check_and_clear_sensors() {
     }
     // 检查当前类型的传感器是否为空
     if (sensors_it->second.empty()) {
-      sensors_it = sensors_map_.erase(sensors_it);
+      sensors_it = sensors_map.erase(sensors_it);
     } else {
       ++sensors_it;
     }
@@ -41,7 +41,7 @@ void SensorManager::check_and_clear_sensors() {
 }
 
 void SensorManager::call_sensors_draw_ui() {
-  for (auto &sensors : sensors_map_) {
+  for (auto &sensors : sensors_map) {
     for (auto &sensor : sensors.second) {
       sensor->draw_ui();
     }
@@ -51,8 +51,7 @@ void SensorManager::call_sensors_draw_ui() {
 void SensorManager::draw_ui() {
   // 需要执行删除操作
   bool need_to_delete = false;
-  int sensor_cnt = 0;
-  int sensor_id = 0;
+  int widgets_id = 0;
 
   // 设置窗口位置和大小
   ImGui::SetNextWindowPos(ImVec2(2, 22), ImGuiCond_Always);
@@ -72,10 +71,10 @@ void SensorManager::draw_ui() {
     ImGui::MenuItem("devices", nullptr, false, false);
     ImGui::Separator();
     if (ImGui::MenuItem("camera")) {
-      std::string sensor_name_tmp = "new camere " + std::to_string(sensor_cnt);
+      std::string sensor_name_tmp = "new camere " + std::to_string(sensor_num_);
       dev::Sensor::Ptr sensor = std::make_shared<dev::Camera>(sensor_name_tmp.c_str(), nh_);
       add_sensor(sensor);
-      sensor_cnt++;
+      sensor_num_++;
     }
     if (ImGui::MenuItem("laser")) {
     }
@@ -89,7 +88,7 @@ void SensorManager::draw_ui() {
   // static int selected = -1;
   // int select_cnt = 0;
   // 遍历设备 显示
-  for (auto &sensors : sensors_map_) {
+  for (auto &sensors : sensors_map) {
     // 显示设备类型的名称
     auto header_name = sensors.second.front()->sensor_type_str;
     if (ImGui::CollapsingHeader(header_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -117,17 +116,17 @@ void SensorManager::draw_ui() {
 
         // 编辑按钮
         ImGui::SameLine();
-        ImGui::PushID(sensor_id);
+        ImGui::PushID(widgets_id);
         if (ImGui::SmallButton("edit")) {
           // 启动ui显示
           sensor->show();
         }
         ImGui::PopID();
-        sensor_id++;
+        widgets_id++;
 
         // 删除按钮
         ImGui::SameLine();
-        ImGui::PushID(sensor_id);
+        ImGui::PushID(widgets_id);
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.9444, 1.0000, 0.6000));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0, 0.75, 0.8));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0, 0.75, 0.8));
@@ -145,7 +144,7 @@ void SensorManager::draw_ui() {
         }
         ImGui::PopStyleColor(3);
         ImGui::PopID();
-        sensor_id++;
+        widgets_id++;
       }
     }
   }
@@ -156,7 +155,7 @@ void SensorManager::draw_ui() {
     need_to_delete = false;
   }
 
-  if (sensors_map_.empty()) {
+  if (sensors_map.empty()) {
     ImGui::Text("please add sensor first.");
   }
 
@@ -166,6 +165,6 @@ void SensorManager::draw_ui() {
   call_sensors_draw_ui();
 }
 
-SensorManager::~SensorManager() { sensors_map_.clear(); }
+SensorManager::~SensorManager() { sensors_map.clear(); }
 
 }  // namespace dev

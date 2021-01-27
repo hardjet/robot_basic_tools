@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <memory>
 
@@ -15,9 +16,10 @@ class NodeHandle;
 
 namespace dev {
 
-// sensor unique id
-static uint32_t sensors_unique_id = 0;
+// 打开文件夹默认路径
+extern std::string default_path;
 
+// sensor type
 enum SENSOR_TYPE { UNDEF = 0, CAMERA = 1, LASER, LIDAR, IMU };
 
 /**
@@ -101,8 +103,10 @@ class Sensor {
   const uint32_t sensor_id;
   // 设备类型
   const SENSOR_TYPE sensor_type;
-  // 设备名称
+  // 设备类型名称
   const std::string sensor_type_str;
+  // sensor unique id
+  static uint32_t sensors_unique_id;
 
  protected:
   // 设备在线颜色 绿色

@@ -3,6 +3,11 @@
 
 namespace dev {
 
+// 打开文件夹默认路径
+std::string default_path{};
+
+uint32_t Sensor::sensors_unique_id = 0;
+
 void Sensor::show() { is_show_window_ = true; }
 
 void Sensor::draw_status() {

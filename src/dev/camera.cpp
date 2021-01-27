@@ -345,12 +345,9 @@ void Camera::draw_ui_topic_name() {
 
 void Camera::draw_ui() {
   // 名称控件变量
-  char name_char[128]{" "};
+  char name_char[128]{""};
   // 相机类型控件变量
   const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
-
-  // ------ test
-  const std::string default_path{"/home/anson/catkin_map/src/robot_basic_tools/config/camera_config"};
 
   if (!is_show_window_) {
     return;

@@ -37,11 +37,16 @@ class SensorManager {
   /// 调用所有传感器的draw_ui
   void call_sensors_draw_ui();
 
+ public:
+  // 使用unordered_map，list便于删除操作
+  std::unordered_map<dev::SENSOR_TYPE, std::list<dev::Sensor::Ptr>> sensors_map;
+
  private:
   // ros 句柄
   ros::NodeHandle& nh_;
-  // 便于删除操作
-  std::unordered_map<dev::SENSOR_TYPE, std::list<dev::Sensor::Ptr>> sensors_map_;
+
+  // 设备个数
+  int sensor_num_{0};
 };
 
 }  // namespace dev

@@ -28,7 +28,7 @@
                                     "id": "c8n3y6q9noo0",
                                     "created": 1611056734991,
                                     "text": "多相机模型支持",
-                                    "progress": 1,
+                                    "progress": 9,
                                     "layout": null
                                 },
                                 "children": []
@@ -38,8 +38,9 @@
                                     "id": "c8n3ymwtgyo0",
                                     "created": 1611056770216,
                                     "text": "显示图像",
-                                    "progress": 1,
-                                    "layout": null
+                                    "progress": 9,
+                                    "layout": null,
+                                    "expandState": "expand"
                                 },
                                 "children": []
                             },
@@ -57,8 +58,8 @@
                                 "data": {
                                     "id": "c8n40jmr6xs0",
                                     "created": 1611056919805,
-                                    "text": "相机内参支持手动输入与从json文件导入，支持导出json",
-                                    "progress": 1,
+                                    "text": "相机内参支持手动输入与从yaml文件导入，支持导出yaml",
+                                    "progress": 9,
                                     "layout": null
                                 },
                                 "children": []
@@ -83,6 +84,20 @@
                                 "children": []
                             }
                         ]
+                    },
+                    {
+                        "data": {
+                            "id": "c8trf7fj6g00",
+                            "created": 1611732313977,
+                            "text": "支持多传感器添加和删除",
+                            "progress": 9,
+                            "layout_right_offset": {
+                                "x": -8,
+                                "y": -341
+                            },
+                            "layout": null
+                        },
+                        "children": []
                     }
                 ]
             },
@@ -127,9 +142,31 @@
                             "id": "c8n47wt6ifc0",
                             "created": 1611057497041,
                             "text": "单线激光与相机标定",
-                            "layout": null
+                            "layout": null,
+                            "progress": null
                         },
-                        "children": []
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c8tredt30zk0",
+                                    "created": 1611732249493,
+                                    "text": "数据源选择",
+                                    "progress": 1,
+                                    "layout": null
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c8trepzqp0g0",
+                                    "created": 1611732276017,
+                                    "text": "标定过程",
+                                    "progress": 1,
+                                    "layout": null
+                                },
+                                "children": []
+                            }
+                        ]
                     },
                     {
                         "data": {

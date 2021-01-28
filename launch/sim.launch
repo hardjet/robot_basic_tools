@@ -1,0 +1,9 @@
+<launch>
+
+    <!--- Sim Time -->
+    <param name="/use_sim_time" value="true"/>
+
+    <node pkg="robot_basic_tools" type="robot_basic_tools" name="robot_basic_tools" output="screen">
+    </node>
+
+</launch>

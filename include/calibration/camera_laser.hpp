@@ -6,6 +6,7 @@
 namespace dev {
 class AprilBoard;
 class Camera;
+class Laser;
 }  // namespace dev
 
 namespace calibration {
@@ -26,5 +27,7 @@ class CamLaserCalib : public BaseCalib {
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 当前选中的相机对象
   std::shared_ptr<dev::Camera> cam_ptr_{nullptr};
+  // 当前选中的相机对象
+  std::shared_ptr<dev::Laser> laser_ptr_{nullptr};
 };
 }  // namespace calibration

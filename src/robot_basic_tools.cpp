@@ -49,7 +49,7 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   // 获取资源路径
   std::string package_path = ros::package::getPath("robot_basic_tools");
   std::string data_directory = package_path + "/data";
-  dev::default_path = data_directory + "/config/camera_config";
+  dev::default_path = package_path + "/config/camera_config";
 
   right_clicked_pos.setZero();
   cur_mouse_pos.setZero();
@@ -116,7 +116,7 @@ void RobotBasicTools::draw_ui() {
   ImGui::Text("FPS: %.3f fps", io.Framerate);
   ImGui::End();
 
-  // message 重新做
+  // todo message 模块重新做
   // ImGui::Begin("##messages", nullptr,
   //              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground);
   // ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "%c %s", "|/-\\"[(int)(ImGui::GetTime() / 0.05f) & 3],

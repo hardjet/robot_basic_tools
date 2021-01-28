@@ -79,7 +79,8 @@
                                     "id": "c8n461jv99c0",
                                     "created": 1611057350633,
                                     "text": "点云数据显示",
-                                    "layout": null
+                                    "layout": null,
+                                    "progress": 1
                                 },
                                 "children": []
                             }
@@ -91,10 +92,6 @@
                             "created": 1611732313977,
                             "text": "支持多传感器添加和删除",
                             "progress": 9,
-                            "layout_right_offset": {
-                                "x": -8,
-                                "y": -341
-                            },
                             "layout": null
                         },
                         "children": []
@@ -151,7 +148,7 @@
                                     "id": "c8tredt30zk0",
                                     "created": 1611732249493,
                                     "text": "数据源选择",
-                                    "progress": 1,
+                                    "progress": 9,
                                     "layout": null
                                 },
                                 "children": []
@@ -164,7 +161,16 @@
                                     "progress": 1,
                                     "layout": null
                                 },
-                                "children": []
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c8umv5blhz40",
+                                            "created": 1611821017619,
+                                            "text": "检测april_board"
+                                        },
+                                        "children": []
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -182,6 +188,15 @@
                             "id": "c8n48psyn400",
                             "created": 1611057560154,
                             "text": "多相机之间标定",
+                            "layout": null
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c8ul5ixegzs0",
+                            "created": 1611816188658,
+                            "text": "相机标定",
                             "layout": null
                         },
                         "children": []

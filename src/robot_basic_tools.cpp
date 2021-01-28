@@ -15,6 +15,8 @@
 
 #include "guik/projection_control.hpp"
 
+#include "util/singleton.hpp"
+
 // 传感器设备管理
 #include "dev/sensor_manager.hpp"
 #include "dev/april_board.hpp"
@@ -52,7 +54,8 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   right_clicked_pos.setZero();
   cur_mouse_pos.setZero();
   progress_ptr = std::make_unique<guik::ProgressModal>("progress modal");
-  sensor_manager_ptr = std::make_shared<dev::SensorManager>(nh);
+  // 创建为单实例对象
+  sensor_manager_ptr = util::Singleton<dev::SensorManager>::instance(nh);
   april_board_ptr = std::make_shared<dev::AprilBoard>(data_directory);
 
   // 单线激光与相机标定

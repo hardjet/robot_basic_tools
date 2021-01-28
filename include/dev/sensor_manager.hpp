@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <unordered_map>
 #include <list>
 
@@ -8,7 +9,7 @@
 namespace dev {
 
 /**
- * @brief SensorManager object
+ * @brief SensorManager object (使用单实例模板初始化)
  *
  */
 class SensorManager {

@@ -4,6 +4,7 @@
 
 // 传感器
 #include "dev/camera.hpp"
+#include "dev/laser.hpp"
 #include "dev/sensor_manager.hpp"
 
 namespace dev {
@@ -77,6 +78,10 @@ void SensorManager::draw_ui() {
       sensor_num_++;
     }
     if (ImGui::MenuItem("laser")) {
+      std::string sensor_name_tmp = "new laser " + std::to_string(sensor_num_);
+      dev::Sensor::Ptr sensor = std::make_shared<dev::Laser>(sensor_name_tmp.c_str(), nh_);
+      add_sensor(sensor);
+      sensor_num_++;
     }
     ImGui::EndPopup();
   }

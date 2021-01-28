@@ -15,7 +15,8 @@ void CamLaserCalib::draw_ui() {
   // 新建窗口
   ImGui::Begin("Camera and Laser Calibration", &is_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
-  draw_sensor_selector<dev::Camera::Ptr, dev::Camera>("camera", dev::CAMERA, cam_ptr_);
+  // 相机选择
+  draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_ptr_);
 
   // // 保证控件中文字对齐
   // ImGui::AlignTextToFramePadding();

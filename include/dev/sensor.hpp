@@ -116,8 +116,10 @@ class Sensor {
 
   // ros 句柄
   ros::NodeHandle& nh_;
-  // ros话题列表
-  std::vector<std::string> topic_list_;
+  // 传感器对应的ros话题
+  std::vector<std::string> sensor_topic_list_;
+  // 选择ros话题列表
+  std::vector<std::string> ros_topic_selector_;
   // 是否需要被删除
   bool is_to_be_deleted_{false};
   // 在线状态

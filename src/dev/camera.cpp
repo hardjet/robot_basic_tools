@@ -1,17 +1,17 @@
 #include <iostream>
-#include <ros/master.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
 #include "dev/camera.hpp"
 #include "dev/sensor_data.hpp"
 #include "dev/image_show.hpp"
+#include "dev/util.hpp"
 #include "camera_model/camera_models/CameraFactory.h"
 
 namespace dev {
 
 Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::CAMERA, "CAMERA") {
-  topic_list_.resize(2);
+  sensor_topic_list_.resize(2);
   // 设置图像数据接收
   image_data_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);
   // 频率/2
@@ -74,17 +74,6 @@ void Camera::creat_instance(int current_camera_type) {
   inst_ptr_->writeParameters(inst_params_);
 }
 
-static void HelpMarker(const char* desc) {
-  ImGui::TextDisabled("(?)");
-  if (ImGui::IsItemHovered()) {
-    ImGui::BeginTooltip();
-    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-    ImGui::TextUnformatted(desc);
-    ImGui::PopTextWrapPos();
-    ImGui::EndTooltip();
-  }
-}
-
 void Camera::draw_ui_parms() {
   static double const_0 = 0.0;
 
@@ -93,7 +82,7 @@ void Camera::draw_ui_parms() {
   ImGui::SameLine();
   ImGui::Text("height:%d", inst_ptr_->imageHeight());
   ImGui::SameLine();
-  HelpMarker("image size will be modified \nafter received image topic.");
+  help_marker("image size will be modified \nafter received image topic.");
 
   ImGui::Separator();
   ImGui::Text("params:");
@@ -166,33 +155,13 @@ void Camera::draw_ui_parms() {
   inst_ptr_->readParameters(inst_params_);
 }
 
-static void get_topic_name_from_list(const std::string& target_topic_type, std::vector<std::string>& candidates) {
-  ros::master::V_TopicInfo master_topics;
-  ros::master::getTopics(master_topics);
-
-  candidates.clear();
-
-  for (auto& info : master_topics) {
-    if (info.datatype == target_topic_type) {
-      candidates.push_back(info.name);
-    }
-  }
-}
-
-static void show_pfd_info(const std::string& title, const std::string& msg) {
-  pfd::message message(title, msg, pfd::choice::ok);
-  while (!message.ready()) {
-    usleep(1000);
-  }
-}
-
 void Camera::draw_ui_topic_name() {
   // 名称控件变量
   char image_topic_name_char[128]{""};
   char points_topic_name_char[128]{""};
 
-  memcpy(image_topic_name_char, topic_list_[0].c_str(), topic_list_[0].length());
-  memcpy(points_topic_name_char, topic_list_[1].c_str(), topic_list_[1].length());
+  memcpy(image_topic_name_char, sensor_topic_list_[0].c_str(), sensor_topic_list_[0].length());
+  memcpy(points_topic_name_char, sensor_topic_list_[1].c_str(), sensor_topic_list_[1].length());
 
   // ImVec2 size = ImGui::GetItemRectSize();
   // ros话题
@@ -204,11 +173,11 @@ void Camera::draw_ui_topic_name() {
     // 选中状态
     if (enable_topic_[0]) {
       // 如果topic有效才启用数据接收
-      if (topic_list_[0].empty()) {
+      if (sensor_topic_list_[0].empty()) {
         show_pfd_info("warning", "please set topic name first!");
         enable_topic_[0] = false;
       } else {
-        image_data_->subscribe(topic_list_[0], 5);
+        image_data_->subscribe(sensor_topic_list_[0], 5);
       }
     } else {
       // 暂停接收
@@ -229,7 +198,7 @@ void Camera::draw_ui_topic_name() {
   if (ImGui::InputTextWithHint("##image_topic_name", "press 'ENTER' to save", image_topic_name_char, 128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
-      topic_list_[0] = image_topic_name_char;
+      sensor_topic_list_[0] = image_topic_name_char;
       // 暂停接收
       image_data_->unsubscribe();
       enable_topic_[0] = false;
@@ -237,31 +206,31 @@ void Camera::draw_ui_topic_name() {
   } else {
     // 恢复名称
     memset(image_topic_name_char, 0, 128);
-    memcpy(image_topic_name_char, topic_list_[0].c_str(), topic_list_[0].length());
+    memcpy(image_topic_name_char, sensor_topic_list_[0].c_str(), sensor_topic_list_[0].length());
   }
   ImGui::SameLine();
   // 从ros系统中选择话题
   int selected_id = -1;
   if (ImGui::Button("...##image")) {
-    get_topic_name_from_list("sensor_msgs/Image", ros_topic_list_);
+    get_topic_name_from_list("sensor_msgs/Image", ros_topic_selector_);
     ImGui::OpenPopup("popup##image");
   }
   if (ImGui::BeginPopup("popup##image")) {
-    if (ros_topic_list_.empty()) {
+    if (ros_topic_selector_.empty()) {
       ImGui::Text("no sensor_msgs/Image msgs available.");
     } else {
       ImGui::Text("[sensor_msgs/Image list]");
       ImGui::Separator();
-      for (int i = 0; i < ros_topic_list_.size(); i++) {
+      for (int i = 0; i < ros_topic_selector_.size(); i++) {
         // 按下
-        if (ImGui::Selectable(ros_topic_list_[i].c_str())) {
+        if (ImGui::Selectable(ros_topic_selector_[i].c_str())) {
           selected_id = i;
         }
       }
     }
     // 变更话题名称
     if (selected_id != -1) {
-      topic_list_[0] = ros_topic_list_[selected_id];
+      sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
       image_data_->unsubscribe();
       enable_topic_[0] = false;
@@ -275,11 +244,11 @@ void Camera::draw_ui_topic_name() {
     // 选中状态
     if (enable_topic_[1]) {
       // 如果topic有效才启用数据接收
-      if (topic_list_[1].empty()) {
+      if (sensor_topic_list_[1].empty()) {
         show_pfd_info("warning", "please set topic name first!");
         enable_topic_[1] = false;
       } else {
-        points_data_->subscribe(topic_list_[1], 5);
+        points_data_->subscribe(sensor_topic_list_[1], 5);
       }
     } else {
       // 暂停接收
@@ -300,7 +269,7 @@ void Camera::draw_ui_topic_name() {
   if (ImGui::InputTextWithHint("##depth_topic_name", "press 'ENTER' to save", points_topic_name_char, 128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
     if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
-      topic_list_[1] = points_topic_name_char;
+      sensor_topic_list_[1] = points_topic_name_char;
       // 暂停接收
       points_data_->unsubscribe();
       enable_topic_[1] = false;
@@ -308,31 +277,31 @@ void Camera::draw_ui_topic_name() {
   } else {
     // 恢复名称
     memset(points_topic_name_char, 0, 128);
-    memcpy(points_topic_name_char, topic_list_[1].c_str(), topic_list_[1].length());
+    memcpy(points_topic_name_char, sensor_topic_list_[1].c_str(), sensor_topic_list_[1].length());
   }
   ImGui::SameLine();
   // 从ros系统中选择话题
   selected_id = -1;
   if (ImGui::Button("...##depth")) {
-    get_topic_name_from_list("sensor_msgs/PointCloud2", ros_topic_list_);
+    get_topic_name_from_list("sensor_msgs/PointCloud2", ros_topic_selector_);
     ImGui::OpenPopup("popup##depth");
   }
   if (ImGui::BeginPopup("popup##depth")) {
-    if (ros_topic_list_.empty()) {
+    if (ros_topic_selector_.empty()) {
       ImGui::Text("no sensor_msgs/Image msgs available.");
     } else {
       ImGui::Text("[sensor_msgs/PointCloud2 list]");
       ImGui::Separator();
-      for (int i = 0; i < ros_topic_list_.size(); i++) {
+      for (int i = 0; i < ros_topic_selector_.size(); i++) {
         // 按下
-        if (ImGui::Selectable(ros_topic_list_[i].c_str())) {
+        if (ImGui::Selectable(ros_topic_selector_[i].c_str())) {
           selected_id = i;
         }
       }
     }
     // 变更话题名称
     if (selected_id != -1) {
-      topic_list_[1] = ros_topic_list_[selected_id];
+      sensor_topic_list_[1] = ros_topic_selector_[selected_id];
       // 暂停接收
       points_data_->unsubscribe();
       enable_topic_[1] = false;

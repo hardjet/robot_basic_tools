@@ -229,11 +229,12 @@ target_link_libraries(guik
 add_executable(${PROJECT_NAME}
         src/dev/sensor.cpp
         src/dev/camera.cpp
-#        src/dev/laser.cpp
+        src/dev/laser.cpp
         src/dev/sensor_manager.cpp
         src/dev/image_show.cpp
         src/dev/april_board.cpp
-        src/calibration/calib_base.cpp
+        src/dev/util.cpp
+#        src/calibration/calib_base.cpp
         src/calibration/camera_laser.cpp
         src/image_loader.cpp
         src/robot_basic_tools.cpp

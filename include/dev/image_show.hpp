@@ -23,13 +23,13 @@ class ImageShow {
   void update_image(sensor_msgs::ImageConstPtr& image);
 
   /// 使能图像显示
-  void enable(std::string& window_name);
+  void enable(std::string& window_name, bool is_use_opencv = false);
 
   /// 关闭图像显示
   void disable();
 
   /// 显示图像
-  void show_image();
+  void show_image(bool &is_show_image);
 
  private:
   /// 显示图像操作，放在单独的线程中
@@ -38,22 +38,30 @@ class ImageShow {
   /// 更新纹理数据，支持灰度和RGB
   void update_texture();
 
+  /// 需要将图像消息转为cv::Mat
+  bool cv_convert();
+
  private:
   // 是否显示图片
   bool is_show_image_{false};
 
+  // 是否使用opencv显示
+  bool is_use_opencv_{false};
+
   // 数据就绪
   bool is_texture_ready_{false};
-
-  std::mutex mtx_;
-  // 显示图片线程
-  std::thread thread_;
 
   // 是否需要将sensor_msgs::Imaga转为cv::mat，减低系统资源占用
   bool is_need_cv_convert_{false};
 
   // 是否需要更新texture
   bool is_need_update_texture_{false};
+
+  // 资源锁
+  std::mutex mtx_;
+
+  // 显示图片opencv线程
+  std::thread thread_;
 
   // 接收到的图像数据
   sensor_msgs::ImageConstPtr image_ptr_{nullptr};

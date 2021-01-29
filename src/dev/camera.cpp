@@ -466,7 +466,7 @@ void Camera::draw_ui() {
   // 检查设备在线状态
   check_online_status();
 
-  im_show_ptr_->show_image();
+  im_show_ptr_->show_image(is_show_image_);
 }
 
 }  // namespace dev

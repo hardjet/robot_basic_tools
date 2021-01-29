@@ -235,7 +235,7 @@ add_executable(${PROJECT_NAME}
         src/dev/april_board.cpp
         src/dev/util.cpp
 #        src/calibration/calib_base.cpp
-        src/calibration/camera_laser.cpp
+        src/calibration/camera_laser_calib.cpp
         src/image_loader.cpp
         src/robot_basic_tools.cpp
         )

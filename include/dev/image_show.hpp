@@ -18,9 +18,15 @@ class ImageShow {
 
   /**
    * @brief 更新当前图像
-   * @param image
+   * @param image 图像信息保存在ros消息中，需要cv_bridge转换回来
    */
   void update_image(sensor_msgs::ImageConstPtr& image);
+
+  /**
+   * @brief 更新当前图像
+   * @param image 图像信息保存在cv::Mat
+   */
+  void update_image(boost::shared_ptr<cv_bridge::CvImage>& image);
 
   /// 使能图像显示
   void enable(std::string& window_name, bool is_use_opencv = false);
@@ -33,7 +39,7 @@ class ImageShow {
 
  private:
   /// 显示图像操作，放在单独的线程中
-  void show();
+  void show_in_opencv();
 
   /// 更新纹理数据，支持灰度和RGB
   void update_texture();
@@ -63,7 +69,7 @@ class ImageShow {
   // 显示图片opencv线程
   std::thread thread_;
 
-  // 接收到的图像数据
+  // 接收到的图像数据 opencv中使用
   sensor_msgs::ImageConstPtr image_ptr_{nullptr};
 
   // 窗口名称

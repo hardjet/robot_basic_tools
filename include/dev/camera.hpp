@@ -8,6 +8,10 @@ namespace camera_model {
 class Camera;
 }
 
+namespace cv_bridge {
+class CvImage;
+}
+
 namespace dev {
 
 template <class M>
@@ -31,6 +35,8 @@ class Camera : public Sensor {
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图
   void draw_ui() override;
+  /// 获取当前图像数据
+  boost::shared_ptr<sensor_msgs::Image const> data();
 
  private:
   // 当前类型

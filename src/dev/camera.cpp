@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cv_bridge/cv_bridge.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
@@ -24,6 +25,10 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 
   // 图像显示
   im_show_ptr_ = std::make_shared<dev::ImageShow>();
+}
+
+boost::shared_ptr<sensor_msgs::Image const> Camera::data() {
+  return image_data_->data();
 }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {}

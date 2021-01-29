@@ -14,8 +14,7 @@ namespace calibration {
 class CamLaserCalib : public BaseCalib {
  public:
   CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-                std::shared_ptr<dev::AprilBoard>& april_board_ptr_)
-      : BaseCalib(sensor_manager_ptr), april_board_ptr_(april_board_ptr_){};
+                std::shared_ptr<dev::AprilBoard>& april_board_ptr_);
 
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
@@ -29,5 +28,7 @@ class CamLaserCalib : public BaseCalib {
   std::shared_ptr<dev::Camera> cam_ptr_{nullptr};
   // 当前选中的相机对象
   std::shared_ptr<dev::Laser> laser_ptr_{nullptr};
+  // 图像显示对象
+  std::shared_ptr<dev::ImageShow> im_show_ptr_{nullptr};
 };
 }  // namespace calibration

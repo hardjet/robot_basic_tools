@@ -158,7 +158,7 @@
                                     "id": "c8trepzqp0g0",
                                     "created": 1611732276017,
                                     "text": "标定过程",
-                                    "progress": 1,
+                                    "progress": null,
                                     "layout": null
                                 },
                                 "children": [
@@ -166,7 +166,8 @@
                                         "data": {
                                             "id": "c8umv5blhz40",
                                             "created": 1611821017619,
-                                            "text": "检测april_board"
+                                            "text": "检测april board",
+                                            "progress": 1
                                         },
                                         "children": []
                                     }

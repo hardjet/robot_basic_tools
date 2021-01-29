@@ -36,6 +36,15 @@ void ImageShow::update_image(sensor_msgs::ImageConstPtr& image) {
   }
 }
 
+void ImageShow::update_image(boost::shared_ptr<cv_bridge::CvImage>& image) {
+  // 避免更新重复图像数据
+  if (!cv_ptr_ || cv_ptr_->header.stamp.nsec != image->header.stamp.nsec) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    cv_ptr_ = image;
+    is_need_update_texture_ = true;
+  }
+}
+
 void ImageShow::update_texture() {
   if (!is_need_update_texture_) return;
 
@@ -83,10 +92,11 @@ bool ImageShow::cv_convert() {
 }
 
 void ImageShow::show_image(bool &is_show_image) {
-  if (!is_show_image || is_use_opencv_) {
+  if (!is_show_image_ || is_use_opencv_) {
     return;
   }
 
+  // 避免直接关闭窗口时两个状态不一致
   is_show_image_ = is_show_image;
 
   std::lock_guard<std::mutex> lock(mtx_);
@@ -106,7 +116,7 @@ void ImageShow::show_image(bool &is_show_image) {
   ImGui::End();
 }
 
-void ImageShow::show() {
+void ImageShow::show_in_opencv() {
   // 定义窗口
   cv::namedWindow(window_name_, cv::WINDOW_AUTOSIZE | cv::WINDOW_GUI_EXPANDED);
   // cv::resizeWindow(window_name_, 640, 360);
@@ -153,7 +163,7 @@ void ImageShow::enable(std::string& window_name, bool is_use_opencv) {
   is_show_image_ = true;
   is_use_opencv_ = is_use_opencv;
   if (is_use_opencv_) {
-    thread_ = std::thread(&ImageShow::show, this);
+    thread_ = std::thread(&ImageShow::show_in_opencv, this);
   }
 }
 void ImageShow::disable() {

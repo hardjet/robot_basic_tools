@@ -27,68 +27,31 @@ ImageShow::~ImageShow() {
   }
 }
 
-void ImageShow::update_image(sensor_msgs::ImageConstPtr& image) {
-  // 避免更新重复图像数据
-  if (!image_ptr_ || image_ptr_->header.stamp.nsec != image->header.stamp.nsec) {
-    std::lock_guard<std::mutex> lock(mtx_);
-    image_ptr_ = image;
-    is_need_cv_convert_ = true;
-  }
-}
-
-void ImageShow::update_image(boost::shared_ptr<cv_bridge::CvImage>& image) {
-  // 避免更新重复图像数据
-  if (!cv_ptr_ || cv_ptr_->header.stamp.nsec != image->header.stamp.nsec) {
-    std::lock_guard<std::mutex> lock(mtx_);
-    cv_ptr_ = image;
-    is_need_update_texture_ = true;
-  }
+void ImageShow::update_image(boost::shared_ptr<cv_bridge::CvImage const>& image) {
+  // 重复更新检测逻辑放在外面
+  std::lock_guard<std::mutex> lock(mtx_);
+  image_cv_ptr_ = image;
+  is_need_update_texture_ = true;
 }
 
 void ImageShow::update_texture() {
   if (!is_need_update_texture_) return;
 
   // 灰度
-  if (cv_ptr_->image.channels() == 1) {
+  if (image_cv_ptr_->image.channels() == 1) {
     glBindTexture(GL_TEXTURE_2D, image_texture_);
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     // 可能有问题
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, cv_ptr_->image.cols, cv_ptr_->image.rows, 0, GL_RED, GL_UNSIGNED_BYTE,
-                 cv_ptr_->image.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RED, GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
   } else {
     glBindTexture(GL_TEXTURE_2D, image_texture_);
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cv_ptr_->image.cols, cv_ptr_->image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                 cv_ptr_->image.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
   }
   is_need_update_texture_ = false;
   is_texture_ready_ = true;
-}
-
-bool ImageShow::cv_convert() {
-  bool res = true;
-  if (is_need_cv_convert_) {
-    // 尝试转换为BGR
-    try {
-      // TODO realsense color image原本发送的就是'rgb8'格式，但是imshow显示使用BGR8格式
-      // 发现使用cv_bridge内部转换很占cpu，因此放到外面转换
-      // 原始msg中的图像就是rgb8格式，这样转换最快
-      cv_ptr_ = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::RGB8);
-    } catch (cv_bridge::Exception& e) {
-      // 尝试转换为灰度图
-      try {
-        cv_ptr_ = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::MONO8);
-      } catch (cv_bridge::Exception& e) {
-        res = false;
-      }
-    }
-    is_need_update_texture_ = true;
-    is_need_cv_convert_ = false;
-  }
-
-  return res;
 }
 
 void ImageShow::show_image(bool &is_show_image) {
@@ -101,10 +64,7 @@ void ImageShow::show_image(bool &is_show_image) {
 
   std::lock_guard<std::mutex> lock(mtx_);
 
-  // 转换失败 需要等待
-  if (!cv_convert()) {
-    return;
-  }
+  // 更新纹理
   update_texture();
 
   if (!is_texture_ready_) {
@@ -112,7 +72,7 @@ void ImageShow::show_image(bool &is_show_image) {
   }
 
   ImGui::Begin(window_name_.c_str(), &is_show_image, ImGuiWindowFlags_AlwaysAutoResize);
-  ImGui::Image((void*)(intptr_t)image_texture_, ImVec2(float(cv_ptr_->image.cols), float(cv_ptr_->image.rows)));
+  ImGui::Image((void*)(intptr_t)image_texture_, ImVec2(float(image_cv_ptr_->image.cols), float(image_cv_ptr_->image.rows)));
   ImGui::End();
 }
 
@@ -133,23 +93,17 @@ void ImageShow::show_in_opencv() {
     {
       std::lock_guard<std::mutex> lock(mtx_);
       // 等待图像就绪
-      if (!image_ptr_) {
+      if (!image_cv_ptr_) {
         is_need_sleep = true;
         continue;
       }
 
-      // 转换失败 需要等待
-      if (!cv_convert()) {
-        is_need_sleep = true;
-        continue;
-      }
-
-      if (cv_ptr_->image.channels() == 3) {
-        cv::cvtColor(cv_ptr_->image, img_show, cv::COLOR_RGB2BGR);
+      if (image_cv_ptr_->image.channels() == 3) {
+        cv::cvtColor(image_cv_ptr_->image, img_show, cv::COLOR_RGB2BGR);
         // 显示
         cv::imshow(window_name_, img_show);
       } else {
-        cv::imshow(window_name_, cv_ptr_->image);
+        cv::imshow(window_name_, image_cv_ptr_->image);
       }
     }
     cv::waitKey(100);

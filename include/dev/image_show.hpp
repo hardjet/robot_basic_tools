@@ -18,15 +18,9 @@ class ImageShow {
 
   /**
    * @brief 更新当前图像
-   * @param image 图像信息保存在ros消息中，需要cv_bridge转换回来
-   */
-  void update_image(sensor_msgs::ImageConstPtr& image);
-
-  /**
-   * @brief 更新当前图像
    * @param image 图像信息保存在cv::Mat
    */
-  void update_image(boost::shared_ptr<cv_bridge::CvImage>& image);
+  void update_image(boost::shared_ptr<cv_bridge::CvImage const>& image);
 
   /// 使能图像显示
   void enable(std::string& window_name, bool is_use_opencv = false);
@@ -44,9 +38,6 @@ class ImageShow {
   /// 更新纹理数据，支持灰度和RGB
   void update_texture();
 
-  /// 需要将图像消息转为cv::Mat
-  bool cv_convert();
-
  private:
   // 是否显示图片
   bool is_show_image_{false};
@@ -57,9 +48,6 @@ class ImageShow {
   // 数据就绪
   bool is_texture_ready_{false};
 
-  // 是否需要将sensor_msgs::Imaga转为cv::mat，减低系统资源占用
-  bool is_need_cv_convert_{false};
-
   // 是否需要更新texture
   bool is_need_update_texture_{false};
 
@@ -69,14 +57,11 @@ class ImageShow {
   // 显示图片opencv线程
   std::thread thread_;
 
-  // 接收到的图像数据 opencv中使用
-  sensor_msgs::ImageConstPtr image_ptr_{nullptr};
-
   // 窗口名称
   std::string window_name_;
 
   // 保存转码后的图像数据
-  boost::shared_ptr<cv_bridge::CvImage> cv_ptr_{nullptr};
+  boost::shared_ptr<cv_bridge::CvImage const> image_cv_ptr_{nullptr};
 
   // 纹理id
   unsigned int image_texture_{0};

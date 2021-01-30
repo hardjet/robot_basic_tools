@@ -22,7 +22,7 @@
 #include "dev/april_board.hpp"
 
 // 标定工具
-#include "calibration/camera_laser.hpp"
+#include "calibration/camera_laser_calib.hpp"
 
 // ros相关
 #include <ros/package.h>

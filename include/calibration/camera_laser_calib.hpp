@@ -7,6 +7,7 @@ namespace dev {
 class AprilBoard;
 class Camera;
 class Laser;
+class ImageShow;
 }  // namespace dev
 
 namespace calibration {

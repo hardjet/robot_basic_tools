@@ -43,19 +43,20 @@ class Camera : public Sensor {
   int current_camera_type_{2};
   // 是否显示图像
   bool is_show_image_{false};
-
   // 相机对象
   boost::shared_ptr<camera_model::Camera> inst_ptr_{nullptr};
   // 相机内参
   std::vector<double> inst_params_;
   // ros topic 使能
   bool enable_topic_[2]{false, false};
-  // 图像数据
-  std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_;
-  // 深度点云数据
-  std::shared_ptr<SensorData<sensor_msgs::PointCloud2>> points_data_;
+  // 获取图像数据
+  std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_ptr_;
+  // 获取深度点云数据
+  std::shared_ptr<SensorData<sensor_msgs::PointCloud2>> points_data_ptr_;
   // 图像显示对象
   std::shared_ptr<dev::ImageShow> im_show_ptr_{nullptr};
+  // 保存转码后的图像数据
+  boost::shared_ptr<cv_bridge::CvImage const> image_cv_ptr_{nullptr};
 
  private:
   /// 创建指定类型的相机
@@ -66,6 +67,8 @@ class Camera : public Sensor {
   void draw_ui_topic_name();
   /// 检查当前设备在线状态
   void check_online_status();
+  /// 需要将图像消息转为cv::Mat
+  bool cv_convert(boost::shared_ptr<const sensor_msgs::Image> &msg);
 };
 
 }  // namespace dev

@@ -14,42 +14,69 @@ namespace dev {
 Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::CAMERA, "CAMERA") {
   sensor_topic_list_.resize(2);
   // 设置图像数据接收
-  image_data_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);
+  image_data_ptr_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);
   // 频率/2
-  image_data_->set_data_rate(2);
+  image_data_ptr_->set_data_rate(2);
 
   // 设置深度点云数据接收
-  points_data_ = std::make_shared<SensorData<sensor_msgs::PointCloud2>>(nh_, 10);
+  points_data_ptr_ = std::make_shared<SensorData<sensor_msgs::PointCloud2>>(nh_, 10);
   // 频率/2
-  points_data_->set_data_rate(2);
+  points_data_ptr_->set_data_rate(2);
 
   // 图像显示
   im_show_ptr_ = std::make_shared<dev::ImageShow>();
 }
 
-boost::shared_ptr<sensor_msgs::Image const> Camera::data() {
-  return image_data_->data();
-}
+boost::shared_ptr<sensor_msgs::Image const> Camera::data() { return image_data_ptr_->data(); }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {}
 
+bool Camera::cv_convert(boost::shared_ptr<const sensor_msgs::Image>& msg) {
+  bool res = true;
+  // 尝试转换为BGR
+  try {
+    // TODO realsense color image原本发送的就是'rgb8'格式，但是imshow显示使用BGR8格式
+    // 发现使用cv_bridge内部转换很占cpu，因此放到外面转换
+    // 原始msg中的图像就是rgb8格式，这样转换最快
+    image_cv_ptr_ = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::RGB8);
+  } catch (cv_bridge::Exception& e) {
+    // 尝试转换为灰度图
+    try {
+      image_cv_ptr_ = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::MONO8);
+    } catch (cv_bridge::Exception& e) {
+      res = false;
+    }
+  }
+  return res;
+}
+
 void Camera::check_online_status() {
+  // 在线状态
   bool online = false;
 
   // 获取图像最新数据
-  auto image_data_ptr = image_data_->data();
+  auto image_msg_ptr = image_data_ptr_->data();
   // 如果有数据
-  if (image_data_ptr) {
-    if (ros::Time::now().sec - image_data_ptr->header.stamp.sec < 2) {
+  if (image_msg_ptr) {
+    // 设置在线状态
+    if (ros::Time::now().sec - image_msg_ptr->header.stamp.sec < 2) {
       online = true;
     }
-    // 设置图像数据
-    im_show_ptr_->update_image(image_data_ptr);
+
+    // 检查图像是否需要更新，避免重复更新
+    if (!image_cv_ptr_ || image_cv_ptr_->header.stamp.nsec != image_msg_ptr->header.stamp.nsec) {
+
+      if (cv_convert(image_msg_ptr)) {
+        // 更新图像数据
+        im_show_ptr_->update_image(image_cv_ptr_);
+      }
+    }
   }
 
   // 获取深度点云最新数据
-  auto depth_data_ptr = points_data_->data();
+  auto depth_data_ptr = points_data_ptr_->data();
   if (depth_data_ptr) {
+    // 设置在线状态
     if (ros::Time::now().sec - depth_data_ptr->header.stamp.sec < 2) {
       online = true;
     }
@@ -182,11 +209,11 @@ void Camera::draw_ui_topic_name() {
         show_pfd_info("warning", "please set topic name first!");
         enable_topic_[0] = false;
       } else {
-        image_data_->subscribe(sensor_topic_list_[0], 5);
+        image_data_ptr_->subscribe(sensor_topic_list_[0], 5);
       }
     } else {
       // 暂停接收
-      image_data_->unsubscribe();
+      image_data_ptr_->unsubscribe();
     }
   }
   // 提示设备状态
@@ -205,7 +232,7 @@ void Camera::draw_ui_topic_name() {
     if (image_topic_name_char[0] != '\0' && image_topic_name_char[0] != ' ') {
       sensor_topic_list_[0] = image_topic_name_char;
       // 暂停接收
-      image_data_->unsubscribe();
+      image_data_ptr_->unsubscribe();
       enable_topic_[0] = false;
     }
   } else {
@@ -237,7 +264,7 @@ void Camera::draw_ui_topic_name() {
     if (selected_id != -1) {
       sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
-      image_data_->unsubscribe();
+      image_data_ptr_->unsubscribe();
       enable_topic_[0] = false;
     }
 
@@ -253,11 +280,11 @@ void Camera::draw_ui_topic_name() {
         show_pfd_info("warning", "please set topic name first!");
         enable_topic_[1] = false;
       } else {
-        points_data_->subscribe(sensor_topic_list_[1], 5);
+        points_data_ptr_->subscribe(sensor_topic_list_[1], 5);
       }
     } else {
       // 暂停接收
-      points_data_->unsubscribe();
+      points_data_ptr_->unsubscribe();
     }
   }
   // 提示设备状态
@@ -276,7 +303,7 @@ void Camera::draw_ui_topic_name() {
     if (points_topic_name_char[0] != '\0' && points_topic_name_char[0] != ' ') {
       sensor_topic_list_[1] = points_topic_name_char;
       // 暂停接收
-      points_data_->unsubscribe();
+      points_data_ptr_->unsubscribe();
       enable_topic_[1] = false;
     }
   } else {
@@ -308,7 +335,7 @@ void Camera::draw_ui_topic_name() {
     if (selected_id != -1) {
       sensor_topic_list_[1] = ros_topic_selector_[selected_id];
       // 暂停接收
-      points_data_->unsubscribe();
+      points_data_ptr_->unsubscribe();
       enable_topic_[1] = false;
     }
 

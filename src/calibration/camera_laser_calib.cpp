@@ -29,7 +29,6 @@ void CamLaserCalib::draw_ui() {
   draw_sensor_selector<dev::Laser>("laser", dev::LASER, laser_ptr_);
 
 
-
   ImGui::End();
 }
 

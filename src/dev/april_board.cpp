@@ -30,6 +30,17 @@ void AprilBoard::draw_ui() {
     if (ImGui::DragScalar("tagSpacing", ImGuiDataType_Double, &tag_spacing_, 0.01, &zero, nullptr, "%.3f")) {
       board->set_params(tag_size_, tag_spacing_);
     }
+
+    ImGui::SameLine();
+    ImGui::Spacing();
+    ImGui::SameLine();
+    ImGui::Spacing();
+    ImGui::SameLine();
+
+    if (ImGui::Button("update params")) {
+      board->updata_params();
+    }
+
     ImGui::Separator();
     ImGui::Image((void *)(intptr_t)texture_id_, ImVec2(float(img_width_), float(img_height_)));
     ImGui::End();

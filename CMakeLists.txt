@@ -206,7 +206,7 @@ add_library(guik SHARED
         src/glk/primitives/primitives.cpp
         src/glk/loaders/ply_loader.cpp
         src/guik/gl_canvas.cpp
-        src/guik/model_control.cpp
+#        src/guik/model_control.cpp
         src/guik/camera_control.cpp
         src/guik/projection_control.cpp
         src/guik/imgui_application.cpp

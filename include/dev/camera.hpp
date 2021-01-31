@@ -36,7 +36,7 @@ class Camera : public Sensor {
   /// imgui绘图
   void draw_ui() override;
   /// 获取当前图像数据
-  boost::shared_ptr<sensor_msgs::Image const> data();
+  boost::shared_ptr<cv_bridge::CvImage const> data();
 
  private:
   // 当前类型

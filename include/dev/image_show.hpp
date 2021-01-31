@@ -23,7 +23,7 @@ class ImageShow {
   void update_image(boost::shared_ptr<cv_bridge::CvImage const>& image);
 
   /// 使能图像显示
-  void enable(std::string& window_name, bool is_use_opencv = false);
+  void enable(const std::string& window_name, bool is_use_opencv = false);
 
   /// 关闭图像显示
   void disable();

@@ -27,7 +27,7 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
   im_show_ptr_ = std::make_shared<dev::ImageShow>();
 }
 
-boost::shared_ptr<sensor_msgs::Image const> Camera::data() { return image_data_ptr_->data(); }
+boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {}
 
@@ -35,8 +35,7 @@ bool Camera::cv_convert(boost::shared_ptr<const sensor_msgs::Image>& msg) {
   bool res = true;
   // 尝试转换为BGR
   try {
-    // TODO realsense color image原本发送的就是'rgb8'格式，但是imshow显示使用BGR8格式
-    // 发现使用cv_bridge内部转换很占cpu，因此放到外面转换
+    // image原本发送的就是'rgb8'格式，但是imshow显示使用BGR8格式
     // 原始msg中的图像就是rgb8格式，这样转换最快
     image_cv_ptr_ = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::RGB8);
   } catch (cv_bridge::Exception& e) {
@@ -65,7 +64,6 @@ void Camera::check_online_status() {
 
     // 检查图像是否需要更新，避免重复更新
     if (!image_cv_ptr_ || image_cv_ptr_->header.stamp.nsec != image_msg_ptr->header.stamp.nsec) {
-
       if (cv_convert(image_msg_ptr)) {
         // 更新图像数据
         im_show_ptr_->update_image(image_cv_ptr_);
@@ -481,7 +479,7 @@ void Camera::draw_ui() {
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &is_show_image_)) {
       if (is_show_image_) {
-        im_show_ptr_->enable(sensor_name);
+        im_show_ptr_->enable(sensor_name, false);
       } else {
         im_show_ptr_->disable();
       }

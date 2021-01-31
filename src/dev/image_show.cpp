@@ -27,7 +27,7 @@ ImageShow::~ImageShow() {
   }
 }
 
-void ImageShow::update_image(boost::shared_ptr<cv_bridge::CvImage const>& image) {
+void ImageShow::update_image(boost::shared_ptr<const cv_bridge::CvImage>& image) {
   // 重复更新检测逻辑放在外面
   std::lock_guard<std::mutex> lock(mtx_);
   image_cv_ptr_ = image;
@@ -43,18 +43,20 @@ void ImageShow::update_texture() {
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     // 可能有问题
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RED, GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RED,
+                 GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
   } else {
     glBindTexture(GL_TEXTURE_2D, image_texture_);
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
   }
   is_need_update_texture_ = false;
   is_texture_ready_ = true;
 }
 
-void ImageShow::show_image(bool &is_show_image) {
+void ImageShow::show_image(bool& is_show_image) {
   if (!is_show_image_ || is_use_opencv_) {
     return;
   }
@@ -72,7 +74,8 @@ void ImageShow::show_image(bool &is_show_image) {
   }
 
   ImGui::Begin(window_name_.c_str(), &is_show_image, ImGuiWindowFlags_AlwaysAutoResize);
-  ImGui::Image((void*)(intptr_t)image_texture_, ImVec2(float(image_cv_ptr_->image.cols), float(image_cv_ptr_->image.rows)));
+  ImGui::Image((void*)(intptr_t)image_texture_,
+               ImVec2(float(image_cv_ptr_->image.cols), float(image_cv_ptr_->image.rows)));
   ImGui::End();
 }
 
@@ -98,6 +101,8 @@ void ImageShow::show_in_opencv() {
         continue;
       }
 
+      std::cout << "show_in_opencv" << image_cv_ptr_->image.cols << image_cv_ptr_->image.rows << std::endl;
+
       if (image_cv_ptr_->image.channels() == 3) {
         cv::cvtColor(image_cv_ptr_->image, img_show, cv::COLOR_RGB2BGR);
         // 显示
@@ -112,7 +117,7 @@ void ImageShow::show_in_opencv() {
   cv::destroyWindow(window_name_);
 }
 
-void ImageShow::enable(std::string& window_name, bool is_use_opencv) {
+void ImageShow::enable(const std::string& window_name, bool is_use_opencv) {
   window_name_ = window_name + " Image";
   is_show_image_ = true;
   is_use_opencv_ = is_use_opencv;

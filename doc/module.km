@@ -167,7 +167,15 @@
                                             "id": "c8umv5blhz40",
                                             "created": 1611821017619,
                                             "text": "检测april board",
-                                            "progress": 1
+                                            "progress": 9
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "c8xt0x40bc00",
+                                            "created": 1612143076461,
+                                            "text": "筛选静态的图片与激光数据"
                                         },
                                         "children": []
                                     }

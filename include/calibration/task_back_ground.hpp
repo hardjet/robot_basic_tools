@@ -21,14 +21,52 @@ class Task {
     }
   }
 
+  // /**
+  //  *
+  //  * @tparam T 任务的返回值
+  //  * @param task_name 任务名称
+  //  * @param task 任务函数
+  //  */
+  // template <typename T>
+  // bool do_task(const std::string &task_name, const std::function<T()> &task) {
+  //   if (is_new_) {
+  //     is_new_ = false;
+  //     create(task_name, task);
+  //   }
+  //
+  //   return is_terminated(task_name);
+  // }
+  //
+  // /**
+  //  *
+  //  * @tparam T 任务的返回值
+  //  * @param task_name 任务名称
+  //  * @param task 任务函数
+  //  */
+  // template <typename T>
+  // void create(const std::string &task_name, const std::function<T()> &task) {
+  //   task_name_ = task_name;
+  //
+  //   result_.clear();
+  //   is_running_ = true;
+  //
+  //   thread_ = std::thread([this, task]() {
+  //     result_ = task();
+  //     is_running_ = false;
+  //   });
+  // }
+
   /**
-   *
-   * @tparam T 任务的返回值
-   * @param task_name 任务名称
-   * @param task 任务函数
-   */
-  template <typename T>
-  bool do_task(const std::string &task_name, const std::function<T()> &task) {
+  * @brief 后台运行一个任务
+  * @tparam Function 任务函数类型
+  * @tparam Args 任务函数参数类型
+  * @param task_name 任务名称
+  * @param task 任务函数
+  * @param args 任务函数参数
+  * @return
+  */
+  template <typename Function, typename... Args>
+  bool do_task(const std::string &task_name, Function&& task, Args&&... args) {
     if (is_new_) {
       is_new_ = false;
       create(task_name, task);
@@ -38,20 +76,23 @@ class Task {
   }
 
   /**
-   *
-   * @tparam T 任务的返回值
-   * @param task_name 任务名称
-   * @param task 任务函数
-   */
-  template <typename T>
-  void create(const std::string &task_name, const std::function<T()> &task) {
+  * @brief 创建一个后台执行任务，并运行
+  * @tparam Function 任务函数类型
+  * @tparam Args 任务函数参数类型
+  * @param task_name 任务名称
+  * @param task 任务函数
+  * @param args 任务函数参数
+  */
+  template<typename Function, typename... Args>
+  void create(const std::string &task_name, Function&& task, Args&&... args)
+  {
     task_name_ = task_name;
 
     result_.clear();
     is_running_ = true;
 
-    thread_ = std::thread([this, task]() {
-      result_ = task();
+    thread_ = std::thread([this, task, args...]() {
+      result_ = task(args...);
       is_running_ = false;
     });
   }

@@ -88,7 +88,7 @@ void GridCalibrationTargetAprilgrid::createGridPoints() {
 
 bool GridCalibrationTargetAprilgrid::computeObservation(const cv::Mat& src_image, cv::Mat& dst_image,
                                                         std::vector<cv::Point2f>& points2ds,
-                                                        std::vector<bool>& outCornerObserved) {
+                                                        std::vector<bool>& outCornerObserved) const {
   bool success = true;
 
   // detect the tags

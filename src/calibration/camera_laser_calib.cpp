@@ -42,8 +42,10 @@ void CamLaserCalib::update_data() {
 }
 
 bool CamLaserCalib::find_and_draw_apriltags() {
-  std::vector<cv::Point2f> points2ds;
-  std::vector<bool> outCornerObserved;
+  // 角点的图像坐标
+  std::vector<cv::Point2f> corners_2d;
+  // 是否检测到角点
+  std::vector<bool> is_corner_observed;
 
   cv::Mat img;
   // 需要转为灰度
@@ -61,12 +63,13 @@ bool CamLaserCalib::find_and_draw_apriltags() {
     img_show = image_ptr_->image.clone();
   }
 
-  if (april_board_ptr_->board->computeObservation(img, img_show, points2ds, outCornerObserved)) {
+  if (april_board_ptr_->board->computeObservation(img, img_show, corners_2d, is_corner_observed)) {
     std::lock_guard<std::mutex> lock(mtx_);
-    image_mat_ = std::make_shared<cv::Mat>(img_show.clone());
+    image_mat_.reset(new cv::Mat(img_show.clone()));
     show_image_ptr_.reset(new const cv_bridge::CvImage(image_ptr_->header, image_ptr_->encoding, *image_mat_));
+    // std::cout << "find_and_draw_apriltags:" << image_mat_->cols << std::endl;
   } else {
-    std::cout << "failed" << std::endl;
+    std::cout << "no april board detected!" << std::endl;
   }
   return true;
 }
@@ -88,11 +91,12 @@ void CamLaserCalib::draw_ui() {
     update_data();
     if (is_new_image_) {
       is_new_image_ = false;
+
       // 执行任务
-      if (task_ptr_->do_task<bool>("find_and_draw_apriltags",
-                                   std::bind(&CamLaserCalib::find_and_draw_apriltags, this))) {
+      if (task_ptr_->do_task("find_and_draw_apriltags", std::bind(&CamLaserCalib::find_and_draw_apriltags, this))) {
         // 结束后需要读取结果
         task_ptr_->result<bool>();
+        // std::cout << "draw_ui:" << image_mat_->cols << std::endl;
         std::lock_guard<std::mutex> lock(mtx_);
         im_show_ptr_->update_image(show_image_ptr_);
       }

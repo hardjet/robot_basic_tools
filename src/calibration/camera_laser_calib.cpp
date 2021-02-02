@@ -37,6 +37,7 @@ CamLaserCalib::CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager
 void CamLaserCalib::draw_gl(glk::GLSLShader& shader) {}
 
 void CamLaserCalib::update_data() {
+  std::lock_guard<std::mutex> lock(mtx_);
   // 图像
   if (!image_ptr_) {
     image_ptr_ = cam_ptr_->data();
@@ -59,35 +60,37 @@ bool CamLaserCalib::get_cam_pose() {
   std::vector<cv::Point3f> objectPoints;
   // 相机坐标系到世界坐标系的变换
   Eigen::Matrix4d Twc;
+  boost::shared_ptr<const cv_bridge::CvImage> cur_image{nullptr};
+
+  // 将图像锁定
+  {
+    std::lock_guard<std::mutex> lock(mtx_);
+    cur_image.reset(new const cv_bridge::CvImage(image_ptr_->header, image_ptr_->encoding, image_ptr_->image));
+  }
 
   cv::Mat img;
   // 需要转为灰度
-  if (image_ptr_->image.channels() == 3) {
-    cv::cvtColor(image_ptr_->image, img, cv::COLOR_RGB2GRAY);
+  if (cur_image->image.channels() == 3) {
+    cv::cvtColor(cur_image->image, img, cv::COLOR_RGB2GRAY);
   } else {
-    img = image_ptr_->image.clone();
+    img = cur_image->image.clone();
   }
 
   cv::Mat img_show;
   // 需要转为彩色图像
-  if (image_ptr_->image.channels() == 1) {
-    cv::cvtColor(image_ptr_->image, img_show, cv::COLOR_GRAY2RGB);
+  if (cur_image->image.channels() == 1) {
+    cv::cvtColor(cur_image->image, img_show, cv::COLOR_GRAY2RGB);
   } else {
-    img_show = image_ptr_->image.clone();
+    img_show = cur_image->image.clone();
   }
 
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
-    // std::cout << "---------------------------------------------" << std::endl;
-    // std::cout << "objectPoints:" << objectPoints << std::endl;
-    // std::cout << "imagePoints" << imagePoints << std::endl;
-    // std::cout << "---------------------------------------------" << std::endl;
-
-    // 计算外参T_cw world->cam
+    // 计算外参T_wc cam->world
     cam_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
 
-    std::lock_guard<std::mutex> lock(mtx_);
-    image_mat_.reset(new cv::Mat(img_show.clone()));
-    show_image_ptr_.reset(new const cv_bridge::CvImage(image_ptr_->header, image_ptr_->encoding, *image_mat_));
+    // std::lock_guard<std::mutex> lock(mtx_);
+    // image_mat_.reset(new cv::Mat(img_show.clone()));
+    show_image_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
     return true;
   } else {
     // std::cout << "no april board detected!" << std::endl;
@@ -115,7 +118,7 @@ void CamLaserCalib::calibration() {
         cur_state_ = STATE_IDLE;
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
-          std::lock_guard<std::mutex> lock(mtx_);
+          // std::lock_guard<std::mutex> lock(mtx_);
           im_show_ptr_->update_image(show_image_ptr_);
         }
       }

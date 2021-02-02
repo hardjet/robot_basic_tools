@@ -62,8 +62,6 @@ class CamLaserCalib : public BaseCalib {
   boost::shared_ptr<const cv_bridge::CvImage> image_ptr_{nullptr};
   // 显示使用的image
   boost::shared_ptr<const cv_bridge::CvImage> show_image_ptr_{nullptr};
-  // 保存处理后显示图像数据
-  std::shared_ptr<cv::Mat> image_mat_{nullptr};
 
 };
 }  // namespace calibration

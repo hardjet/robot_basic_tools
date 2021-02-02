@@ -122,7 +122,7 @@ void Camera::estimateExtrinsics(const vector<cv::Point3f>& objectPoints, const v
   cv::Mat rvec;
   cv::Mat tvec;
   // assume unit focal length, zero principal point, and zero distortion
-  // 得到世界坐标系到相机坐标系的变换矩阵
+  // 得到标定板坐标系到相机坐标系的变换矩阵
   cv::solvePnP(objectPoints, Ms, cv::Mat::eye(3, 3, CV_64F), cv::noArray(), rvec, tvec);
 
   cv::Mat rotation;
@@ -131,6 +131,7 @@ void Camera::estimateExtrinsics(const vector<cv::Point3f>& objectPoints, const v
   cv::cv2eigen(rotation, Rcw);
   Eigen::Vector3d tcw;
   cv::cv2eigen(tvec, tcw);
+  // 计算相机坐标系到标定板坐标系的变换
   Twc.block<3, 3>(0, 0) = Rcw.transpose();
   Twc.block<3, 1>(0, 3) = -Rcw.transpose() * tcw;
 

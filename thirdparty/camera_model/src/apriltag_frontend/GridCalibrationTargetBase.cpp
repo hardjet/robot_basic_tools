@@ -13,7 +13,7 @@ std::vector<cv::Point3f> GridCalibrationTargetBase::points3d() const {
   std::vector<cv::Point3f> pts;
   for (int i = 0; i < _points.rows(); i++) {
     Eigen::Vector3d pt = _points.row(i);
-    pts.push_back(cv::Point3f(pt.x(), pt.y(), pt.z()));
+    pts.emplace_back(pt.x(), pt.y(), pt.z());
   }
   return pts;
 }

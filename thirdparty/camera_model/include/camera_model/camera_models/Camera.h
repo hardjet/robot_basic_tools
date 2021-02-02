@@ -91,6 +91,10 @@ class Camera {
   virtual void estimateExtrinsics(const std::vector<cv::Point3f>& objectPoints,
                                   const std::vector<cv::Point2f>& imagePoints, cv::Mat& rvec, cv::Mat& tvec) const;
 
+  virtual void estimateExtrinsics(const std::vector<cv::Point3f>& objectPoints,
+                                  const std::vector<cv::Point2f>& imagePoints, Eigen::Matrix4d& Twc,
+                                  cv::Mat& image) const;
+
   // Lift points from the image plane to the sphere
   virtual void liftSphere(const Eigen::Vector2d& p, Eigen::Vector3d& P) const = 0;
   //%output P

@@ -63,7 +63,7 @@ class Task {
   * @param task_name 任务名称
   * @param task 任务函数
   * @param args 任务函数参数
-  * @return
+  * @return 任务是否结束
   */
   template <typename Function, typename... Args>
   bool do_task(const std::string &task_name, Function&& task, Args&&... args) {
@@ -112,7 +112,7 @@ class Task {
   /**
    * @brief 指定名称的任务是否结束
    * @param task_name 指定任务
-   * @return
+   * @return 任务是否结束
    */
   bool is_terminated(const std::string &task_name) {
     if (task_name != task_name_) {

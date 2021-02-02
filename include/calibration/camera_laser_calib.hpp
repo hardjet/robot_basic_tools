@@ -36,13 +36,19 @@ class CamLaserCalib : public BaseCalib {
  private:
   /// 更新数据
   void update_data();
-  /// just test
-  bool find_and_draw_apriltags();
+  /// 检测图片是否有足够的apriltags
+  bool get_cam_pose();
+  /// 标定流程
+  void calibration();
 
  private:
+  // 是否显示图像
+  bool is_show_image_{false};
+  // 是否有新数据
+  bool is_new_image_{false};
   // 资源锁
   std::mutex mtx_;
-  // 标定板
+  // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 当前选中的相机对象
   std::shared_ptr<dev::Camera> cam_ptr_{nullptr};
@@ -56,11 +62,8 @@ class CamLaserCalib : public BaseCalib {
   boost::shared_ptr<const cv_bridge::CvImage> image_ptr_{nullptr};
   // 显示使用的image
   boost::shared_ptr<const cv_bridge::CvImage> show_image_ptr_{nullptr};
-  // 保存处理后显示图像
+  // 保存处理后显示图像数据
   std::shared_ptr<cv::Mat> image_mat_{nullptr};
-  // 是否显示图像
-  bool is_show_image_{false};
-  // 是否有新数据
-  bool is_new_image_{false};
+
 };
 }  // namespace calibration

@@ -25,10 +25,10 @@ class BaseCalib {
 
   /**
   *
-  * @tparam T
+  * @tparam T 传感器Class
   * @param name 提示框文字
-  * @param type
-  * @param sensor
+  * @param type 传感器类型
+  * @param sensor 传感器指针
   */
   template <class T>
   void draw_sensor_selector(const std::string& name, dev::SENSOR_TYPE type, std::shared_ptr<T> &sensor) {
@@ -98,5 +98,9 @@ class BaseCalib {
   bool is_show_window_{false};
   // 传感器管理器
   std::shared_ptr<dev::SensorManager> sensor_manager_ptr_;
+  // 标定流程状态 当前
+  int cur_state_{0};
+  // 标定流程状态 下个
+  int next_state_{0};
 };
 }  // namespace calibration

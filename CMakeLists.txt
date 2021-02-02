@@ -206,7 +206,6 @@ add_library(guik SHARED
         src/glk/primitives/primitives.cpp
         src/glk/loaders/ply_loader.cpp
         src/guik/gl_canvas.cpp
-#        src/guik/model_control.cpp
         src/guik/camera_control.cpp
         src/guik/projection_control.cpp
         src/guik/imgui_application.cpp
@@ -234,7 +233,6 @@ add_executable(${PROJECT_NAME}
         src/dev/image_show.cpp
         src/dev/april_board.cpp
         src/dev/util.cpp
-#        src/calibration/calib_base.cpp
         src/calibration/camera_laser_calib.cpp
         src/image_loader.cpp
         src/robot_basic_tools.cpp

@@ -6,6 +6,8 @@
 #include <camera_model/gpl/gpl.h>
 
 #include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/imgproc.hpp>
 
 namespace camera_model {
 
@@ -100,7 +102,60 @@ void Camera::estimateExtrinsics(const std::vector<cv::Point3f>& objectPoints,
   }
 
   // assume unit focal length, zero principal point, and zero distortion
+  // 得到世界坐标系到相机坐标系的变换矩阵
   cv::solvePnP(objectPoints, Ms, cv::Mat::eye(3, 3, CV_64F), cv::noArray(), rvec, tvec);
+}
+
+void Camera::estimateExtrinsics(const vector<cv::Point3f>& objectPoints, const vector<cv::Point2f>& imagePoints,
+                                Eigen::Matrix4d& Twc, cv::Mat& image) const {
+  unsigned int size_point = imagePoints.size();
+  std::vector<cv::Point2f> Ms(size_point);
+  size_t i;
+  for (i = 0; i < size_point; i++) {
+    Eigen::Vector3d P;
+    liftProjective(Eigen::Vector2d(imagePoints[i].x, imagePoints[i].y), P);
+    P /= P(2);
+    Ms[i].x = P(0);
+    Ms[i].y = P(1);
+  }
+
+  cv::Mat rvec;
+  cv::Mat tvec;
+  // assume unit focal length, zero principal point, and zero distortion
+  // 得到世界坐标系到相机坐标系的变换矩阵
+  cv::solvePnP(objectPoints, Ms, cv::Mat::eye(3, 3, CV_64F), cv::noArray(), rvec, tvec);
+
+  cv::Mat rotation;
+  cv::Rodrigues(rvec, rotation);
+  Eigen::Matrix3d Rcw;
+  cv::cv2eigen(rotation, Rcw);
+  Eigen::Vector3d tcw;
+  cv::cv2eigen(tvec, tcw);
+  Twc.block<3, 3>(0, 0) = Rcw.transpose();
+  Twc.block<3, 1>(0, 3) = -Rcw.transpose() * tcw;
+
+  cv::putText(
+      image,
+      "t_wc: (m) " + std::to_string(Twc(0, 3)) + " " + std::to_string(Twc(1, 3)) + " " + std::to_string(Twc(2, 3)),
+      cv::Point2f(50, 30), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 0, 0));
+
+  std::vector<Eigen::Vector3d> axis;
+  std::vector<cv::Point2f> img_pts;
+  double size = 0.1;
+  axis.emplace_back(objectPoints.at(0).x, objectPoints.at(0).y, objectPoints.at(0).z);
+  axis.emplace_back(objectPoints.at(0).x + size, objectPoints.at(0).y, 0);
+  axis.emplace_back(objectPoints.at(0).x, objectPoints.at(0).y + size, 0);
+  axis.emplace_back(objectPoints.at(0).x, objectPoints.at(0).y, size);
+  for (i = 0; i < axis.size(); ++i) {
+    Eigen::Vector2d pt;
+    Eigen::Vector3d Pt = Rcw * axis[i] + tcw;
+    spaceToPlane(Pt, pt);  // 三维空间点，加上畸变投影到图像平面
+    img_pts.emplace_back(pt.x(), pt.y());
+  }
+
+  cv::line(image, img_pts[0], img_pts[1], cv::Scalar(255, 0, 0), 4);
+  cv::line(image, img_pts[0], img_pts[2], cv::Scalar(0, 255, 0), 4);
+  cv::line(image, img_pts[0], img_pts[3], cv::Scalar(0, 0, 255), 4);
 }
 
 double Camera::reprojectionDist(const Eigen::Vector3d& P1, const Eigen::Vector3d& P2) const {

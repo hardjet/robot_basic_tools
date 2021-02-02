@@ -11,6 +11,17 @@
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_laser_calib.hpp"
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
+#include "camera_model/camera_models/Camera.h"
+
+// ---- 相机-单线激光标定状态
+// 空闲
+#define STATE_IDLE 0
+// 启动
+#define STATE_START 1
+// 等待新数据
+#define STATE_WAIT_DATA 2
+// 采集数据
+#define STATE_GET_CAM_POSE 3
 
 namespace calibration {
 
@@ -41,11 +52,13 @@ void CamLaserCalib::update_data() {
   }
 }
 
-bool CamLaserCalib::find_and_draw_apriltags() {
-  // 角点的图像坐标
-  std::vector<cv::Point2f> corners_2d;
-  // 是否检测到角点
-  std::vector<bool> is_corner_observed;
+bool CamLaserCalib::get_cam_pose() {
+  // 检测到的角点空间坐标
+  std::vector<cv::Point2f> imagePoints;
+  // 检测到的角点图像坐标
+  std::vector<cv::Point3f> objectPoints;
+  // 相机坐标系到世界坐标系的变换
+  Eigen::Matrix4d Twc;
 
   cv::Mat img;
   // 需要转为灰度
@@ -63,15 +76,51 @@ bool CamLaserCalib::find_and_draw_apriltags() {
     img_show = image_ptr_->image.clone();
   }
 
-  if (april_board_ptr_->board->computeObservation(img, img_show, corners_2d, is_corner_observed)) {
+  if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
+    // std::cout << "---------------------------------------------" << std::endl;
+    // std::cout << "objectPoints:" << objectPoints << std::endl;
+    // std::cout << "imagePoints" << imagePoints << std::endl;
+    // std::cout << "---------------------------------------------" << std::endl;
+
+    // 计算外参T_cw world->cam
+    cam_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
+
     std::lock_guard<std::mutex> lock(mtx_);
     image_mat_.reset(new cv::Mat(img_show.clone()));
     show_image_ptr_.reset(new const cv_bridge::CvImage(image_ptr_->header, image_ptr_->encoding, *image_mat_));
-    // std::cout << "find_and_draw_apriltags:" << image_mat_->cols << std::endl;
+    return true;
   } else {
-    std::cout << "no april board detected!" << std::endl;
+    // std::cout << "no april board detected!" << std::endl;
+    return false;
   }
-  return true;
+}
+
+void CamLaserCalib::calibration() {
+  // 首先获取最新的数据
+  update_data();
+
+  switch (cur_state_) {
+    case STATE_IDLE:
+      cur_state_ = next_state_;
+      break;
+    case STATE_START:
+      if (is_new_image_) {
+        is_new_image_ = false;
+        cur_state_ = STATE_GET_CAM_POSE;
+      }
+      break;
+    case STATE_GET_CAM_POSE:
+      // 执行任务
+      if (task_ptr_->do_task("get_cam_pose", std::bind(&CamLaserCalib::get_cam_pose, this))) {
+        cur_state_ = STATE_IDLE;
+        // 结束后需要读取结果
+        if (task_ptr_->result<bool>()) {
+          std::lock_guard<std::mutex> lock(mtx_);
+          im_show_ptr_->update_image(show_image_ptr_);
+        }
+      }
+      break;
+  }
 }
 
 void CamLaserCalib::draw_ui() {
@@ -87,20 +136,6 @@ void CamLaserCalib::draw_ui() {
   draw_sensor_selector<dev::Laser>("laser", dev::LASER, laser_ptr_);
 
   if (cam_ptr_ && laser_ptr_) {
-    // 首先获取最新的数据
-    update_data();
-    if (is_new_image_) {
-      is_new_image_ = false;
-
-      // 执行任务
-      if (task_ptr_->do_task("find_and_draw_apriltags", std::bind(&CamLaserCalib::find_and_draw_apriltags, this))) {
-        // 结束后需要读取结果
-        task_ptr_->result<bool>();
-        // std::cout << "draw_ui:" << image_mat_->cols << std::endl;
-        std::lock_guard<std::mutex> lock(mtx_);
-        im_show_ptr_->update_image(show_image_ptr_);
-      }
-    }
     ImGui::SameLine();
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &is_show_image_)) {
@@ -110,10 +145,24 @@ void CamLaserCalib::draw_ui() {
         im_show_ptr_->disable();
       }
     }
+
+    // 标定逻辑
+    calibration();
+  }
+
+  if (next_state_ == STATE_IDLE) {
+    if (ImGui::Button("start")) {
+      next_state_ = STATE_START;
+    }
+  } else {
+    if (ImGui::Button("stop")) {
+      next_state_ = STATE_IDLE;
+    }
   }
 
   ImGui::End();
 
+  // 显示图像
   im_show_ptr_->show_image(is_show_image_);
 }
 

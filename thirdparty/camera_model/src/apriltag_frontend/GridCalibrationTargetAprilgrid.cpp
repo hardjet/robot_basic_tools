@@ -87,9 +87,15 @@ void GridCalibrationTargetAprilgrid::createGridPoints() {
 }
 
 bool GridCalibrationTargetAprilgrid::computeObservation(const cv::Mat& src_image, cv::Mat& dst_image,
-                                                        std::vector<cv::Point2f>& points2ds,
-                                                        std::vector<bool>& outCornerObserved) const {
+                                                        std::vector<cv::Point3f>& objectPoints,
+                                                        std::vector<cv::Point2f>& imagePoints) const {
   bool success = true;
+
+  objectPoints.clear();
+  imagePoints.clear();
+
+  std::vector<cv::Point2f> points2ds;
+  std::vector<bool> outCornerObserved;
 
   // detect the tags
   std::vector<AprilTags::TagDetection> detections = _tagDetector->extractTags(src_image);
@@ -278,6 +284,9 @@ bool GridCalibrationTargetAprilgrid::computeObservation(const cv::Mat& src_image
       points2ds.at(pIdx[j]) = cv::Point2f(corner_x, corner_y);
       if (subpix_displacement_squarred <= _options.maxSubpixDisplacement2) {
         outCornerObserved[pIdx[j]] = true;
+        Eigen::Vector3d pt = _points.row(pIdx[j]);
+        objectPoints.emplace_back(pt.x(), pt.y(), pt.z());
+        imagePoints.emplace_back(corner_x, corner_y);
       } else {
         // std::cout << "Subpix refinement failed for point: " << pIdx[j]
         //           << " with displacement: " << sqrt(subpix_displacement_squarred) << "(point removed) \n";

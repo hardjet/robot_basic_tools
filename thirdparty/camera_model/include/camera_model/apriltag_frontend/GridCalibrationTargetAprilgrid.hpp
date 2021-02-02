@@ -94,6 +94,9 @@ class GridCalibrationTargetAprilgrid : public GridCalibrationTargetBase {
     _tagSpacing = tagSpacing;
   }
 
+  // 获取tagSize
+  double get_tagsize() const { return _tagSize; }
+
   // 更新参数
   void updata_params() { createGridPoints(); }
 
@@ -101,12 +104,12 @@ class GridCalibrationTargetAprilgrid : public GridCalibrationTargetBase {
    *
    * @param src_image 待检测的图像
    * @param dst_image 有检测结果的图像
-   * @param points2ds 检测到的角点的图像坐标值
-   * @param outCornerObserved 是否检测到角点
+   * @param objectPoints 检测到的角点空间坐标
+   * @param imagePoints 检测到的角点图像坐标
    * @return
    */
-  bool computeObservation(const cv::Mat& src_image, cv::Mat& dst_image, std::vector<cv::Point2f>& points2ds,
-                          std::vector<bool>& outCornerObserved) const;
+  bool computeObservation(const cv::Mat& src_image, cv::Mat& dst_image, std::vector<cv::Point3f>& objectPoints,
+                          std::vector<cv::Point2f>& imagePoints) const;
 
  private:
   /// \brief initialize the object

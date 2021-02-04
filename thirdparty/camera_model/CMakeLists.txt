@@ -70,12 +70,3 @@ target_link_libraries(${PROJECT_NAME}
         ${CERES_LIBRARIES})
 
 
-#add_executable(april_calib
-#        src/april_calib.cc
-#        )
-#
-#target_link_libraries(april_calib
-#        ${PROJECT_NAME}
-#        )
-
-

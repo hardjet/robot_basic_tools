@@ -10,8 +10,10 @@
 #include "dev/image_show.hpp"
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_laser_calib.hpp"
+#include "algorithm/line.hpp"
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/camera_models/Camera.h"
+
 
 // ---- 相机-单线激光标定状态
 // 空闲
@@ -51,6 +53,20 @@ void CamLaserCalib::update_data() {
       is_new_image_ = true;
     }
   }
+
+  // 激光
+  if (!laser_data_ptr_) {
+    laser_data_ptr_ = laser_ptr_->data();
+    if (laser_data_ptr_) {
+      is_new_laser_ = true;
+    }
+  } else {
+    auto laser = laser_ptr_->data();
+    if (laser_data_ptr_->header.stamp.nsec != laser->header.stamp.nsec) {
+      laser_data_ptr_ = laser;
+      is_new_laser_ = true;
+    }
+  }
 }
 
 bool CamLaserCalib::get_cam_pose() {
@@ -61,41 +77,53 @@ bool CamLaserCalib::get_cam_pose() {
   // 相机坐标系到世界坐标系的变换
   Eigen::Matrix4d Twc;
   boost::shared_ptr<const cv_bridge::CvImage> cur_image{nullptr};
+  boost::shared_ptr<const sensor_msgs::LaserScan> cur_laser_data{nullptr};
 
   // 将图像锁定
   {
     std::lock_guard<std::mutex> lock(mtx_);
     cur_image.reset(new const cv_bridge::CvImage(image_ptr_->header, image_ptr_->encoding, image_ptr_->image));
+    cur_laser_data = laser_data_ptr_;
   }
 
-  cv::Mat img;
-  // 需要转为灰度
-  if (cur_image->image.channels() == 3) {
-    cv::cvtColor(cur_image->image, img, cv::COLOR_RGB2GRAY);
-  } else {
-    img = cur_image->image.clone();
-  }
+  // cv::Mat img;
+  // // 需要转为灰度
+  // if (cur_image->image.channels() == 3) {
+  //   cv::cvtColor(cur_image->image, img, cv::COLOR_RGB2GRAY);
+  // } else {
+  //   img = cur_image->image.clone();
+  // }
+  //
+  // cv::Mat img_show;
+  // // 需要转为彩色图像
+  // if (cur_image->image.channels() == 1) {
+  //   cv::cvtColor(cur_image->image, img_show, cv::COLOR_GRAY2RGB);
+  // } else {
+  //   img_show = cur_image->image.clone();
+  // }
+  //
+  // if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
+  //   // 计算外参T_wc cam->world
+  //   cam_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
+  //
+  //   // std::lock_guard<std::mutex> lock(mtx_);
+  //   // image_mat_.reset(new cv::Mat(img_show.clone()));
+  //   show_image_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
+  //   return true;
+  // } else {
+  //   // std::cout << "no april board detected!" << std::endl;
+  //   return false;
+  // }
 
-  cv::Mat img_show;
-  // 需要转为彩色图像
-  if (cur_image->image.channels() == 1) {
-    cv::cvtColor(cur_image->image, img_show, cv::COLOR_GRAY2RGB);
-  } else {
-    img_show = cur_image->image.clone();
-  }
+  // 检测
+  cv::Mat laser_show;
+  algorithm::Line line(*cur_laser_data, 60.0, 2.0);
+  line.find_line(laser_show);
 
-  if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
-    // 计算外参T_wc cam->world
-    cam_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
+  show_image_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, laser_show));
 
-    // std::lock_guard<std::mutex> lock(mtx_);
-    // image_mat_.reset(new cv::Mat(img_show.clone()));
-    show_image_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
-    return true;
-  } else {
-    // std::cout << "no april board detected!" << std::endl;
-    return false;
-  }
+  return true;
+
 }
 
 void CamLaserCalib::calibration() {
@@ -107,8 +135,9 @@ void CamLaserCalib::calibration() {
       cur_state_ = next_state_;
       break;
     case STATE_START:
-      if (is_new_image_) {
+      if (is_new_image_ && is_new_laser_) {
         is_new_image_ = false;
+        is_new_laser_ = false;
         cur_state_ = STATE_GET_CAM_POSE;
       }
       break;

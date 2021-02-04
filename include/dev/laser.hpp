@@ -26,6 +26,8 @@ class Laser : public Sensor {
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图
   void draw_ui() override;
+  /// 获取当前激光数据
+  boost::shared_ptr<const sensor_msgs::LaserScan> data();
 
  private:
   // 是否显示激光

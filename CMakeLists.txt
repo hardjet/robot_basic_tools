@@ -224,6 +224,25 @@ target_link_libraries(guik
         imgui
         )
 
+# build target algorithm
+add_library(algorithm SHARED
+        src/algorithm/line.cpp
+        )
+
+set_target_properties(algorithm PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${RDPARTY_SO_PATH}
+        )
+
+target_include_directories(algorithm PUBLIC
+        $<BUILD_INTERFACE:./include;${OpenCV_INCLUDE_DIRS};${catkin_INCLUDE_DIRS}>
+        )
+
+#target_link_libraries(algorithm
+#        PUBLIC
+#        ${PCL_LIBRARIES}
+#        ${OpenCV_LIBRARIES}
+#        )
+
 # build target
 add_executable(${PROJECT_NAME}
         src/dev/sensor.cpp
@@ -249,6 +268,7 @@ target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBRARIES}
         guik
         camera_model
+        algorithm
         glog
         )
 

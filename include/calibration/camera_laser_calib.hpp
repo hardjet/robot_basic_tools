@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <mutex>
+
+#include <sensor_msgs/LaserScan.h>
 #include "calib_base.hpp"
 
 namespace cv_bridge {
@@ -44,8 +46,10 @@ class CamLaserCalib : public BaseCalib {
  private:
   // 是否显示图像
   bool is_show_image_{false};
-  // 是否有新数据
+  // 是否有新图像数据
   bool is_new_image_{false};
+  // 是否有新激光数据
+  bool is_new_laser_{false};
   // 资源锁
   std::mutex mtx_;
   // 标定板对象
@@ -62,6 +66,8 @@ class CamLaserCalib : public BaseCalib {
   boost::shared_ptr<const cv_bridge::CvImage> image_ptr_{nullptr};
   // 显示使用的image
   boost::shared_ptr<const cv_bridge::CvImage> show_image_ptr_{nullptr};
+  // 激光数据
+  boost::shared_ptr<const sensor_msgs::LaserScan> laser_data_ptr_{nullptr};
 
 };
 }  // namespace calibration

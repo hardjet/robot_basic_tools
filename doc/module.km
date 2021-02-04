@@ -173,9 +173,28 @@
                                     },
                                     {
                                         "data": {
+                                            "id": "c8zk6d9lfsg0",
+                                            "created": 1612321233372,
+                                            "text": "计算相机与标点板之间的位姿",
+                                            "progress": 9
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "c8zk5ydybh40",
+                                            "created": 1612321200984,
+                                            "text": "提取激光数据中的线条",
+                                            "progress": 1
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
                                             "id": "c8xt0x40bc00",
                                             "created": 1612143076461,
-                                            "text": "筛选静态的图片与激光数据"
+                                            "text": "筛选静态的图片与激光数据",
+                                            "progress": 1
                                         },
                                         "children": []
                                     }

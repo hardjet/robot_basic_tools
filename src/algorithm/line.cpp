@@ -17,7 +17,6 @@ Line::Line(const sensor_msgs::LaserScan& scan, double angle_range, double max_ra
     : angle_range_(DEG2RAD(angle_range)), max_range_(max_range) {
   points_.resize(0);
   outlier_points_.resize(0);
-  best_line_pts_.resize(0);
   img_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));
   // 转换点
   scan2points(scan);
@@ -43,8 +42,9 @@ void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool Line::find_line(cv::Mat& img) {
+bool Line::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) {
   img = img_ptr_->clone();
+  best_line_pts.clear();
 
   // 先显示所有点
   // 范围内的点
@@ -59,17 +59,17 @@ bool Line::find_line(cv::Mat& img) {
     img.at<cv::Vec3b>(row, col) = color_value;
   }
 
-  // 范围外的点
-  for (auto pt : outlier_points_) {
-    int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
-    // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
-    int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);
-
-    if (col > img_w_ - 1 || col < 0 || row > img_w_ - 1 || row < 0) continue;
-
-    cv::Vec3b color_value(0, 255, 0);
-    img.at<cv::Vec3b>(row, col) = color_value;
-  }
+  // // 范围外的点
+  // for (auto pt : outlier_points_) {
+  //   int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
+  //   // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+  //   int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);
+  //
+  //   if (col > img_w_ - 1 || col < 0 || row > img_w_ - 1 || row < 0) continue;
+  //
+  //   cv::Vec3b color_value(0, 255, 0);
+  //   img.at<cv::Vec3b>(row, col) = color_value;
+  // }
 
   /// detect and get line
   // 直接从每一帧激光的正前方开始搜索一定距离范围内的符合平面标定板形状的激光线段
@@ -111,8 +111,8 @@ bool Line::find_line(cv::Mat& img) {
       newSeg = true;
       Eigen::Vector3d dist = points_.at(seg.id_start) - points_.at(seg.id_end);
       // 至少长于 20 cm, 标定板不能距离激光超过2m, 标定板上的激光点肯定多余 50 个
-      if (dist.head(2).norm() > 0.2 && points_.at(seg.id_start).head(2).norm() < 2 &&
-          points_.at(seg.id_end).head(2).norm() < 2 && seg.id_end - seg.id_start > 50) {
+      if (dist.head(2).norm() > 0.2 && points_.at(seg.id_start).head(2).norm() < max_range_ &&
+          points_.at(seg.id_end).head(2).norm() < max_range_ && seg.id_end - seg.id_start > 50) {
         seg.dist = dist.head(2).norm();
         segs.push_back(seg);
       }
@@ -148,6 +148,7 @@ bool Line::find_line(cv::Mat& img) {
     }
   }
 
+  // 检测到直线
   if (!segs.empty()) {
     LineSeg bestLine{};
     int maxpts = -1;
@@ -160,10 +161,12 @@ bool Line::find_line(cv::Mat& img) {
       }
     }
 
+    // 保存最佳的直线
     for (int i = bestLine.id_start; i < bestLine.id_end + 1; ++i) {
-      best_line_pts_.push_back(points_.at(i));
+      best_line_pts.push_back(points_.at(i));
     }
 
+    // 画所有直线
     // for (int j = 0; j < segs.size(); ++j) {
     //   LineSeg tmp = segs.at(j);
     //   for (int i = tmp.id_start; i < tmp.id_end; ++i) {
@@ -179,8 +182,9 @@ bool Line::find_line(cv::Mat& img) {
     //   }
     // }
 
-    for (int j = 0; j < best_line_pts_.size(); ++j) {
-      Eigen::Vector3d pt = best_line_pts_.at(j);
+    // 画最佳的直线
+    for (int j = 0; j < best_line_pts.size(); ++j) {
+      Eigen::Vector3d pt = best_line_pts.at(j);
       int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
       int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);  // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
 
@@ -190,8 +194,20 @@ bool Line::find_line(cv::Mat& img) {
       img.at<cv::Vec3b>(row, col) = color_value;
     }
 
-    cv::putText(img, "Detecting the Laser Points on the calibra planar!", cv::Point(5, 30),
-                cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+    // ---- 画坐标
+    // x轴向前，y轴向左
+    int orig_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+    int orig_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+
+    int x_axis_col = (int)(0.2 / img_z_ * img_focal_ + img_w_ / 2);
+    int x_axis_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+    cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{x_axis_col, x_axis_row}, cv::Scalar(255, 0, 0), 4);
+
+    int y_axis_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+    int y_axis_row = (int)(-0.2 / img_z_ * img_focal_ + img_w_ / 2);
+
+    cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
+
     return true;
   } else {
     return false;

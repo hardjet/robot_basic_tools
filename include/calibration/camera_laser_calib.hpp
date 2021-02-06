@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <mutex>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <sensor_msgs/LaserScan.h>
 #include "calib_base.hpp"
@@ -27,6 +29,21 @@ class Task;
 
 class CamLaserCalib : public BaseCalib {
  public:
+  // 标定数据
+  struct CalibData {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    double timestamp;
+    // 相机坐标系到世界坐标系的变换
+    Eigen::Quaterniond q_wc;
+    Eigen::Vector3d t_wc;
+    // 检测到的激光点数据
+    std::vector<Eigen::Vector3d> line_pts;
+    // 显示使用的image
+    boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
+    // 显示激光使用的image
+    boost::shared_ptr<const cv_bridge::CvImage> laser_img_ptr_{nullptr};
+  };
+
   CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
                 std::shared_ptr<dev::AprilBoard>& april_board_ptr_);
 
@@ -39,7 +56,7 @@ class CamLaserCalib : public BaseCalib {
   /// 更新数据
   void update_data();
   /// 检测图片是否有足够的apriltags
-  bool get_cam_pose();
+  bool get_pose_and_points();
   /// 标定流程
   void calibration();
 
@@ -59,15 +76,24 @@ class CamLaserCalib : public BaseCalib {
   // 当前选中的相机对象
   std::shared_ptr<dev::Laser> laser_ptr_{nullptr};
   // 图像显示对象
-  std::shared_ptr<dev::ImageShow> im_show_ptr_{nullptr};
+  std::shared_ptr<dev::ImageShow> im_show_dev_ptr_{nullptr};
+  // 激光显示对象
+  std::shared_ptr<dev::ImageShow> laser_show_dev_ptr_{nullptr};
   // 任务对象
   std::shared_ptr<Task> task_ptr_{nullptr};
   // 当前图像对象
   boost::shared_ptr<const cv_bridge::CvImage> image_ptr_{nullptr};
   // 显示使用的image
-  boost::shared_ptr<const cv_bridge::CvImage> show_image_ptr_{nullptr};
+  boost::shared_ptr<const cv_bridge::CvImage> show_cam_img_ptr_{nullptr};
+  // 显示激光使用的image
+  boost::shared_ptr<const cv_bridge::CvImage> show_laser_img_ptr_{nullptr};
   // 激光数据
   boost::shared_ptr<const sensor_msgs::LaserScan> laser_data_ptr_{nullptr};
-
+  // 当前计算出的标定数据
+  std::shared_ptr<CalibData> calib_data_{nullptr};
+  // 候选标定数据
+  std::vector<CalibData> calib_data_vec_;
+  // 有效的标定数据
+  std::vector<CalibData> calib_valid_data_vec_;
 };
 }  // namespace calibration

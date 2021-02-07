@@ -14,7 +14,9 @@
 #include "dev/util.hpp"
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_laser_calib.hpp"
-#include "algorithm/line.hpp"
+#include "algorithm/line.h"
+#include "algorithm/util.h"
+#include "algorithm/laser_cam_ceres.h"
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/camera_models/Camera.h"
 
@@ -27,6 +29,10 @@
 #define STATE_GET_POSE_AND_PTS 2
 // 检查数据稳定性,连续5帧姿态没有大的变化，取中间帧作为候选
 #define STATE_CHECK_STEADY 3
+// 开始标定
+#define STATE_START_CALIB 4
+// 在标定过程中
+#define STATE_IN_CALIB 5
 
 #define DEG2RAD(x) (x * M_PI / 180.0)
 #define RAD2DEG(x) (x * 180.0 / M_PI)
@@ -260,6 +266,63 @@ bool CamLaserCalib::save_calib_data(const std::string& file_path) {
   }
 }
 
+bool CamLaserCalib::calc() {
+  // 准备标定数据
+  std::vector<algorithm::Oberserve> obs;
+
+  for (const auto& data : calib_valid_data_vec_) {
+    Eigen::Vector2d line;
+    algorithm::LineFittingCeres(data.line_pts, line);
+    std::vector<Eigen::Vector3d> points_on_line;
+
+    // 激光所在直线不能垂直于某个轴
+    double x_start(data.line_pts.begin()->x()), x_end(data.line_pts.end()->x());
+    double y_start(data.line_pts.begin()->y()), y_end(data.line_pts.end()->y());
+    if (fabs(x_end - x_start) > fabs(y_end - y_start)) {
+      y_start = -(x_start * line(0) + 1) / line(1);
+      y_end = -(x_end * line(0) + 1) / line(1);
+      // 可能垂直于 x 轴，采用y值来计算 x
+    } else {
+      x_start = -(y_start * line(1) + 1) / line(0);
+      x_end = -(y_end * line(1) + 1) / line(0);
+    }
+
+    points_on_line.emplace_back(x_start, y_start, 0);
+    points_on_line.emplace_back(x_end, y_end, 0);
+
+    algorithm::Oberserve ob;
+    ob.tag_pose_q_ca = data.q_wc.inverse();
+    ob.tag_pose_t_ca = -ob.tag_pose_q_ca.toRotationMatrix() * data.t_wc;
+    ob.points = data.line_pts;
+    ob.points_on_line = points_on_line;
+    obs.push_back(ob);
+  }
+
+  Eigen::Matrix4d Tlc_initial = Eigen::Matrix4d::Identity();
+  algorithm::CamLaserCalClosedSolution(obs, Tlc_initial);
+
+  Eigen::Matrix4d Tcl = Tlc_initial.inverse();
+  algorithm::CamLaserCalibration(obs, Tcl, true);
+
+  std::cout << "\n----- Transform from Camera to Laser Tlc is: -----\n" << std::endl;
+  Eigen::Matrix4d Tlc = Tcl.inverse();
+  std::cout << Tlc << std::endl;
+
+  std::cout << "\n----- Transform from Camera to Laser, euler angles and translations are: -----\n" << std::endl;
+  Eigen::Matrix3d Rlc(Tlc.block(0, 0, 3, 3));
+  Eigen::Vector3d tlc(Tlc.block(0, 3, 3, 1));
+  Eigen::Quaterniond q(Rlc);
+  algorithm::EulerAngles rpy = algorithm::ToEulerAngles(q);
+  std::cout << "q(x, y, z, w):" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
+  std::cout << "q(x, y, z, w):" << q.coeffs().transpose() << std::endl;
+  std::cout << "   roll(rad): " << rpy.roll << " pitch(rad): " << rpy.pitch << " yaw(rad): " << rpy.yaw << "\n"
+            << "or roll(deg): " << rpy.roll * 180. / M_PI << " pitch(deg): " << rpy.pitch * 180. / M_PI
+            << " yaw(deg): " << rpy.yaw * 180. / M_PI << "\n"
+            << "       tx(m): " << tlc.x() << "  ty(m): " << tlc.y() << "   tz(m): " << tlc.z() << std::endl;
+
+  return true;
+}
+
 void CamLaserCalib::calibration() {
   // 首先获取最新的数据
   update_data();
@@ -306,10 +369,6 @@ void CamLaserCalib::calibration() {
           // 足够稳定才保存
           if (calib_data_vec_.size() > 3) {
             check_and_save();
-            // 大于6帧就可以进行校准了
-            if (calib_valid_data_vec_.size() > 5) {
-              std::cout << "ready to calibration" << std::endl;
-            }
           }
         } else {
           // 抖动大则重新开始检测
@@ -318,6 +377,18 @@ void CamLaserCalib::calibration() {
           std::cout << "moved!!!" << std::endl;
         }
         cur_state_ = STATE_IDLE;
+      }
+      break;
+    case STATE_START_CALIB:
+      cur_state_ = STATE_IN_CALIB;
+      break;
+    case STATE_IN_CALIB:
+      // 执行任务
+      if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {
+        // 结束后需要读取结果
+        if (task_ptr_->result<bool>()) {
+          cur_state_ = STATE_IDLE;
+        }
       }
       break;
   }
@@ -417,8 +488,21 @@ void CamLaserCalib::draw_ui() {
     }
   }
 
+  // 标定状态只需要设定一次
+  if (cur_state_ == STATE_IN_CALIB) {
+    next_state_ = STATE_IDLE;
+  }
+
+  // 大于6帧数据就可以开始进行标定操作了
+  if (calib_valid_data_vec_.size() > 6) {
+    ImGui::SameLine();
+    // 开始执行标定
+    if (ImGui::Button("calib")) {
+      next_state_ = STATE_START_CALIB;
+    }
+  }
+
   // 显示当前有效数据个数
-  ImGui::SameLine();
   ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
 
   ImGui::End();

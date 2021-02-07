@@ -1,7 +1,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/imgproc.hpp>
 
-#include "algorithm/line.hpp"
+#include "algorithm/line.h"
 
 namespace algorithm {
 

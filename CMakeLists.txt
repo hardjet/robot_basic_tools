@@ -161,6 +161,16 @@ message(STATUS "Use OpenCV ${OpenCV_VERSION}")
 message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBRARIES: ${OpenCV_LIBRARIES}")
 
+# Ceres
+find_package(Ceres PATHS "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" NO_DEFAULT_PATH REQUIRED)
+message(STATUS "CERES_VERSION: ${CERES_VERSION}")
+message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
+
+# Eigen
+#find_package(Eigen3 REQUIRED)
+#message(STATUS "EIGEN3_VERSION: ${EIGEN3_VERSION_STRING}")
+#message(STATUS "EIGEN3_INCLUDE_DIR: ${EIGEN3_INCLUDE_DIR}")
+
 # ----- catking config -----
 catkin_package(
 )
@@ -226,7 +236,9 @@ target_link_libraries(guik
 
 # build target algorithm
 add_library(algorithm SHARED
+        src/algorithm/util.cpp
         src/algorithm/line.cpp
+        src/algorithm/laser_cam_ceres.cpp
         )
 
 set_target_properties(algorithm PROPERTIES
@@ -237,11 +249,12 @@ target_include_directories(algorithm PUBLIC
         $<BUILD_INTERFACE:./include;${OpenCV_INCLUDE_DIRS};${catkin_INCLUDE_DIRS}>
         )
 
-#target_link_libraries(algorithm
-#        PUBLIC
+target_link_libraries(algorithm
+        PUBLIC
 #        ${PCL_LIBRARIES}
 #        ${OpenCV_LIBRARIES}
-#        )
+        ${CERES_LIBRARIES}
+        )
 
 # build target
 add_executable(${PROJECT_NAME}

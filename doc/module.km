@@ -212,7 +212,16 @@
                                             "id": "c92axt8o9js0",
                                             "created": 1612599852748,
                                             "text": "对直线点做直线拟合",
-                                            "progress": 1
+                                            "progress": 9
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "c93bnbgln940",
+                                            "created": 1612703411470,
+                                            "text": "计算位姿",
+                                            "progress": 9
                                         },
                                         "children": []
                                     }

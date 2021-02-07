@@ -194,6 +194,24 @@
                                             "id": "c8xt0x40bc00",
                                             "created": 1612143076461,
                                             "text": "筛选静态的图片与激光数据",
+                                            "progress": 9
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "c931h18pddc0",
+                                            "created": 1612674707941,
+                                            "text": "从文件加载保存标定数据",
+                                            "progress": 9
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "c92axt8o9js0",
+                                            "created": 1612599852748,
+                                            "text": "对直线点做直线拟合",
                                             "progress": 1
                                         },
                                         "children": []
@@ -235,8 +253,17 @@
                 "data": {
                     "id": "c8n4a3wo9nk0",
                     "created": 1611057669218,
-                    "text": "...",
-                    "layout": null
+                    "text": "系统消息控件设计",
+                    "layout": null,
+                    "progress": null
+                },
+                "children": []
+            },
+            {
+                "data": {
+                    "id": "c931ny5azqg0",
+                    "created": 1612675249754,
+                    "text": "..."
                 },
                 "children": []
             }

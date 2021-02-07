@@ -59,6 +59,12 @@ class CamLaserCalib : public BaseCalib {
   bool get_pose_and_points();
   /// 标定流程
   void calibration();
+  /// 保证保存的帧角度不同
+  void check_and_save();
+  /// 从文件加载标定数据
+  bool load_calib_data(const std::string& file_path);
+  /// 保存标定数据到文件
+  bool save_calib_data(const std::string& file_path);
 
  private:
   // 是否显示图像

@@ -16,8 +16,8 @@ class NodeHandle;
 
 namespace dev {
 
-// 打开文件夹默认路径
-extern std::string default_path;
+extern std::string config_default_path;
+extern std::string data_default_path;
 
 // sensor type
 enum SENSOR_TYPE { UNDEF = 0, CAMERA = 1, LASER, LIDAR, IMU };

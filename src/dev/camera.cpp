@@ -388,7 +388,7 @@ void Camera::draw_ui() {
   if (ImGui::Button("R")) {
     // 选择加载文件路径
     std::vector<std::string> filters = {"camera config file (.yaml)", "*.yaml"};
-    std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", default_path, filters));
+    std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", config_default_path, filters));
     while (!dialog->ready()) {
       usleep(1000);
     }
@@ -422,7 +422,7 @@ void Camera::draw_ui() {
     if (ImGui::Button("W")) {
       // 选择保存文件路径
       std::vector<std::string> filters = {"camera config file (.yaml)", "*.yaml"};
-      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", default_path, filters));
+      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", config_default_path, filters));
       while (!dialog->ready()) {
         usleep(1000);
       }

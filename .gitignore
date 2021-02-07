@@ -1,6 +1,7 @@
 .idea/
 cmake-build-debug/
 .vscode/
+data/calib_data/
 *.ini
 include/version_info.h
 

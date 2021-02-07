@@ -3,8 +3,10 @@
 
 namespace dev {
 
-// 打开文件夹默认路径
-std::string default_path{};
+// 打开配置文件夹默认路径
+std::string config_default_path{};
+// 打开数据文件夹默认路径
+std::string data_default_path{};
 
 uint32_t Sensor::sensors_unique_id = 0;
 

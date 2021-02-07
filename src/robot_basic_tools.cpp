@@ -48,21 +48,21 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
 
   // 获取资源路径
   std::string package_path = ros::package::getPath("robot_basic_tools");
-  std::string data_directory = package_path + "/data";
-  dev::default_path = package_path + "/config/camera_config";
+  dev::config_default_path = package_path + "/config";
+  dev::data_default_path = package_path + "/data";
 
   right_clicked_pos.setZero();
   cur_mouse_pos.setZero();
   progress_ptr = std::make_unique<guik::ProgressModal>("progress modal");
   // 创建为单实例对象
   sensor_manager_ptr = util::Singleton<dev::SensorManager>::instance(nh);
-  april_board_ptr = std::make_shared<dev::AprilBoard>(data_directory);
+  april_board_ptr = std::make_shared<dev::AprilBoard>(dev::data_default_path);
 
   // 单线激光与相机标定
   cl_calib_ptr = std::make_shared<calibration::CamLaserCalib>(sensor_manager_ptr, april_board_ptr);
 
   // initialize the main OpenGL canvas
-  main_canvas_ptr = std::make_unique<guik::GLCanvas>(data_directory, framebuffer_size());
+  main_canvas_ptr = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
   if (!main_canvas_ptr->ready()) {
     close();
   }

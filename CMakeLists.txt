@@ -259,6 +259,7 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${catkin_INCLUDE_DIRS}
+        thirdparty/json
         thirdparty/portable-file-dialogs
         )
 

@@ -24,14 +24,14 @@ class BaseCalib {
   void show() { is_show_window_ = true; }
 
   /**
-  *
-  * @tparam T 传感器Class
-  * @param name 提示框文字
-  * @param type 传感器类型
-  * @param sensor 传感器指针
-  */
+   *
+   * @tparam T 传感器Class
+   * @param name 提示框文字
+   * @param type 传感器类型
+   * @param sensor 传感器指针
+   */
   template <class T>
-  void draw_sensor_selector(const std::string& name, dev::SENSOR_TYPE type, std::shared_ptr<T> &sensor) {
+  void draw_sensor_selector(const std::string& name, dev::SENSOR_TYPE type, std::shared_ptr<T>& sensor) {
     // 保证控件中文字对齐
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s:", name.c_str());
@@ -58,7 +58,7 @@ class BaseCalib {
 
       if (ImGui::BeginCombo(comb_list_name.c_str(), sensor->sensor_name.c_str(), ImGuiComboFlags_None)) {
         // 添加列表
-        for (auto &c : sensors_iter->second) {
+        for (auto& c : sensors_iter->second) {
           sensor_names.push_back(c->sensor_name);
           // 判断是否为之前选择的
           bool is_selected = (sensor_id == c->sensor_id);

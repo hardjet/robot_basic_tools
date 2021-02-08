@@ -2,7 +2,6 @@
 
 namespace dev {
 
-
 void help_marker(const char* desc);
 
 void get_topic_name_from_list(const std::string& target_topic_type, std::vector<std::string>& candidates);

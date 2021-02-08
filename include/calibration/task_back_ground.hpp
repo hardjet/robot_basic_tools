@@ -57,16 +57,16 @@ class Task {
   // }
 
   /**
-  * @brief 后台运行一个任务
-  * @tparam Function 任务函数类型
-  * @tparam Args 任务函数参数类型
-  * @param task_name 任务名称
-  * @param task 任务函数
-  * @param args 任务函数参数
-  * @return 任务是否结束
-  */
+   * @brief 后台运行一个任务
+   * @tparam Function 任务函数类型
+   * @tparam Args 任务函数参数类型
+   * @param task_name 任务名称
+   * @param task 任务函数
+   * @param args 任务函数参数
+   * @return 任务是否结束
+   */
   template <typename Function, typename... Args>
-  bool do_task(const std::string &task_name, Function&& task, Args&&... args) {
+  bool do_task(const std::string &task_name, Function &&task, Args &&...args) {
     if (is_new_) {
       is_new_ = false;
       create(task_name, task);
@@ -76,16 +76,15 @@ class Task {
   }
 
   /**
-  * @brief 创建一个后台执行任务，并运行
-  * @tparam Function 任务函数类型
-  * @tparam Args 任务函数参数类型
-  * @param task_name 任务名称
-  * @param task 任务函数
-  * @param args 任务函数参数
-  */
-  template<typename Function, typename... Args>
-  void create(const std::string &task_name, Function&& task, Args&&... args)
-  {
+   * @brief 创建一个后台执行任务，并运行
+   * @tparam Function 任务函数类型
+   * @tparam Args 任务函数参数类型
+   * @param task_name 任务名称
+   * @param task 任务函数
+   * @param args 任务函数参数
+   */
+  template <typename Function, typename... Args>
+  void create(const std::string &task_name, Function &&task, Args &&...args) {
     task_name_ = task_name;
 
     result_.clear();

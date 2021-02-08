@@ -18,7 +18,7 @@ Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ro
   laser_data_->set_data_rate(2);
 }
 
-boost::shared_ptr<const sensor_msgs::LaserScan> Laser::data(){return laser_data_->data();}
+boost::shared_ptr<const sensor_msgs::LaserScan> Laser::data() { return laser_data_->data(); }
 
 void Laser::draw_gl(glk::GLSLShader& shader) {}
 

@@ -29,7 +29,7 @@ class ImageShow {
   void disable();
 
   /// 显示图像
-  void show_image(bool &is_show_image);
+  void show_image(bool& is_show_image);
 
  private:
   /// 显示图像操作，放在单独的线程中

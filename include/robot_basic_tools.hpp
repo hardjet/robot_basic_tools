@@ -5,13 +5,11 @@
 namespace dev {
 class SensorManager;
 class AprilBoard;
-}
+}  // namespace dev
 
 namespace calibration {
 class CamLaserCalib;
 }
-
-
 
 class RobotBasicTools : public guik::Application {
  public:

@@ -38,7 +38,7 @@ class Camera : public Sensor {
   /// 获取当前图像数据
   boost::shared_ptr<cv_bridge::CvImage const> data();
   /// 获取当前相机对象
-  boost::shared_ptr<camera_model::Camera> cam(){return inst_ptr_;};
+  boost::shared_ptr<camera_model::Camera> cam() { return inst_ptr_; };
 
  private:
   // 当前类型
@@ -70,7 +70,7 @@ class Camera : public Sensor {
   /// 检查当前设备在线状态
   void check_online_status();
   /// 需要将图像消息转为cv::Mat
-  bool cv_convert(boost::shared_ptr<const sensor_msgs::Image> &msg);
+  bool cv_convert(boost::shared_ptr<const sensor_msgs::Image>& msg);
 };
 
 }  // namespace dev

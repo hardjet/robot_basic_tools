@@ -37,7 +37,6 @@
 #include <glog/logging.h>
 #endif
 
-
 bool RobotBasicTools::init(const char *window_name, const char *imgui_config_path, const Eigen::Vector2i &size,
                            const char *glsl_version) {
   if (!Application::init(window_name, imgui_config_path, size, glsl_version)) {
@@ -176,7 +175,6 @@ void RobotBasicTools::draw_gl() {
   }
 }
 
-
 void RobotBasicTools::main_menu() {
   ImGui::BeginMainMenuBar();
 
@@ -267,7 +265,6 @@ void RobotBasicTools::context_menu() {
     ImGui::EndPopup();
   }
 }
-
 
 int main(int argc, char **argv) {
 #ifdef USE_STACK_TRACE_LOGGER

@@ -55,10 +55,12 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   progress_ptr = std::make_unique<guik::ProgressModal>("progress modal");
   // 创建为单实例对象
   sensor_manager_ptr = util::Singleton<dev::SensorManager>::instance(nh);
+
+  // 标定板
   april_board_ptr = std::make_shared<dev::AprilBoard>(dev::data_default_path);
 
   // 单线激光与相机标定
-  cl_calib_ptr = std::make_shared<calibration::CamLaserCalib>(sensor_manager_ptr, april_board_ptr);
+  cl_calib_ptr = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr, april_board_ptr);
 
   // initialize the main OpenGL canvas
   main_canvas_ptr = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());

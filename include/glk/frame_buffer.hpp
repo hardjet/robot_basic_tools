@@ -33,12 +33,12 @@ class FrameBuffer {
   int width;
   int height;
 
-  GLint viewport[4];
+  GLint viewport[4]{};
 
   std::vector<std::shared_ptr<Texture>> color_buffers;
   std::shared_ptr<Texture> depth_buffer;
 
-  GLuint frame_buffer;
+  GLuint frame_buffer{};
 };
 
 }  // namespace glk

@@ -78,14 +78,6 @@ class RobotBasicTools : public guik::Application {
   // 进度条
   std::unique_ptr<guik::ProgressModal> progress_ptr;
 
-  // 热键标记(ALT)
-  bool is_hotkey_alt_pressed = false;
-  // 选中的物体集合
-  // std::set<int> selected_id;
-
-  // ui显示标记
-  bool is_show_imgui_demo{false};
-
   // 传感器管理器
   std::shared_ptr<dev::SensorManager> sensor_manager_ptr;
 
@@ -93,5 +85,13 @@ class RobotBasicTools : public guik::Application {
   std::shared_ptr<dev::AprilBoard> april_board_ptr;
 
   // 相机与单线激光标定
-  std::shared_ptr<calibration::CamLaserCalib> cl_calib_ptr;
+  std::unique_ptr<calibration::CamLaserCalib> cl_calib_ptr;
+
+  // 热键标记(ALT)
+  bool is_hotkey_alt_pressed = false;
+  // 选中的物体集合
+  // std::set<int> selected_id;
+
+  // ui显示标记
+  bool is_show_imgui_demo{false};
 };

@@ -29,7 +29,7 @@ class GLCanvas {
   bool ready() const;
 
   void reset_camera();
-  void set_size(const Eigen::Vector2i& size);
+  void set_size(const Eigen::Vector2i& fb_size);
   void mouse_control() const;
 
   void bind(bool clear_buffers = true) const;

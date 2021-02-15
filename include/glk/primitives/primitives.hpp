@@ -13,6 +13,7 @@ namespace glk {
 class Primitives {
  private:
   Primitives() { meshes.resize(NUM_PRIMITIVES, nullptr); }
+  ~Primitives() { delete instance_; }
 
  public:
   enum PrimitiveType { ICOSAHEDRON = 0, SPHERE, CUBE, CONE, GRID, COORDINATE_SYSTEM, BUNNY, NUM_PRIMITIVES };

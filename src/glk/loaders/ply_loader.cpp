@@ -1,11 +1,9 @@
-#include <glk/loaders/ply_loader.hpp>
-
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include <Eigen/Core>
 
-#include <glk/mesh_utils.hpp>
+#include "glk/mesh_utils.hpp"
+#include "glk/loaders/ply_loader.hpp"
 
 namespace glk {
 

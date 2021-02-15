@@ -4,7 +4,7 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include <glk/drawble.hpp>
+#include "glk/drawble.hpp"
 
 namespace glk {
 
@@ -35,7 +35,7 @@ class Lines : public Drawable {
   GLuint vbo;  // vertices
   GLuint cbo;  // colors
   GLuint ibo;  // infos
-  GLuint ebo;  // elements
+  GLuint ebo{};  // elements
 };
 }  // namespace glk
 

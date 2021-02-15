@@ -5,15 +5,15 @@
 #include "imgui.h"
 #include "GL/gl3w.h"
 
-#include <glk/glsl_shader.hpp>
-#include <glk/frame_buffer.hpp>
-#include <glk/texture.hpp>
-#include <glk/texture_renderer.hpp>
+#include "glk/glsl_shader.hpp"
+#include "glk/frame_buffer.hpp"
+#include "glk/texture.hpp"
+#include "glk/texture_renderer.hpp"
 
-#include <guik/camera_control.hpp>
-#include <guik/projection_control.hpp>
+#include "guik/camera_control.hpp"
+#include "guik/projection_control.hpp"
 
-#include <guik/gl_canvas.hpp>
+#include "guik/gl_canvas.hpp"
 
 namespace guik {
 
@@ -57,12 +57,12 @@ void GLCanvas::reset_camera() {
 /**
  * @brief Set the Size object
  *
- * @param size
+ * @param fb_size
  */
-void GLCanvas::set_size(const Eigen::Vector2i &size) {
-  this->size = size;
-  projection_control->set_size(size);
-  frame_buffer = std::make_unique<glk::FrameBuffer>(size);
+void GLCanvas::set_size(const Eigen::Vector2i &fb_size) {
+  this->size = fb_size;
+  projection_control->set_size(fb_size);
+  frame_buffer = std::make_unique<glk::FrameBuffer>(fb_size);
   frame_buffer->add_color_buffer(GL_RGBA32I, GL_RGBA_INTEGER, GL_INT);
 }
 
@@ -123,7 +123,7 @@ void GLCanvas::render_to_screen(int color_buffer_id) const {
 void GLCanvas::mouse_control() const {
   ImGuiIO &io = ImGui::GetIO();
   auto mouse_pos = ImGui::GetMousePos();
-  auto drag_delta = ImGui::GetMouseDragDelta();
+  // auto drag_delta = ImGui::GetMouseDragDelta();
 
   Eigen::Vector2i p(mouse_pos.x, mouse_pos.y);
 

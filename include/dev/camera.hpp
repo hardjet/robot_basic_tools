@@ -2,6 +2,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
+
 #include "dev/sensor.hpp"
 
 namespace camera_model {

@@ -23,7 +23,7 @@ class Singleton {
   }
 
   /// 禁用拷贝构造
-  Singleton(Singleton&) = delete;
+  Singleton(const Singleton&) = delete;
 
   /// 禁用赋值操作
   Singleton& operator=(const Singleton&) = delete;

@@ -1,4 +1,4 @@
-#include <glk/colormap.hpp>
+#include "glk/colormap.hpp"
 
 #include <iostream>
 

@@ -1,5 +1,11 @@
 #include "imgui.h"
+
+#include "glk/mesh.hpp"
+#include "glk/loaders/ply_loader.hpp"
+
 #include "dev/sensor.hpp"
+
+#include <memory>
 
 namespace dev {
 
@@ -11,6 +17,16 @@ std::string data_default_path{};
 uint32_t Sensor::sensors_unique_id = 0;
 
 void Sensor::show() { is_show_window_ = true; }
+
+bool Sensor::load_model(const std::string& ply_file_name) {
+  glk::PLYLoader ply_model(ply_file_name);
+  if (ply_model.indices.empty()) {
+    return false;
+  }
+
+  ply_model_ptr_ = std::make_unique<glk::Mesh>(ply_model.vertices, ply_model.normals, ply_model.indices);
+  return true;
+}
 
 void Sensor::draw_status() {
   if (is_online_) {

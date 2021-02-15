@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 
 #include "GL/gl3w.h"
-#include <glk/drawble.hpp>
+#include "glk/drawble.hpp"
 
 namespace glk {
 
@@ -32,10 +32,10 @@ class Mesh : public Drawable {
   int num_vertices;
   int num_indices;
 
-  GLuint vao;
-  GLuint vbo;
-  GLuint nbo;
-  GLuint ebo;
+  GLuint vao{};
+  GLuint vbo{};
+  GLuint nbo{};
+  GLuint ebo{};
 };
 
 }  // namespace glk

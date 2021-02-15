@@ -11,7 +11,7 @@
 #include "imgui.h"
 #include <boost/any.hpp>
 
-#include <guik/progress_interface.hpp>
+#include "guik/progress_interface.hpp"
 
 namespace guik {
 

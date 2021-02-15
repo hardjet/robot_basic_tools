@@ -6,9 +6,9 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "GL/gl3w.h"
 #include <GLFW/glfw3.h>
-#include <guik/imgui_application.hpp>
+#include "GL/gl3w.h"
+#include "guik/imgui_application.hpp"
 
 namespace guik {
 

@@ -3,8 +3,8 @@
 
 #include "GL/gl3w.h"
 
-#include <glk/glsl_shader.hpp>
-#include <glk/lines.hpp>
+#include "glk/glsl_shader.hpp"
+#include "glk/lines.hpp"
 
 namespace glk {
 

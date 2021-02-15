@@ -8,6 +8,7 @@
 //  前向声明
 namespace glk {
 class GLSLShader;
+class Drawable;
 }
 
 namespace ros {
@@ -37,9 +38,9 @@ class Sensor {
    * @param type
    * @param type_str
    */
-  Sensor(const std::string& name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF,
+  Sensor(std::string name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF,
          std::string type_str = "undef")
-      : sensor_name(name),
+      : sensor_name(std::move(name)),
         nh_(ros_nh),
         sensor_id(sensors_unique_id++),
         sensor_type(type),
@@ -73,6 +74,13 @@ class Sensor {
    * @brief 打开显示ui开关
    */
   void show();
+
+  /**
+  * @brief 加载.ply模型文件
+  * @param ply_file_name
+  * @return
+  */
+  bool load_model(const std::string& ply_file_name);
 
   /**
    * @brief 将当前对象标记为删除状态
@@ -126,8 +134,8 @@ class Sensor {
   bool is_online_{false};
   // 是否显示ui窗口
   bool is_show_window_{false};
-  // 3d模型
-  // ...
+  // 相机3d模型
+  std::unique_ptr<glk::Drawable> ply_model_ptr_{nullptr};
 };
 
 }  // namespace dev

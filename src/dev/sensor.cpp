@@ -1,11 +1,11 @@
 #include "imgui.h"
+#include "portable-file-dialogs.h"
 
 #include "glk/mesh.hpp"
 #include "glk/loaders/ply_loader.hpp"
 
 #include "dev/sensor.hpp"
-
-#include <memory>
+#include "dev/util.hpp"
 
 namespace dev {
 
@@ -18,13 +18,27 @@ uint32_t Sensor::sensors_unique_id = 0;
 
 void Sensor::show() { is_show_window_ = true; }
 
-bool Sensor::load_model(const std::string& ply_file_name) {
-  glk::PLYLoader ply_model(ply_file_name);
-  if (ply_model.indices.empty()) {
-    return false;
+bool Sensor::load_model() {
+  // 选择加载文件路径
+  std::vector<std::string> filters = {"3d model file (.ply)", "*.ply"};
+  std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", data_default_path, filters));
+  while (!dialog->ready()) {
+    usleep(1000);
   }
 
-  ply_model_ptr_ = std::make_unique<glk::Mesh>(ply_model.vertices, ply_model.normals, ply_model.indices);
+  auto file_paths = dialog->result();
+  if (!file_paths.empty()) {
+    glk::PLYLoader ply_model(file_paths[0]);
+    if (ply_model.indices.empty()) {
+      std::string msg = "load 3d model from [" + file_paths[0] + "] failed!";
+      show_pfd_info("load 3d model", msg);
+      return false;
+    } else {
+      ply_model_ptr_ = std::make_unique<glk::Mesh>(ply_model.vertices, ply_model.normals, ply_model.indices);
+      std::string msg = "load 3d model from [" + file_paths[0] + "] ok!";
+      show_pfd_info("load 3d model", msg);
+    }
+  }
   return true;
 }
 

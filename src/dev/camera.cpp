@@ -416,7 +416,7 @@ void Camera::draw_ui() {
   }
   // tips
   if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("load from .yaml");
+    ImGui::SetTooltip("load camera from .yaml");
   }
 
   // 将相机参数写入文件
@@ -436,10 +436,19 @@ void Camera::draw_ui() {
         inst_ptr_->writeParametersToYamlFile(file_path);
       }
     }
-
     // tips
     if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("save to .yaml");
+      ImGui::SetTooltip("save camera to .yaml");
+    }
+
+    // 加载3d模型
+    ImGui::SameLine();
+    if (ImGui::Button("3D")) {
+      load_model();
+    }
+    // tips
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("load 3d model from .ply file");
     }
   }
 

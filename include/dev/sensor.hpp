@@ -5,10 +5,11 @@
 #include <vector>
 #include <memory>
 
+#include "glk/drawble.hpp"
+
 //  前向声明
 namespace glk {
 class GLSLShader;
-class Drawable;
 }
 
 namespace ros {
@@ -77,10 +78,9 @@ class Sensor {
 
   /**
   * @brief 加载.ply模型文件
-  * @param ply_file_name
   * @return
   */
-  bool load_model(const std::string& ply_file_name);
+  bool load_model();
 
   /**
    * @brief 将当前对象标记为删除状态

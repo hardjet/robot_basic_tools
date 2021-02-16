@@ -214,6 +214,7 @@ add_library(guik SHARED
         src/glk/frame_buffer.cpp
         src/glk/pointcloud_buffer.cpp
         src/glk/primitives/primitives.cpp
+        src/glk/loaders/miniply.cpp
         src/glk/loaders/ply_loader.cpp
         src/guik/gl_canvas.cpp
         src/guik/camera_control.cpp

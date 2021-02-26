@@ -28,6 +28,7 @@ PLYLoader::PLYLoader(const std::string& filename) {
 
   printf("ply format %s %d.%d\n", kFileTypes[int(reader.file_type())], reader.version_major(), reader.version_minor());
 
+  // 打印格式、元素、属性等信息
   for (uint32_t i = 0, endI = reader.num_elements(); i < endI; i++) {
     const miniply::PLYElement* elem = reader.get_element(i);
     printf("element %s %u\n", elem->name.c_str(), elem->count);
@@ -42,7 +43,7 @@ PLYLoader::PLYLoader(const std::string& filename) {
   }
 
   uint32_t indexes[3];
-  bool gotVerts = false, gotFaces = false;
+  bool gotVerts = false, gotFaces = false, gotNormals = false;
   while (reader.has_element() && (!gotVerts || !gotFaces)) {
     // 加载vertex
     if (reader.element_is(miniply::kPLYVertexElement) && reader.load_element() && reader.find_pos(indexes)) {
@@ -52,93 +53,52 @@ PLYLoader::PLYLoader(const std::string& filename) {
       // if (reader.find_texcoord(indexes)) {
       //   reader.extract_properties(indexes, 2, miniply::PLYPropertyType::Float, texcoord.data());
       // }
+
+      // 加载法向量
+      if (reader.find_normal(indexes)) {
+        normals.resize(reader.num_rows());
+        reader.extract_properties(indexes, 3, miniply::PLYPropertyType::Float, normals.data());
+        gotNormals = true;
+      }
       gotVerts = true;
     } else if (reader.element_is(miniply::kPLYFaceElement) && reader.load_element() && reader.find_indices(indexes)) {
+      // 检查是否都是三角形
       bool polys = reader.requires_triangulation(indexes[0]);
       if (polys && !gotVerts) {
         fprintf(stderr, "Error: need vertex positions to triangulate faces.\n");
         break;
       }
+      // 提取三角形
       if (polys) {
+        printf("need extract_triangles! num_triangles = %d\n", reader.num_triangles(indexes[0]));
         indices.resize(reader.num_triangles(indexes[0]) * 3);
-        reader.extract_triangles(indexes[0], reinterpret_cast<const float*>(vertices.data()), vertices.size(), miniply::PLYPropertyType::Int,
-                                 indices.data());
+        reader.extract_triangles(indexes[0], reinterpret_cast<const float*>(vertices.data()), vertices.size(),
+                                 miniply::PLYPropertyType::Int, indices.data());
       } else {
-        fprintf(stderr, "Error: must be triangulate faces.\n");
-        break;
+        fprintf(stdout, "num_triangles: %d, sum_of_list_counts: %d\n", reader.num_rows(),
+                reader.sum_of_list_counts(indexes[0]));
+        indices.resize(reader.num_rows() * 3);
+        printf("indices.size() = %zu\n", indices.size());
+        // reader.extract_list_property(indexes[0], miniply::PLYPropertyType::Int, indices.data());
       }
       gotFaces = true;
     }
+
     if (gotVerts && gotFaces) {
       break;
     }
     reader.next_element();
   }
 
-
-  std::ifstream ifs(filename);
-  if (!ifs) {
-    std::cerr << "error: failed to open " << filename << std::endl;
-    return;
+  if (!gotVerts || !gotFaces) {
+    fprintf(stderr, "Error: load %s failed!\n", filename.c_str());
+    vertices.clear();
+    indices.clear();
+  } else if (!gotNormals) {
+    // // 没有法向量需要自己计算
+    // NormalEstimater nest(vertices, indices);
+    // normals = nest.normals;
   }
-
-  int num_vertices = 0;
-  int num_faces = 0;
-  std::vector<std::string> properties;
-  while (!ifs.eof()) {
-    std::string line;
-    std::getline(ifs, line);
-
-    if (line.empty()) {
-      continue;
-    }
-
-    std::stringstream sst(line);
-    std::string token;
-
-    if (line.find("element vertex") != std::string::npos) {
-      sst >> token >> token >> num_vertices;
-    }
-    if (line.find("element face") != std::string::npos) {
-      sst >> token >> token >> num_faces;
-    }
-
-    if (line.find("property float32") != std::string::npos) {
-      std::string property;
-      sst >> token >> token >> property;
-      properties.push_back(property);
-    }
-
-    if (line.find("end") != std::string::npos) {
-      break;
-    }
-  }
-
-  vertices.resize(num_vertices);
-  for (int i = 0; i < num_vertices; i++) {
-    std::string line;
-    std::getline(ifs, line);
-
-    std::stringstream sst(line);
-    sst >> vertices[i][0] >> vertices[i][1] >> vertices[i][2];
-  }
-
-  indices.resize(num_faces * 3);
-  for (int i = 0; i < num_faces; i++) {
-    std::string line;
-    std::getline(ifs, line);
-
-    int faces = 0;
-    std::stringstream sst(line);
-    sst >> faces >> indices[i * 3 + 2] >> indices[i * 3 + 1] >> indices[i * 3];
-
-    if (faces != 3) {
-      std::cerr << "error : only faces with three vertices are supported!!" << std::endl;
-    }
-  }
-
-  NormalEstimater nest(vertices, indices);
-  normals = nest.normals;
 }
 
 }  // namespace glk

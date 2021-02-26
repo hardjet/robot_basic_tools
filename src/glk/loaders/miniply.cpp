@@ -1041,6 +1041,7 @@ bool PLYReader::extract_list_property(uint32_t propIdx, PLYPropertyType destType
   }
 
   const PLYProperty& prop = element()->properties[propIdx];
+  fprintf(stdout, "prop.listData.size: %zu\n", prop.listData.size());
   if (compatible_types(prop.type, destType)) {
     // If no type conversion is required, we can just copy the list data
     // directly over with a single memcpy.

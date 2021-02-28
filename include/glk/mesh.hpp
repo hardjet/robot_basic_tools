@@ -19,7 +19,7 @@ class Mesh : public Drawable {
        const std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
        const std::vector<int> &indices);
 
-  ~Mesh() override;
+  void free() override;
 
   void draw(glk::GLSLShader &shader) const override;
 

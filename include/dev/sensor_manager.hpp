@@ -27,9 +27,17 @@ class SensorManager {
   void add_sensor(dev::Sensor::Ptr& sensor);
 
   /**
+   * @brief opengl渲染
+   */
+  void draw_gl(glk::GLSLShader& shader);
+
+  /**
    * @brief 画ui
    */
   void draw_ui();
+
+  /// 释放资源，主要是opengl 相关资源
+  void free();
 
  private:
   /// 检查并清楚需要删除的传感器

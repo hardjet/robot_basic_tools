@@ -12,6 +12,7 @@ class GLSLShader;
 class Drawable {
  public:
   virtual ~Drawable() = default;
+  virtual void free() {}
 
   virtual void draw(glk::GLSLShader &shader) const = 0;
 };

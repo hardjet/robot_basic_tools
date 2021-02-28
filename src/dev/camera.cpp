@@ -5,6 +5,7 @@
 #include "portable-file-dialogs.h"
 
 #include "glk/drawble.hpp"
+#include "glk/glsl_shader.hpp"
 
 #include "dev/camera.hpp"
 #include "dev/sensor_data.hpp"
@@ -32,7 +33,15 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
-void Camera::draw_gl(glk::GLSLShader& shader) {}
+void Camera::draw_gl(glk::GLSLShader& shader) {
+  if (ply_model_ptr_) {
+    shader.set_uniform("color_mode", 1);
+    shader.set_uniform("model_matrix",
+                       (Eigen::Translation3f(Eigen::Vector3f{1.0, 1.0, 1.0}) * Eigen::Isometry3f::Identity()).matrix());
+    shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.f, 0.f, 1.0f));
+    ply_model_ptr_->draw(shader);
+  }
+}
 
 bool Camera::cv_convert(boost::shared_ptr<const sensor_msgs::Image>& msg) {
   bool res = true;

@@ -165,6 +165,7 @@ void RobotBasicTools::draw_gl() {
     grid.draw(*main_canvas_ptr->shader);
 
     // let the windows draw something on the main canvas
+    sensor_manager_ptr->draw_gl(*main_canvas_ptr->shader);
 
     // flush to the screen
     main_canvas_ptr->unbind();
@@ -175,6 +176,10 @@ void RobotBasicTools::draw_gl() {
     // in case the optimization is going, show the last rendered image
     main_canvas_ptr->render_to_screen();
   }
+}
+
+void RobotBasicTools::free() {
+  sensor_manager_ptr->free();
 }
 
 void RobotBasicTools::main_menu() {

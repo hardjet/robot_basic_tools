@@ -48,6 +48,22 @@ void SensorManager::call_sensors_draw_ui() {
   }
 }
 
+void SensorManager::draw_gl(glk::GLSLShader& shader) {
+  for (auto &sensors : sensors_map) {
+    for (auto &sensor : sensors.second) {
+      sensor->draw_gl(shader);
+    }
+  }
+}
+
+void SensorManager::free() {
+  for (auto &sensors : sensors_map) {
+    for (auto &sensor : sensors.second) {
+      sensor->free();
+    }
+  }
+}
+
 void SensorManager::draw_ui() {
   // 需要执行删除操作
   bool need_to_delete = false;

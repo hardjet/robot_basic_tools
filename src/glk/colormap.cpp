@@ -114,7 +114,7 @@ Eigen::Vector4i colormap(COLORMAP_TYPE type, int x) {
   switch (type) {
     default:
     case TURBO:
-      return Eigen::Vector4i(turbo_srgb_bytes[x][0], turbo_srgb_bytes[x][1], turbo_srgb_bytes[x][2], 255);
+      return Eigen::Vector4i{turbo_srgb_bytes[x][0], turbo_srgb_bytes[x][1], turbo_srgb_bytes[x][2], 255};
       break;
   }
 
@@ -127,7 +127,7 @@ Eigen::Vector4f colormapf(COLORMAP_TYPE type, float x_) {
   switch (type) {
     default:
     case TURBO:
-      return Eigen::Vector4f(turbo_srgb_floats[x][0], turbo_srgb_floats[x][1], turbo_srgb_floats[x][2], 1.0f);
+      return Eigen::Vector4f{turbo_srgb_floats[x][0], turbo_srgb_floats[x][1], turbo_srgb_floats[x][2], 1.0f};
       break;
   }
 

@@ -16,6 +16,8 @@ class Application {
   virtual bool init(const char* window_name, const char* imgui_config_path, const Eigen::Vector2i& size,
                     const char* glsl_version);
 
+  virtual void free() {}
+
   void run();
 
   void close();

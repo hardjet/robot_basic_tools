@@ -29,7 +29,7 @@ bool Sensor::load_model() {
   auto file_paths = dialog->result();
   if (!file_paths.empty()) {
     glk::PLYLoader ply_model(file_paths[0]);
-    if (ply_model.indices.empty()) {
+    if (ply_model.vertices.empty() || ply_model.normals.empty() || ply_model.indices.empty()) {
       std::string msg = "load 3d model from [" + file_paths[0] + "] failed!";
       show_pfd_info("load 3d model", msg);
       return false;
@@ -40,6 +40,19 @@ bool Sensor::load_model() {
     }
   }
   return true;
+}
+
+Sensor::~Sensor() {
+  if (ply_model_ptr_) {
+    ply_model_ptr_->free();
+  }
+}
+
+void Sensor::free() {
+  if (ply_model_ptr_) {
+    ply_model_ptr_->free();
+    ply_model_ptr_ = nullptr;
+  }
 }
 
 void Sensor::draw_status() {

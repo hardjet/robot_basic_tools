@@ -39,7 +39,7 @@ class Texture {
  private:
   int width;
   int height;
-  GLuint texture;
+  GLuint texture{};
 };
 }  // namespace glk
 

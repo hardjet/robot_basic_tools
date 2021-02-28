@@ -45,8 +45,9 @@ bool Application::init(const char *window_name, const char *imgui_config_path, c
     return false;
   }
 
+  // glfwWindowHint(GLFW_SAMPLES, 8);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
   window = glfwCreateWindow(size[0], size[1], window_name, nullptr, nullptr);
   if (window == nullptr) {
@@ -103,6 +104,9 @@ void Application::run() {
 
     usleep(5000);
   }
+
+  // 释放资源
+  free();
 }
 
 void Application::close() { glfwSetWindowShouldClose(window, 1); }

@@ -51,7 +51,7 @@ class Sensor {
    * @brief 虚析构函数
    *
    */
-  virtual ~Sensor() = default;
+  virtual ~Sensor();
 
   /**
    * @brief 修改传感器名称
@@ -81,6 +81,11 @@ class Sensor {
   * @return
   */
   bool load_model();
+
+  /*
+  * @brief 释放资源
+  */
+  void free();
 
   /**
    * @brief 将当前对象标记为删除状态

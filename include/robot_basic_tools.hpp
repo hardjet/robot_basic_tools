@@ -47,6 +47,8 @@ class RobotBasicTools : public guik::Application {
    */
   void framebuffer_size_callback(const Eigen::Vector2i &size) override { main_canvas_ptr->set_size(size); }
 
+  void free() override;
+
  private:
   /**
    * @brief draw main menu

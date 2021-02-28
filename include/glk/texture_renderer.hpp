@@ -12,7 +12,7 @@ namespace glk {
  */
 class TextureRenderer {
  public:
-  TextureRenderer(const std::string& data_directory) {
+  explicit TextureRenderer(const std::string& data_directory) {
     std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices = {
         Eigen::Vector3f(-1.0f, -1.0f, 0.0f), Eigen::Vector3f(1.0f, -1.0f, 0.0f), Eigen::Vector3f(-1.0f, 1.0f, 0.0f),
         Eigen::Vector3f(1.0f, 1.0f, 0.0f)};
@@ -22,7 +22,7 @@ class TextureRenderer {
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT) * 3 * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 
     if (!shader.init(data_directory + "/shader/texture")) {
       return;
@@ -35,7 +35,7 @@ class TextureRenderer {
     glEnableVertexAttribArray(position_loc);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // glDisableVertexAttribArray(0);
@@ -60,8 +60,8 @@ class TextureRenderer {
   }
 
  private:
-  GLuint vao;
-  GLuint vbo;
+  GLuint vao{};
+  GLuint vbo{};
 
   glk::GLSLShader shader;
 };

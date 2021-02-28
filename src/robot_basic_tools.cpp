@@ -178,9 +178,7 @@ void RobotBasicTools::draw_gl() {
   }
 }
 
-void RobotBasicTools::free() {
-  sensor_manager_ptr->free();
-}
+void RobotBasicTools::free() { sensor_manager_ptr->free(); }
 
 void RobotBasicTools::main_menu() {
   ImGui::BeginMainMenuBar();

@@ -77,14 +77,14 @@ class Sensor {
   void show();
 
   /**
-  * @brief 加载.ply模型文件
-  * @return
-  */
+   * @brief 加载.ply模型文件
+   * @return
+   */
   bool load_model();
 
   /*
-  * @brief 释放资源
-  */
+   * @brief 释放资源
+   */
   void free();
 
   /**

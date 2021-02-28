@@ -48,7 +48,7 @@ void SensorManager::call_sensors_draw_ui() {
   }
 }
 
-void SensorManager::draw_gl(glk::GLSLShader& shader) {
+void SensorManager::draw_gl(glk::GLSLShader &shader) {
   for (auto &sensors : sensors_map) {
     for (auto &sensor : sensors.second) {
       sensor->draw_gl(shader);

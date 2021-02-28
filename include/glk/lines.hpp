@@ -31,10 +31,10 @@ class Lines : public Drawable {
   int num_vertices;
   int num_indices;
 
-  GLuint vao;  // vertex array object
-  GLuint vbo;  // vertices
-  GLuint cbo;  // colors
-  GLuint ibo;  // infos
+  GLuint vao;    // vertex array object
+  GLuint vbo;    // vertices
+  GLuint cbo;    // colors
+  GLuint ibo;    // infos
   GLuint ebo{};  // elements
 };
 }  // namespace glk

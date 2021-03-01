@@ -10,7 +10,7 @@
 namespace guik {
 
 ArcCameraControl::ArcCameraControl()
-    : center(0.0f, 0.0f, 0.0f), distance(10.0f), left_button_down(false), theta(0.0f), phi(-60.0f * M_PI / 180.0f) {
+    : center(0.0f, 0.0f, 0.0f), distance(5.0f), left_button_down(false), theta(0.0f), phi(-60.0f * M_PI / 180.0f) {
   left_button_down = false;
   middle_button_down = false;
 }

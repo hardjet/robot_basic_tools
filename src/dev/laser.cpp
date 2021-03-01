@@ -1,7 +1,8 @@
-#include <iostream>
-
+#include <memory>
 #include "imgui.h"
-#include "portable-file-dialogs.h"
+
+#include "glk/glsl_shader.hpp"
+#include "glk/pointcloud_buffer.hpp"
 
 #include "dev/sensor_data.hpp"
 #include "dev/laser.hpp"
@@ -13,20 +14,77 @@ Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ro
   sensor_topic_list_.resize(1);
 
   // 设置深度点云数据接收
-  laser_data_ = std::make_shared<SensorData<sensor_msgs::LaserScan>>(nh_, 5);
+  laser_data_ptr_ = std::make_shared<SensorData<sensor_msgs::LaserScan>>(nh_, 5);
   // 频率/2
-  laser_data_->set_data_rate(2);
+  laser_data_ptr_->set_data_rate(2);
 }
 
-boost::shared_ptr<const sensor_msgs::LaserScan> Laser::data() { return laser_data_->data(); }
+boost::shared_ptr<const sensor_msgs::LaserScan> Laser::data() { return laser_data_ptr_->data(); }
 
-void Laser::draw_gl(glk::GLSLShader& shader) {}
+static pcl::PointCloud<pcl::PointXYZI>::Ptr convert_laserscan_to_pc(sensor_msgs::LaserScan::ConstPtr& laser_scan) {
+  pcl::PointCloud<pcl::PointXYZI>::Ptr pc(new pcl::PointCloud<pcl::PointXYZI>());
+
+  float angle_min = laser_scan->angle_min;
+  float angle_increment = laser_scan->angle_increment;
+
+  // 填充点云
+  // 当前range数据对应的角度
+  float cur_angle;
+  for (size_t i = 0; i < laser_scan->ranges.size(); i++) {
+    cur_angle = angle_min + i * angle_increment;
+    pcl::PointXYZI p{};
+    p.x = std::cos(cur_angle) * laser_scan->ranges.at(i);
+    p.y = std::sin(cur_angle) * laser_scan->ranges.at(i);
+    p.z = 0;
+    p.intensity = laser_scan->intensities.empty() ? float(0.) : laser_scan->intensities.at(i);
+    pc->push_back(p);
+  }
+
+  return pc;
+}
+
+void Laser::free() {
+  if (pointcloud_buffer_ptr_) {
+    pointcloud_buffer_ptr_->free();
+  }
+  free_model();
+}
+
+void Laser::draw_gl(glk::GLSLShader& shader) {
+  // 获取最新的激光数据
+  auto laser_data = data();
+
+  // 如果有数据
+  if (laser_data) {
+    // 时间戳不等才更新
+    if (laser_data->header.stamp.nsec != time_ns_) {
+      pointcloud_buffer_ptr_.reset(new glk::PointCloudBuffer(convert_laserscan_to_pc(laser_data)));
+      time_ns_ = laser_data->header.stamp.nsec;
+    }
+
+    if (pointcloud_buffer_ptr_) {
+      // 画图
+      shader.set_uniform("color_mode", 1);
+      shader.set_uniform("info_values", Eigen::Vector4i(1, 0, 0, 0));
+      shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+      pointcloud_buffer_ptr_->draw(shader);
+    }
+  }
+
+  if (ply_model_ptr_) {
+    shader.set_uniform("color_mode", 1);
+    shader.set_uniform("model_matrix",
+                       (Eigen::Translation3f(Eigen::Vector3f{1.0, 1.0, 1.0}) * Eigen::Isometry3f::Identity()).matrix());
+    shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.f, 0.f, 1.0f));
+    ply_model_ptr_->draw(shader);
+  }
+}
 
 void Laser::check_online_status() {
   bool online = false;
 
   // 获取深度点云最新数据
-  auto laser_data_ptr = laser_data_->data();
+  auto laser_data_ptr = laser_data_ptr_->data();
   if (laser_data_ptr) {
     if (ros::Time::now().sec - laser_data_ptr->header.stamp.sec < 2) {
       online = true;
@@ -52,11 +110,11 @@ void Laser::draw_ui_topic_name() {
         show_pfd_info("warning", "please set topic name first!");
         enable_topic_ = false;
       } else {
-        laser_data_->subscribe(sensor_topic_list_[0], 5);
+        laser_data_ptr_->subscribe(sensor_topic_list_[0], 5);
       }
     } else {
       // 暂停接收
-      laser_data_->unsubscribe();
+      laser_data_ptr_->unsubscribe();
     }
   }
   // 提示设备状态
@@ -75,7 +133,7 @@ void Laser::draw_ui_topic_name() {
     if (laser_topic_name_char[0] != '\0' && laser_topic_name_char[0] != ' ') {
       sensor_topic_list_[0] = laser_topic_name_char;
       // 暂停接收
-      laser_data_->unsubscribe();
+      laser_data_ptr_->unsubscribe();
       enable_topic_ = false;
     }
   } else {
@@ -107,7 +165,7 @@ void Laser::draw_ui_topic_name() {
     if (selected_id != -1) {
       sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
-      laser_data_->unsubscribe();
+      laser_data_ptr_->unsubscribe();
       enable_topic_ = false;
     }
 

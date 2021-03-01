@@ -53,6 +53,11 @@ class Sensor {
    */
   virtual ~Sensor();
 
+  /*
+   * @brief 释放资源
+   */
+  virtual void free() = 0;
+
   /**
    * @brief 修改传感器名称
    * @param name 将传感器名称设置成
@@ -82,10 +87,11 @@ class Sensor {
    */
   bool load_model();
 
-  /*
-   * @brief 释放资源
+  /**
+   * @brief 释放模型资源
+   * @return
    */
-  void free();
+  void free_model();
 
   /**
    * @brief 将当前对象标记为删除状态

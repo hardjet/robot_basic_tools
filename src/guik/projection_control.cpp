@@ -5,11 +5,18 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <utility>
 
 namespace guik {
 
-ProjectionControl::ProjectionControl(const Eigen::Vector2i& size)
-    : show_window(false), size(size), projection_mode(0), fovy(30.0f), width(10.0f), near(1.0f), far(1000.0f) {}
+ProjectionControl::ProjectionControl(Eigen::Vector2i size)
+    : show_window(false),
+      size(std::move(size)),
+      projection_mode(0),
+      fovy(30.0f),
+      width(10.0f),
+      near(0.1f),
+      far(100.0f) {}
 
 ProjectionControl::~ProjectionControl() = default;
 

@@ -3,6 +3,10 @@
 #include <sensor_msgs/LaserScan.h>
 #include "dev/sensor.hpp"
 
+namespace glk {
+class PointCloudBuffer;
+}
+
 namespace dev {
 
 template <class M>
@@ -22,6 +26,8 @@ class Laser : public Sensor {
 
   ~Laser() override = default;
 
+  void free() override;
+
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图
@@ -35,7 +41,11 @@ class Laser : public Sensor {
   // ros topic 使能
   bool enable_topic_{false};
   // 点云数据
-  std::shared_ptr<SensorData<sensor_msgs::LaserScan>> laser_data_;
+  std::shared_ptr<SensorData<sensor_msgs::LaserScan>> laser_data_ptr_{nullptr};
+  // 点云数据显示所用
+  std::shared_ptr<glk::PointCloudBuffer> pointcloud_buffer_ptr_{nullptr};
+  // 当前pointcloud_buffer中数据的时间ns数
+  uint32_t time_ns_{0};
 
  private:
   /// 绘制话题ui

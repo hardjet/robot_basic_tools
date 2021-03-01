@@ -48,7 +48,7 @@ Sensor::~Sensor() {
   }
 }
 
-void Sensor::free() {
+void Sensor::free_model() {
   if (ply_model_ptr_) {
     ply_model_ptr_->free();
     ply_model_ptr_ = nullptr;

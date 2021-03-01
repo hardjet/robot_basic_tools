@@ -8,26 +8,28 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+#include "glk/drawble.hpp"
+
 namespace glk {
 
 class GLSLShader;
 
-class PointCloudBuffer {
+class PointCloudBuffer : public Drawable{
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   using Ptr = std::shared_ptr<PointCloudBuffer>;
 
   explicit PointCloudBuffer(const std::string& cloud_filename);
   explicit PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& cloud);
-  ~PointCloudBuffer();
 
-  void draw(glk::GLSLShader& shader) const;
+  void free() override;
+
+  void draw(glk::GLSLShader &shader) const override;
 
  private:
   GLuint vao{};
   GLuint vbo{};
-  int stride;
-  int num_points;
+  int stride_{};
+  int num_points_{};
 };
 
 }  // namespace glk

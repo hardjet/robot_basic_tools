@@ -120,24 +120,24 @@ void Lines::draw(glk::GLSLShader& shader) const {
 
   glEnableVertexAttribArray(position_loc);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
   if (cbo) {
     color_loc = shader.attrib("vert_color");
     glEnableVertexAttribArray(color_loc);
     glBindBuffer(GL_ARRAY_BUFFER, cbo);
-    glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
   }
 
   if (ibo) {
     info_loc = shader.attrib("vert_info");
     glEnableVertexAttribArray(info_loc);
     glBindBuffer(GL_ARRAY_BUFFER, ibo);
-    glVertexAttribIPointer(info_loc, 4, GL_INT, 0, 0);
+    glVertexAttribIPointer(info_loc, 4, GL_INT, 0, nullptr);
   }
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-  glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
   glDisableVertexAttribArray(position_loc);

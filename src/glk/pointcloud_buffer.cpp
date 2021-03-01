@@ -11,13 +11,12 @@ PointCloudBuffer::PointCloudBuffer(const std::string &cloud_filename) {
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>());
   if (pcl::io::loadPCDFile(cloud_filename, *cloud)) {
     std::cerr << "error: failed to load " << cloud_filename << std::endl;
-    num_points = 0;
+    num_points_ = 0;
     return;
   }
 
-  stride = sizeof(pcl::PointXYZI);
-  num_points = cloud->size();
-  // std::cout << "num_points " << num_points << std::endl;
+  stride_ = sizeof(pcl::PointXYZI);
+  num_points_ = cloud->size();
 
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
@@ -28,9 +27,8 @@ PointCloudBuffer::PointCloudBuffer(const std::string &cloud_filename) {
 }
 
 PointCloudBuffer::PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr &cloud) {
-  stride = sizeof(pcl::PointXYZI);
-  num_points = cloud->size();
-  // std::cout << "num_points " << num_points << ", stride " << stride << std::endl;
+  stride_ = sizeof(pcl::PointXYZI);
+  num_points_ = cloud->size();
 
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
@@ -40,13 +38,13 @@ PointCloudBuffer::PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstP
   glBufferData(GL_ARRAY_BUFFER, cloud->size() * sizeof(pcl::PointXYZI), cloud->points.data(), GL_STATIC_DRAW);
 }
 
-PointCloudBuffer::~PointCloudBuffer() {
+void PointCloudBuffer::free() {
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(1, &vbo);
 }
 
 void PointCloudBuffer::draw(glk::GLSLShader &shader) const {
-  if (num_points == 0) {
+  if (num_points_ == 0) {
     return;
   }
 
@@ -56,12 +54,12 @@ void PointCloudBuffer::draw(glk::GLSLShader &shader) const {
   glEnableVertexAttribArray(position_loc);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, nullptr);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride_, nullptr);
 
-  glDrawArrays(GL_POINTS, 0, num_points);
+  glDrawArrays(GL_POINTS, 0, num_points_);
 
+  glDisableVertexAttribArray(position_loc);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glDisableVertexAttribArray(0);
 }
 
 }  // namespace glk

@@ -16,7 +16,7 @@ class Primitives {
   ~Primitives() { delete instance_; }
 
  public:
-  enum PrimitiveType { ICOSAHEDRON = 0, SPHERE, CUBE, CONE, GRID, COORDINATE_SYSTEM, BUNNY, NUM_PRIMITIVES };
+  enum PrimitiveType { ICOSAHEDRON = 0, SPHERE, CUBE, CONE, GRID, COORDINATE_SYSTEM, NUM_PRIMITIVES };
 
   static Primitives *instance() {
     if (instance_ == nullptr) {

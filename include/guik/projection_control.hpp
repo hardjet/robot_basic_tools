@@ -9,7 +9,7 @@ class ProjectionControl {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  explicit ProjectionControl(const Eigen::Vector2i& size);
+  explicit ProjectionControl(Eigen::Vector2i size);
   ~ProjectionControl();
 
   void set_size(const Eigen::Vector2i& _size) { this->size = _size; }

@@ -80,7 +80,7 @@
                                     "created": 1611057350633,
                                     "text": "点云数据显示",
                                     "layout": null,
-                                    "progress": 1
+                                    "progress": 9
                                 },
                                 "children": []
                             }
@@ -101,7 +101,7 @@
                             "id": "c99zfnxnmy80",
                             "created": 1613379878088,
                             "text": "增加3D模型加载显示",
-                            "progress": 1
+                            "progress": 9
                         },
                         "children": []
                     }
@@ -289,7 +289,7 @@
                             "id": "c9k4hs5bso80",
                             "created": 1614409749103,
                             "text": "资源使用，释放优化",
-                            "progress": 1
+                            "progress": 5
                         },
                         "children": []
                     }

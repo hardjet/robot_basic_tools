@@ -32,6 +32,8 @@ class Camera : public Sensor {
 
   ~Camera() override = default;
 
+  void free() override { free_model(); }
+
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图

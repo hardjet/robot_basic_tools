@@ -53,10 +53,10 @@ const glk::Drawable &Primitives::primitive(PrimitiveType type) {
         glk::Grid grid;
         meshes[type].reset(new glk::Lines(0.01f, grid.vertices));
       } break;
-      case BUNNY: {
-        glk::PLYLoader ply("data/models/bunny.ply");
-        meshes[type].reset(new glk::Mesh(ply.vertices, ply.normals, ply.indices));
-      } break;
+      // case BUNNY: {
+      //   glk::PLYLoader ply("data/models/bunny.ply");
+      //   meshes[type].reset(new glk::Mesh(ply.vertices, ply.normals, ply.indices));
+      // } break;
       case COORDINATE_SYSTEM: {
         glk::CoordinateSystem coord;
         meshes[type].reset(new glk::Lines(0.01f, coord.vertices, coord.colors));

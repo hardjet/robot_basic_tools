@@ -102,13 +102,13 @@ void Laser::draw_ui_topic_name() {
 
   ImGui::Separator();
 
-  if (ImGui::Checkbox("##laser_topic", &enable_topic_)) {
+  if (ImGui::Checkbox("##laser_topic", &is_enable_topic_)) {
     // 选中状态
-    if (enable_topic_) {
+    if (is_enable_topic_) {
       // 如果topic有效才启用数据接收
       if (sensor_topic_list_[0].empty()) {
         show_pfd_info("warning", "please set topic name first!");
-        enable_topic_ = false;
+        is_enable_topic_ = false;
       } else {
         laser_data_ptr_->subscribe(sensor_topic_list_[0], 5);
       }
@@ -134,7 +134,7 @@ void Laser::draw_ui_topic_name() {
       sensor_topic_list_[0] = laser_topic_name_char;
       // 暂停接收
       laser_data_ptr_->unsubscribe();
-      enable_topic_ = false;
+      is_enable_topic_ = false;
     }
   } else {
     // 恢复名称
@@ -166,7 +166,7 @@ void Laser::draw_ui_topic_name() {
       sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
       laser_data_ptr_->unsubscribe();
-      enable_topic_ = false;
+      is_enable_topic_ = false;
     }
 
     ImGui::EndPopup();

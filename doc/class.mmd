@@ -1,0 +1,443 @@
+classDiagram
+class Application{
+ %%GUI应用程序框架基类
+ +init(...) bool
+ +free()
+ +run()
+ +close()
+ +draw_ui()
+ +draw_gl()
+ +framebuffer_size_callback(...)
+
+ #GLFWwindow* window
+}
+
+class RobotBasicTools{
+ %%机器基础工具应用程序
+ +init(...) bool
+ +free()
+ +draw_ui()
+ +draw_gl()
+ +framebuffer_size_callback(...)
+
+ -main_menu()
+ -context_menu()
+
+ -std::unique_ptr<guik::GLCanvas> main_canvas_ptr
+ -std::unique_ptr<guik::ProgressModal> progress_ptr
+ -std::shared_ptr<dev::SensorManager> sensor_manager_ptr
+ -std::shared_ptr<dev::AprilBoard> april_board_ptr
+ -std::unique_ptr<calibration::CamLaserCalib> cl_calib_ptr
+}
+
+class GLCanvas{
+ %%处理openGL中相机模型，投影方式以及渲染显示
+ +ready() bool
+ +reset_camera()
+ +set_size(...)
+ +mouse_control()
+ +bind(clear_buffers)
+ +unbind()
+ +render_to_screen(color_buffer_id)
+ +pick_info(...) Vector4i
+ +pick_depth(...) float
+ +unproject(...) Vector3f
+ +show_shader_setting()
+ +draw_ui()
+ +show_projection_setting()
+
+ +std::unique_ptr<glk::GLSLShader> shader
+ +std::unique_ptr<glk::FrameBuffer> frame_buffer
+ +std::unique_ptr<glk::TextureRenderer> texture_renderer
+ +std::unique_ptr<guik::CameraControl> camera_control
+ +std::unique_ptr<guik::ProjectionControl> projection_control
+}
+
+class Singleton{
+ %%单实例模板类
+ <<template>>
+}
+
+SensorManager <--o Singleton
+
+
+Application <|-- RobotBasicTools : I
+GLCanvas <--o RobotBasicTools : D
+ProgressModal <--o RobotBasicTools : D
+Singleton <--o RobotBasicTools : D
+AprilBoard <--o RobotBasicTools : D
+CamLaserCalib <--o RobotBasicTools : D
+
+GLSLShader <--o GLCanvas : D
+TextureRenderer <--o GLCanvas : D
+FrameBuffer <--o GLCanvas : D
+ProjectionControl <--o GLCanvas : D
+CameraControl <--o GLCanvas : D
+
+class GLSLShader{
+ %%openGL染色器控制操作
+ +init() bool
+ +use()
+ +attrib(name) GLint
+ +uniform(name) GLint
+ +get_uniform4f(name) Vector4f
+ +get_uniform_matrix4f(name) Matrix4f
+ +set_uniform(name, value)
+
+ -read_shader_from_file(filename, shader_type)
+
+ -GLuint shader_program
+ -std::unordered_map<std::string, GLint> attrib_cache
+ -std::unordered_map<std::string, GLint> uniform_cache
+}
+
+class FrameBuffer{
+ %%openGL帧缓存封装
+ +bind()
+ +unbind()
+ +add_color_buffer(...)
+ +color() Texture
+ +depth() Texture
+
+ -int width
+ -int height
+ -GLint viewport[4]
+ -GLuint frame_buffer
+ -std::vector<std::shared_ptr
+ <Texture>> color_buffers
+ -std::shared_ptr<Texture> depth_buffer
+}
+
+class Texture{
+ %%openGL纹理封装
+ +id() GLuint
+ +size() Vector2i
+ +T_read_pixels() std_vector_T
+}
+
+Texture "*" <--o "1" FrameBuffer : D
+
+class TextureRenderer{
+ %%openGL帧缓存显示控制
+ +draw(texture)
+ 
+ -GLSLShader shader
+}
+
+GLSLShader <--* TextureRenderer : C
+
+class CameraControl{
+ %%openGL相机控制基类
+ +mouse(...)
+ +drag(...)
+ +scroll(rel)
+ +view_matrix() Matrix4f
+}
+
+class ArcCameraControl{
+ %%极坐标arctic相机控制模型
+ +mouse(...)
+ +drag(...)
+ +scroll(rel)
+ +view_matrix() Matrix4f
+ 
+ -Vector3f center
+ -double distance
+ -...
+}
+
+CameraControl <|-- ArcCameraControl : I
+
+class ProjectionControl{
+ %%openGL投影控制
+ +set_size(size)
+ +projection_matrix() Matrix4f
+ +draw_ui()
+ +show()
+
+ -int projection_mode
+ -Vector2i size
+ -bool show_window
+ -float fovy
+ -float width
+ -float near
+ -float far
+}
+
+class Drawable{
+ %%openGL绘图对象抽象类
+ +free()
+ +draw(shader)
+}
+
+class Lines{
+ %%openGL直线对象
+ +draw(shader)
+}
+
+class Mesh{
+ %%openGL_mesh对象
+ +free()
+ +draw(shader)
+}
+
+class PointCloudBuffer{
+ %%openGL点云对象
+ +free()
+ +draw(shader)
+}
+
+Drawable <|-- Lines : I
+Drawable <|-- Mesh : I
+Drawable <|-- PointCloudBuffer : I
+
+class Primitives{
+ %%openGL图元工厂类
+ +instance()* Primitives_ptr
+ +primitive(type) Drawable
+
+ -Primitives *instance_
+ -std::vector<std::shared_ptr<
+ glk::Drawable>> meshes
+}
+
+class Icosahedron{
+ %%二十面体
+}
+
+class Cube{
+ %%立方体
+}
+
+class Cone{
+ %%椎体
+}
+
+class Grid{
+ %%栅格
+}
+
+class CoordinateSystem{
+ %%坐标系
+}
+
+Drawable "*" <--o "1" Primitives : D
+
+Icosahedron <-- Primitives : DP
+Cone <-- Primitives : DP
+Cube <-- Primitives : DP
+Grid <-- Primitives : DP
+CoordinateSystem <-- Primitives : DP
+Lines <-- Primitives : DP
+Mesh <-- Primitives : DP
+
+Primitives <-- RobotBasicTools : DP
+
+class ProgressInterface{
+ %%GUI进度条接口
+ <<interface>>
+ +set_title(title)
+ +set_text(text)
+ +set_maximum(max)
+ +set_current(current)
+ +increment()
+}
+
+class ProgressModal{
+ %%GUI进度条模块
+ +set_title(title)
+ +set_text(text)
+ +set_maximum(max)
+ +set_current(current)
+ +increment()
+ +T_open(...)
+ +T_result() T
+ +run(task_name) bool
+
+ -thread thread_
+ -boost_any result_
+ -atomic_bool running_
+ -atomic_int max_
+ -atomic_int current_
+ -...
+}
+
+ProgressInterface <|-- ProgressModal : I
+
+class Sensor{
+ %%传感器抽象类
+ +free()
+ +change_sensor_name(name)
+ +is_sensor_online() bool
+ +draw_status()
+ +show()
+ +load_model()
+ +free_model()
+ +marked_to_be_deleted()
+ +is_to_be_deleted() bool
+ +draw_gl(shader)
+ +draw_ui()
+
+ +string sensor_name
+ +uint32_t sensor_id
+ +...
+
+ #std::unique_ptr<glk::Drawable> ply_model_ptr_
+ #...
+}
+
+class SensorManager{
+ %%传感器管理器
+ +add_sensor(sensor)
+ +draw_gl(shader)
+ +draw_ui()
+ +free()
+
+ +std::unordered_map<dev::SENSOR_TYPE, 
+ std::list<dev::Sensor::Ptr>> sensors_map
+
+ -check_and_clear_sensors()
+ -call_sensors_draw_ui()
+}
+
+Drawable <--o Sensor : D
+Sensor <--o SensorManager : D
+
+class SensorData{
+ %%传感器数据抽象类
+ <<template>>
+ +subscribe(topic, queue_size)
+ +unsubscribe()
+ +set_msgs_deque_size(cache_size)
+ +set_data_rate(data_rate)
+
+ -callback(msg)
+
+ -boost::shared_ptr<
+ message_filters::Subscriber<M>> sub_
+ -std::deque<MConstPtr> msgs_
+ -...
+}
+
+class Laser{
+ %%激光传感器封装
+ +free()
+ +draw_gl(shader)
+ +draw_ui()
+
+ -check_online_status()
+ -...()
+
+ -bool is_show_laser_
+ -std::shared_ptr<SensorData<
+ sensor_msgs::LaserScan>> laser_data_ptr_
+ -std::shared_ptr<
+ glk::PointCloudBuffer> pointcloud_buffer_ptr_
+}
+
+class Camera{
+ %%相机传感器封装
+ +free()
+ +draw_gl(shader)
+ +draw_ui()
+ +data()
+ +cam() camera_model_Camera
+ -creat_instance(current_camera_type)
+ -...()
+
+ -boost::shared_ptr<
+ camera_model::Camera> inst_ptr_
+ -std::shared_ptr<SensorData<
+ sensor_msgs::Image>> image_data_ptr_
+ -std::shared_ptr<SensorData<
+ sensor_msgs::PointCloud2>> points_data_ptr_
+ -std::shared_ptr<dev::ImageShow> im_show_ptr_
+ -...
+
+}
+
+class ImageShow{
+ %%图像显示封装
+ +update_image(image)
+ +enable(window_name, is_use_opencv)
+ +disable()
+ +show_image(is_show_image)
+
+ -show_in_opencv()
+ -update_texture()
+
+}
+
+PointCloudBuffer <--o Laser : D
+SensorData <--o Laser : D
+SensorData <--o Camera : D
+Sensor <|-- Laser : I
+Sensor <|-- Camera : I
+ImageShow <--o Camera
+
+class AprilBoard{
+ %%标定板封装
+ +draw_ui()
+ +show()
+ +boost::shared_ptr<aslam::
+ cameras::GridCalibrationTargetAprilgrid> board
+}
+
+class BaseCalib{
+ %%标定基础类
+ +show()
+ +T_draw_sensor_selector(name, type, sensor)
+ +draw_gl(shader)
+ +draw_ui()
+
+ #std::shared_ptr<
+ dev::SensorManager> sensor_manager_ptr_
+ #...
+}
+
+class CamLaserCalib{
+ %%相机与单线激光标定类 
+ +draw_gl(shader)
+ +draw_ui()
+
+ -update_data()
+ -get_pose_and_points()
+ -calibration()
+ -check_and_save()
+ -calc()
+ -load_calib_data(file_path)
+ -save_calib_data(file_path)
+
+ -std::shared_ptr<
+ dev::AprilBoard> april_board_ptr_
+ -std::shared_ptr<dev::Camera> cam_ptr_
+ -std::shared_ptr<dev::Laser> laser_ptr_
+ -std::shared_ptr<
+ dev::ImageShow> im_show_dev_ptr_
+ -std::shared_ptr<
+ dev::ImageShow> laser_show_dev_ptr_
+ -std::shared_ptr<Task> task_ptr_
+ -...
+}
+
+
+AprilBoard <--o CamLaserCalib
+Camera <--o CamLaserCalib
+Laser <--o CamLaserCalib
+ImageShow "2" <--o CamLaserCalib
+Task <--o CamLaserCalib
+BaseCalib <|-- CamLaserCalib
+
+class Task{
+ %%标定流程后台任务抽象类
+ +T_do_task(task_name, task, args) bool
+ +T_create(task_name, task, args)
+ +T_result() T
+ +is_terminated(task_name) bool
+
+ -string task_name_
+ -atomic_bool is_running_
+ -thread thread_
+ -boost_any result_
+}
+

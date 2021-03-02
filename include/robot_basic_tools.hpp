@@ -56,7 +56,6 @@ class RobotBasicTools : public guik::Application {
    */
   void main_menu();
 
- private:
   /**
    * @brief handling mouse input
    */
@@ -77,6 +76,7 @@ class RobotBasicTools : public guik::Application {
 
   // 主画布
   std::unique_ptr<guik::GLCanvas> main_canvas_ptr;
+
   // 进度条
   std::unique_ptr<guik::ProgressModal> progress_ptr;
 

@@ -5,7 +5,8 @@
 
 namespace guik {
 
-struct ProgressInterface {
+class ProgressInterface {
+ public:
   ProgressInterface() = default;
 
   virtual ~ProgressInterface() = default;

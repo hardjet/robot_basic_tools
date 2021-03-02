@@ -210,13 +210,13 @@ void Camera::draw_ui_topic_name() {
   ImGui::Separator();
 
   // ---- 修改image topic名称
-  if (ImGui::Checkbox("##image_topic", &enable_topic_[0])) {
+  if (ImGui::Checkbox("##image_topic", &is_enable_topic_[0])) {
     // 选中状态
-    if (enable_topic_[0]) {
+    if (is_enable_topic_[0]) {
       // 如果topic有效才启用数据接收
       if (sensor_topic_list_[0].empty()) {
         show_pfd_info("warning", "please set topic name first!");
-        enable_topic_[0] = false;
+        is_enable_topic_[0] = false;
       } else {
         image_data_ptr_->subscribe(sensor_topic_list_[0], 5);
       }
@@ -242,7 +242,7 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[0] = image_topic_name_char;
       // 暂停接收
       image_data_ptr_->unsubscribe();
-      enable_topic_[0] = false;
+      is_enable_topic_[0] = false;
     }
   } else {
     // 恢复名称
@@ -274,20 +274,20 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
       image_data_ptr_->unsubscribe();
-      enable_topic_[0] = false;
+      is_enable_topic_[0] = false;
     }
 
     ImGui::EndPopup();
   }
 
   // ---- 修改depth points topic名称
-  if (ImGui::Checkbox("##depth_topic", &enable_topic_[1])) {
+  if (ImGui::Checkbox("##depth_topic", &is_enable_topic_[1])) {
     // 选中状态
-    if (enable_topic_[1]) {
+    if (is_enable_topic_[1]) {
       // 如果topic有效才启用数据接收
       if (sensor_topic_list_[1].empty()) {
         show_pfd_info("warning", "please set topic name first!");
-        enable_topic_[1] = false;
+        is_enable_topic_[1] = false;
       } else {
         points_data_ptr_->subscribe(sensor_topic_list_[1], 5);
       }
@@ -313,7 +313,7 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[1] = points_topic_name_char;
       // 暂停接收
       points_data_ptr_->unsubscribe();
-      enable_topic_[1] = false;
+      is_enable_topic_[1] = false;
     }
   } else {
     // 恢复名称
@@ -345,7 +345,7 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[1] = ros_topic_selector_[selected_id];
       // 暂停接收
       points_data_ptr_->unsubscribe();
-      enable_topic_[1] = false;
+      is_enable_topic_[1] = false;
     }
 
     ImGui::EndPopup();

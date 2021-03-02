@@ -39,6 +39,7 @@ const glk::Drawable &Primitives::primitive(PrimitiveType type) {
       case CUBE: {
         // 立方体
         glk::Cube cube;
+        // 扁平化
         glk::Flatize flat(cube.vertices, cube.indices);
         meshes[type].reset(new glk::Mesh(flat.vertices, flat.normals, flat.indices));
       } break;
@@ -53,10 +54,6 @@ const glk::Drawable &Primitives::primitive(PrimitiveType type) {
         glk::Grid grid;
         meshes[type].reset(new glk::Lines(0.01f, grid.vertices));
       } break;
-      // case BUNNY: {
-      //   glk::PLYLoader ply("data/models/bunny.ply");
-      //   meshes[type].reset(new glk::Mesh(ply.vertices, ply.normals, ply.indices));
-      // } break;
       case COORDINATE_SYSTEM: {
         glk::CoordinateSystem coord;
         meshes[type].reset(new glk::Lines(0.01f, coord.vertices, coord.colors));

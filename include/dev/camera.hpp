@@ -53,7 +53,7 @@ class Camera : public Sensor {
   // 相机内参
   std::vector<double> inst_params_;
   // ros topic 使能
-  bool enable_topic_[2]{false, false};
+  bool is_enable_topic_[2]{false, false};
   // 获取图像数据
   std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_ptr_;
   // 获取深度点云数据

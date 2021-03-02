@@ -5,6 +5,8 @@ data/calib_data/
 *.ini
 include/version_info.h
 
+*png
+
 # Prerequisites
 *.d
 

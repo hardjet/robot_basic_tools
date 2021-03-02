@@ -82,18 +82,6 @@ class Sensor {
   void show();
 
   /**
-   * @brief 加载.ply模型文件
-   * @return
-   */
-  bool load_model();
-
-  /**
-   * @brief 释放模型资源
-   * @return
-   */
-  void free_model();
-
-  /**
    * @brief 将当前对象标记为删除状态
    */
   void marked_to_be_deleted() { is_to_be_deleted_ = true; }
@@ -115,6 +103,24 @@ class Sensor {
    */
   virtual void draw_ui() = 0;
 
+ protected:
+  /**
+   * @brief 画数据颜色选择器
+   */
+  void draw_data_color_selector();
+
+  /**
+ * @brief 加载.ply模型文件
+ * @return
+ */
+  bool load_model();
+
+  /**
+   * @brief 释放模型资源
+   * @return
+   */
+  void free_model();
+
  public:
   // 设备名称
   std::string sensor_name;
@@ -132,6 +138,8 @@ class Sensor {
   const std::vector<double> COLOR_ONLINE{173.0 / 255, 1., 47.0 / 255};
   // 设备离线颜色 红色
   const std::vector<double> COLOR_OFFLINE{204.0 / 255, 51.0 / 255, 51.0 / 255};
+  // 数据颜色
+  std::vector<float> data_color_{1.0, 0., 0.};
 
   // ros 句柄
   ros::NodeHandle& nh_;

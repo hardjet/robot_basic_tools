@@ -458,6 +458,10 @@ void Camera::draw_ui() {
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("load 3d model from .ply file");
     }
+
+    // 选择数据颜色
+    ImGui::SameLine();
+    draw_data_color_selector();
   }
 
   // 相机类型控制

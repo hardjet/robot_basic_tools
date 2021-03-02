@@ -17,6 +17,11 @@ Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ro
   laser_data_ptr_ = std::make_shared<SensorData<sensor_msgs::LaserScan>>(nh_, 5);
   // 频率/2
   laser_data_ptr_->set_data_rate(2);
+
+  // 设置默认颜色
+  data_color_[0] = 0.;
+  data_color_[1] = 1.;
+  data_color_[2] = 0.;
 }
 
 boost::shared_ptr<const sensor_msgs::LaserScan> Laser::data() { return laser_data_ptr_->data(); }
@@ -74,7 +79,7 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
   if (ply_model_ptr_) {
     shader.set_uniform("color_mode", 1);
     shader.set_uniform("model_matrix",
-                       (Eigen::Translation3f(Eigen::Vector3f{1.0, 1.0, 1.0}) * Eigen::Isometry3f::Identity()).matrix());
+                       (Eigen::Translation3f(Eigen::Vector3f{0.5, 0.5, 0.5}) * Eigen::Isometry3f::Identity()).matrix());
     shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.f, 0.f, 1.0f));
     ply_model_ptr_->draw(shader);
   }
@@ -205,6 +210,20 @@ void Laser::draw_ui() {
     memset(name_char, 0, 128);
     memcpy(name_char, sensor_name.c_str(), sensor_name.length());
   }
+
+  // 加载3d模型
+  ImGui::SameLine();
+  if (ImGui::Button("3D")) {
+    load_model();
+  }
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("load 3d model from .ply file");
+  }
+
+  // 选择数据颜色
+  ImGui::SameLine();
+  draw_data_color_selector();
 
   draw_ui_topic_name();
 

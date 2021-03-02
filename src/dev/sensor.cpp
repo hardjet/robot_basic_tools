@@ -63,4 +63,8 @@ void Sensor::draw_status() {
   }
 }
 
+void Sensor::draw_data_color_selector() {
+  ImGui::ColorEdit3("##color", data_color_.data(), ImGuiColorEditFlags_NoInputs);
+}
+
 }  // namespace dev

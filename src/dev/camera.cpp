@@ -37,7 +37,7 @@ void Camera::draw_gl(glk::GLSLShader& shader) {
     shader.set_uniform("color_mode", 1);
     shader.set_uniform("model_matrix",
                        (Eigen::Translation3f(Eigen::Vector3f{1.0, 1.0, 1.0}) * Eigen::Isometry3f::Identity()).matrix());
-    shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.f, 0.f, 1.0f));
+    shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
     ply_model_ptr_->draw(shader);
   }
 }

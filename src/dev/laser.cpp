@@ -71,7 +71,7 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
       // 画图
       shader.set_uniform("color_mode", 1);
       shader.set_uniform("info_values", Eigen::Vector4i(1, 0, 0, 0));
-      shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+      shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
       pointcloud_buffer_ptr_->draw(shader);
     }
   }
@@ -80,7 +80,7 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
     shader.set_uniform("color_mode", 1);
     shader.set_uniform("model_matrix",
                        (Eigen::Translation3f(Eigen::Vector3f{0.5, 0.5, 0.5}) * Eigen::Isometry3f::Identity()).matrix());
-    shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 0.f, 0.f, 1.0f));
+    shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
     ply_model_ptr_->draw(shader);
   }
 }

@@ -98,15 +98,15 @@ void RobotBasicTools::draw_ui() {
   }
   // 显示
   ImGui::Text("mouse:(%d, %d)", cur_mouse_pos.x(), cur_mouse_pos.y());
-  ImGui::Text("x:%.2f", pos_3d.x());
-  ImGui::Text("y:%.2f", pos_3d.y());
-  ImGui::Text("z:%.2f", pos_3d.z());
+  ImGui::Text("x:%.3f", pos_3d.x());
+  ImGui::Text("y:%.3f", pos_3d.y());
+  ImGui::Text("z:%.3f", pos_3d.z());
 
   // 判断热键是否按下
   ImGuiIO &io = ImGui::GetIO();
   // 按下大于0.5秒触发
   // alt: 342
-  if (io.KeyAlt || io.KeysDownDuration[342] >= 0.5f) {
+  if (io.KeyAlt && io.KeysDownDuration[342] >= 0.5f) {
     ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "HotKey Activated!");
     is_hotkey_alt_pressed = true;
   } else {

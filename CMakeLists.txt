@@ -171,6 +171,11 @@ message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
 #message(STATUS "EIGEN3_VERSION: ${EIGEN3_VERSION_STRING}")
 #message(STATUS "EIGEN3_INCLUDE_DIR: ${EIGEN3_INCLUDE_DIR}")
 
+# MRPT
+find_package(MRPT 2.2 COMPONENTS math)
+message(STATUS "MRPT_VERSION: ${MRPT_VERSION}")
+message(STATUS "MRPT_LIBRARIES: ${MRPT_LIBRARIES}")
+
 # ----- catking config -----
 catkin_package(
 )
@@ -281,6 +286,7 @@ target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
         ${OpenCV_LIBRARIES}
+        ${MRPT_LIBRARIES}
         guik
         camera_model
         algorithm

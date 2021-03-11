@@ -1,6 +1,8 @@
 #include <fstream>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core.hpp>
+// ransac_detect_2D_lines
+#include <mrpt/math/ransac_applications.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
@@ -33,9 +35,6 @@
 #define STATE_START_CALIB 4
 // 在标定过程中
 #define STATE_IN_CALIB 5
-
-#define DEG2RAD(x) (x * M_PI / 180.0)
-#define RAD2DEG(x) (x * 180.0 / M_PI)
 
 namespace calibration {
 

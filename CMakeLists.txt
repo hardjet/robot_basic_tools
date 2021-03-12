@@ -259,6 +259,7 @@ target_link_libraries(algorithm
         PUBLIC
 #        ${PCL_LIBRARIES}
 #        ${OpenCV_LIBRARIES}
+        ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
         )
 
@@ -272,6 +273,7 @@ add_executable(${PROJECT_NAME}
         src/dev/april_board.cpp
         src/dev/util.cpp
         src/calibration/camera_laser_calib.cpp
+        src/calibration/two_lasers_calib.cpp
         src/image_loader.cpp
         src/robot_basic_tools.cpp
         )
@@ -286,7 +288,6 @@ target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
         ${OpenCV_LIBRARIES}
-        ${MRPT_LIBRARIES}
         guik
         camera_model
         algorithm

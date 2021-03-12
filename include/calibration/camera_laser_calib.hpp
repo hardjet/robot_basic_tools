@@ -81,7 +81,7 @@ class CamLaserCalib : public BaseCalib {
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 当前选中的相机对象
   std::shared_ptr<dev::Camera> cam_ptr_{nullptr};
-  // 当前选中的相机对象
+  // 当前选中的激光对象
   std::shared_ptr<dev::Laser> laser_ptr_{nullptr};
   // 图像显示对象
   std::shared_ptr<dev::ImageShow> im_show_dev_ptr_{nullptr};
@@ -91,7 +91,7 @@ class CamLaserCalib : public BaseCalib {
   std::shared_ptr<Task> task_ptr_{nullptr};
   // 当前图像对象
   boost::shared_ptr<const cv_bridge::CvImage> image_ptr_{nullptr};
-  // 显示使用的image
+  // 显示相机使用的image
   boost::shared_ptr<const cv_bridge::CvImage> show_cam_img_ptr_{nullptr};
   // 显示激光使用的image
   boost::shared_ptr<const cv_bridge::CvImage> show_laser_img_ptr_{nullptr};

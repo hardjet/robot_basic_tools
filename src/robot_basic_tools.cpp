@@ -22,6 +22,7 @@
 
 // 标定工具
 #include "calibration/camera_laser_calib.hpp"
+#include "calibration/two_lasers_calib.hpp"
 
 // ros相关
 #include <ros/package.h>
@@ -42,28 +43,31 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
     return false;
   }
 
-  is_show_imgui_demo = false;
+  is_show_imgui_demo_ = false;
 
   // 获取资源路径
   std::string package_path = ros::package::getPath("robot_basic_tools");
   dev::config_default_path = package_path + "/config";
   dev::data_default_path = package_path + "/data";
 
-  right_clicked_pos.setZero();
-  cur_mouse_pos.setZero();
-  progress_ptr = std::make_unique<guik::ProgressModal>("progress modal");
+  right_clicked_pos_.setZero();
+  cur_mouse_pos_.setZero();
+  progress_ptr_ = std::make_unique<guik::ProgressModal>("progress modal");
   // 创建为单实例对象
-  sensor_manager_ptr = util::Singleton<dev::SensorManager>::instance(nh);
+  sensor_manager_ptr_ = util::Singleton<dev::SensorManager>::instance(nh_);
 
   // 标定板
-  april_board_ptr = std::make_shared<dev::AprilBoard>(dev::data_default_path);
+  april_board_ptr_ = std::make_shared<dev::AprilBoard>(dev::data_default_path);
 
   // 单线激光与相机标定
-  cl_calib_ptr = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr, april_board_ptr);
+  cl_calib_ptr_ = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr_, april_board_ptr_);
+
+  // 两个单线激光标定
+  tl_calib_ptr_ = std::make_unique<calibration::TwoLasersCalib>(sensor_manager_ptr_);
 
   // initialize the main OpenGL canvas
-  main_canvas_ptr = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
-  if (!main_canvas_ptr->ready()) {
+  main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
+  if (!main_canvas_ptr_->ready()) {
     close();
   }
 
@@ -75,8 +79,8 @@ void RobotBasicTools::draw_ui() {
   main_menu();
 
   // just for debug and development
-  if (is_show_imgui_demo) {
-    ImGui::ShowDemoWindow(&is_show_imgui_demo);
+  if (is_show_imgui_demo_) {
+    ImGui::ShowDemoWindow(&is_show_imgui_demo_);
   }
 
   // show basic graph statistics and FPS
@@ -90,14 +94,14 @@ void RobotBasicTools::draw_ui() {
   ImGui::Begin("##stats", nullptr, flags);
 
   // 计算3D坐标
-  float depth = main_canvas_ptr->pick_depth(cur_mouse_pos);
+  float depth = main_canvas_ptr_->pick_depth(cur_mouse_pos_);
   Eigen::Vector3f pos_3d{0, 0, 0};
   // +-1都不是有效的深度值
   if (fabs(std::fabs(depth) - 1.) > 1e-8) {
-    pos_3d = main_canvas_ptr->unproject(cur_mouse_pos, depth);
+    pos_3d = main_canvas_ptr_->unproject(cur_mouse_pos_, depth);
   }
   // 显示
-  ImGui::Text("mouse:(%d, %d)", cur_mouse_pos.x(), cur_mouse_pos.y());
+  ImGui::Text("mouse:(%d, %d)", cur_mouse_pos_.x(), cur_mouse_pos_.y());
   ImGui::Text("x:%.3f", pos_3d.x());
   ImGui::Text("y:%.3f", pos_3d.y());
   ImGui::Text("z:%.3f", pos_3d.z());
@@ -108,9 +112,9 @@ void RobotBasicTools::draw_ui() {
   // alt: 342
   if (io.KeyAlt && io.KeysDownDuration[342] >= 0.5f) {
     ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "HotKey Activated!");
-    is_hotkey_alt_pressed = true;
+    is_hotkey_alt_pressed_ = true;
   } else {
-    is_hotkey_alt_pressed = false;
+    is_hotkey_alt_pressed_ = false;
   }
 
   ImGui::Text("FPS: %.3f fps", io.Framerate);
@@ -132,10 +136,11 @@ void RobotBasicTools::draw_ui() {
   // ImGui::End();
 
   // draw windows
-  main_canvas_ptr->draw_ui();
-  sensor_manager_ptr->draw_ui();
-  april_board_ptr->draw_ui();
-  cl_calib_ptr->draw_ui();
+  main_canvas_ptr_->draw_ui();
+  sensor_manager_ptr_->draw_ui();
+  april_board_ptr_->draw_ui();
+  cl_calib_ptr_->draw_ui();
+  tl_calib_ptr_->draw_ui();
 
   context_menu();
   mouse_control();
@@ -145,39 +150,39 @@ void RobotBasicTools::draw_gl() {
   if (true) {
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-    main_canvas_ptr->bind();
+    main_canvas_ptr_->bind();
 
     // draw coordinate system
-    main_canvas_ptr->shader->set_uniform("color_mode", 2);
-    main_canvas_ptr->shader->set_uniform("model_matrix",
+    main_canvas_ptr_->shader->set_uniform("color_mode", 2);
+    main_canvas_ptr_->shader->set_uniform("model_matrix",
                                          (Eigen::UniformScaling<float>(1.0f) * Eigen::Isometry3f::Identity()).matrix());
     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-    coord.draw(*main_canvas_ptr->shader);
+    coord.draw(*main_canvas_ptr_->shader);
 
     // draw grid
-    main_canvas_ptr->shader->set_uniform("color_mode", 1);
-    main_canvas_ptr->shader->set_uniform(
+    main_canvas_ptr_->shader->set_uniform("color_mode", 1);
+    main_canvas_ptr_->shader->set_uniform(
         "model_matrix",
         (Eigen::Translation3f(Eigen::Vector3f::UnitZ() * -0.02) * Eigen::Isometry3f::Identity()).matrix());
-    main_canvas_ptr->shader->set_uniform("material_color", Eigen::Vector4f(0.8f, 0.8f, 0.8f, 1.0f));
+    main_canvas_ptr_->shader->set_uniform("material_color", Eigen::Vector4f(0.8f, 0.8f, 0.8f, 1.0f));
     const auto &grid = glk::Primitives::instance()->primitive(glk::Primitives::GRID);
-    grid.draw(*main_canvas_ptr->shader);
+    grid.draw(*main_canvas_ptr_->shader);
 
     // let the windows draw something on the main canvas
-    sensor_manager_ptr->draw_gl(*main_canvas_ptr->shader);
+    sensor_manager_ptr_->draw_gl(*main_canvas_ptr_->shader);
 
     // flush to the screen
-    main_canvas_ptr->unbind();
-    main_canvas_ptr->render_to_screen();
+    main_canvas_ptr_->unbind();
+    main_canvas_ptr_->render_to_screen();
 
     glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
   } else {
     // in case the optimization is going, show the last rendered image
-    main_canvas_ptr->render_to_screen();
+    main_canvas_ptr_->render_to_screen();
   }
 }
 
-void RobotBasicTools::free() { sensor_manager_ptr->free(); }
+void RobotBasicTools::free() { sensor_manager_ptr_->free(); }
 
 void RobotBasicTools::main_menu() {
   ImGui::BeginMainMenuBar();
@@ -187,7 +192,7 @@ void RobotBasicTools::main_menu() {
   // this trick is necessary to open ImGUI popup modals from the menubar
   if (ImGui::BeginMenu("Setting")) {
     if (ImGui::MenuItem("AprilTag setting")) {
-      april_board_ptr->show();
+      april_board_ptr_->show();
     }
 
     ImGui::Separator();
@@ -202,13 +207,13 @@ void RobotBasicTools::main_menu() {
   /*** View menu ***/
   if (ImGui::BeginMenu("View")) {
     if (ImGui::MenuItem("Reset camera")) {
-      main_canvas_ptr->reset_camera();
+      main_canvas_ptr_->reset_camera();
     }
     if (ImGui::MenuItem("Shader setting")) {
-      main_canvas_ptr->show_shader_setting();
+      main_canvas_ptr_->show_shader_setting();
     }
     if (ImGui::MenuItem("Projection setting")) {
-      main_canvas_ptr->show_projection_setting();
+      main_canvas_ptr_->show_projection_setting();
     }
     if (ImGui::MenuItem("Clear selections")) {
     }
@@ -218,7 +223,10 @@ void RobotBasicTools::main_menu() {
 
   if (ImGui::BeginMenu("Calibration")) {
     if (ImGui::MenuItem("camera & laser")) {
-      cl_calib_ptr->show();
+      cl_calib_ptr_->show();
+    }
+    if (ImGui::MenuItem("two lasers")) {
+      tl_calib_ptr_->show();
     }
     ImGui::EndMenu();
   }
@@ -226,7 +234,7 @@ void RobotBasicTools::main_menu() {
   /*** Help menu ***/
   if (ImGui::BeginMenu("Help")) {
     if (ImGui::MenuItem("ImGuiDemo")) {
-      is_show_imgui_demo = true;
+      is_show_imgui_demo_ = true;
     }
 
     if (ImGui::MenuItem("About")) {
@@ -242,29 +250,29 @@ void RobotBasicTools::mouse_control() {
   ImGuiIO &io = ImGui::GetIO();
   if (!io.WantCaptureMouse) {
     // let the main canvas handle the mouse input
-    main_canvas_ptr->mouse_control();
+    main_canvas_ptr_->mouse_control();
 
     auto mouse_pos = ImGui::GetMousePos();
     // remember the right click position
     if (ImGui::IsMouseClicked(1)) {
-      right_clicked_pos = Eigen::Vector2i(mouse_pos.x, mouse_pos.y);
+      right_clicked_pos_ = Eigen::Vector2i(mouse_pos.x, mouse_pos.y);
     }
 
     // 记录当前鼠标位置，用于显示当前位置的3D坐标
-    cur_mouse_pos = Eigen::Vector2i(mouse_pos.x, mouse_pos.y);
+    cur_mouse_pos_ = Eigen::Vector2i(mouse_pos.x, mouse_pos.y);
   }
 }
 
 void RobotBasicTools::context_menu() {
   if (ImGui::BeginPopupContextVoid("context menu")) {
     // pickup information of the right clicked object
-    Eigen::Vector4i picked_info = main_canvas_ptr->pick_info(right_clicked_pos);
+    Eigen::Vector4i picked_info = main_canvas_ptr_->pick_info(right_clicked_pos_);
     int picked_type = picked_info[0];  // object type (point, vertex, edge, etc...)
     int picked_id = picked_info[1];    // object ID
 
     // calculate the 3D position of the right clicked pixel
-    float depth = main_canvas_ptr->pick_depth(right_clicked_pos);
-    Eigen::Vector3f pos_3d = main_canvas_ptr->unproject(right_clicked_pos, depth);
+    float depth = main_canvas_ptr_->pick_depth(right_clicked_pos_);
+    Eigen::Vector3f pos_3d = main_canvas_ptr_->unproject(right_clicked_pos_, depth);
 
     ImGui::EndPopup();
   }
@@ -278,9 +286,9 @@ int main(int argc, char **argv) {
 #endif
 
   ros::init(argc, argv, "robot_basic_tools");
-  ros::NodeHandle nh("~");
+  ros::NodeHandle nh_("~");
 
-  std::unique_ptr<guik::Application> app(new RobotBasicTools(nh));
+  std::unique_ptr<guik::Application> app(new RobotBasicTools(nh_));
 
   std::string glsl_version = "#version 330";
   // auto path = ros::package::getPath("robot_basic_tools") + "/imgui.ini";

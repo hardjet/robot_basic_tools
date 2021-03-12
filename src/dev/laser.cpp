@@ -10,7 +10,7 @@
 
 namespace dev {
 
-Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::LASER, "LASER") {
+Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::LASER) {
   sensor_topic_list_.resize(1);
 
   // 设置深度点云数据接收

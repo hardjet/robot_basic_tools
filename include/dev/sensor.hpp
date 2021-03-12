@@ -23,6 +23,7 @@ extern std::string data_default_path;
 
 // sensor type
 enum SENSOR_TYPE { UNDEF = 0, CAMERA = 1, LASER, LIDAR, IMU };
+extern const std::string dev_type_str[];
 
 /**
  * @brief Sensor object 抽象基类
@@ -39,13 +40,12 @@ class Sensor {
    * @param type
    * @param type_str
    */
-  Sensor(std::string name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF,
-         std::string type_str = "undef")
+  Sensor(std::string name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF)
       : sensor_name(std::move(name)),
         nh_(ros_nh),
         sensor_id(sensors_unique_id++),
         sensor_type(type),
-        sensor_type_str(std::move(type_str)) {}
+        sensor_type_str(dev_type_str[type]) {}
 
   /**
    * @brief 虚析构函数

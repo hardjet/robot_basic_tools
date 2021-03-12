@@ -16,6 +16,9 @@ class Line {
   /// 找直线点
   bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img);
 
+  /// 使用ransac的方法找直线
+  bool find_line_ransac(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img);
+
  private:
   /// 将LaserScan转换为点云
   void scan2points(const sensor_msgs::LaserScan& scan_in);

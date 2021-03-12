@@ -13,6 +13,8 @@ namespace dev {
 std::string config_default_path{};
 // 打开数据文件夹默认路径
 std::string data_default_path{};
+// 设备名称
+const std::string dev_type_str[] = {"UNDEF", "CAMERA", "LASER", "LIDAR", "IMU"};//NOLINT
 
 uint32_t Sensor::sensors_unique_id = 0;
 

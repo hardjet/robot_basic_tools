@@ -1,11 +1,12 @@
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/imgproc.hpp>
+// ransac_detect_2D_lines
+#include <mrpt/math/ransac_applications.h>
 
+#include "algorithm/util.h"
 #include "algorithm/line.h"
 
 namespace algorithm {
-
-#define DEG2RAD(x) (x * M_PI / 180.0)
 
 struct LineSeg {
   int id_start;
@@ -14,7 +15,7 @@ struct LineSeg {
 };
 
 Line::Line(const sensor_msgs::LaserScan& scan, double angle_range, double max_range)
-    : angle_range_(DEG2RAD(angle_range)), max_range_(max_range) {
+    : angle_range_(DEG2RAD_RBT(angle_range)), max_range_(max_range) {
   points_.resize(0);
   outlier_points_.resize(0);
   img_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));
@@ -40,6 +41,53 @@ void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
     // 角增量
     angle += scan_in.angle_increment;
   }
+}
+
+bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) {
+  img = img_ptr_->clone();
+  best_line_pts.clear();
+
+  // ransac 数据
+  mrpt::math::CVectorDouble xs, ys;
+  // 检测到的直线
+  std::vector<std::pair<size_t, mrpt::math::TLine2D>> detectedLines;
+  // 时间统计
+  mrpt::system::CTicTac tictac;
+
+  // 先显示所有点
+  // 范围内的点
+  for (auto pt : points_) {
+    int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
+    // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+    int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);
+
+    // 添加数据 不能有0数据
+    if (fabs(pt.x()) > 1e-3 && fabs(pt.y()) > 1e-3) {
+      xs.push_back(pt.x());
+      ys.push_back(pt.y());
+      // std::cout << pt.x() << "," << pt.y() << std::endl;
+    }
+
+    if (col > img_w_ - 1 || col < 0 || row > img_w_ - 1 || row < 0) continue;
+
+    cv::Vec3b color_value(0, 255, 0);
+    img.at<cv::Vec3b>(row, col) = color_value;
+  }
+
+  // 点数过少
+  if (xs.size() < 100) {
+    return false;
+  }
+
+  // 开始计时
+  tictac.Tic();
+
+  // 直线内点距离门限5cm，有效点数门限50个
+  ransac_detect_2D_lines(xs, ys, detectedLines, 0.05, 50);
+
+  std::cout << " ransac_detect_2D_lines using: " << tictac.Tac() * 1000.0 << " ms" << std::endl;
+  std::cout << " " << detectedLines.size() << " lines detected." << std::endl;
+  return true;
 }
 
 bool Line::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) {

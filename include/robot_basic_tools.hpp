@@ -9,11 +9,12 @@ class AprilBoard;
 
 namespace calibration {
 class CamLaserCalib;
+class TwoLasersCalib;
 }
 
 class RobotBasicTools : public guik::Application {
  public:
-  explicit RobotBasicTools(ros::NodeHandle &ros_nh) : Application(), nh(ros_nh) {}
+  explicit RobotBasicTools(ros::NodeHandle &ros_nh) : Application(), nh_(ros_nh) {}
 
   ~RobotBasicTools() override = default;
 
@@ -45,7 +46,7 @@ class RobotBasicTools : public guik::Application {
    *
    * @param size
    */
-  void framebuffer_size_callback(const Eigen::Vector2i &size) override { main_canvas_ptr->set_size(size); }
+  void framebuffer_size_callback(const Eigen::Vector2i &size) override { main_canvas_ptr_->set_size(size); }
 
   void free() override;
 
@@ -68,32 +69,35 @@ class RobotBasicTools : public guik::Application {
 
  private:
   // ros nodehandle
-  ros::NodeHandle &nh;
+  ros::NodeHandle &nh_;
   // 鼠标右击位置
-  Eigen::Vector2i right_clicked_pos;
+  Eigen::Vector2i right_clicked_pos_;
   // 当前鼠标位置
-  Eigen::Vector2i cur_mouse_pos;
+  Eigen::Vector2i cur_mouse_pos_;
 
   // 主画布
-  std::unique_ptr<guik::GLCanvas> main_canvas_ptr;
+  std::unique_ptr<guik::GLCanvas> main_canvas_ptr_;
 
   // 进度条
-  std::unique_ptr<guik::ProgressModal> progress_ptr;
+  std::unique_ptr<guik::ProgressModal> progress_ptr_;
 
   // 传感器管理器
-  std::shared_ptr<dev::SensorManager> sensor_manager_ptr;
+  std::shared_ptr<dev::SensorManager> sensor_manager_ptr_;
 
   // 标定板
-  std::shared_ptr<dev::AprilBoard> april_board_ptr;
+  std::shared_ptr<dev::AprilBoard> april_board_ptr_;
 
   // 相机与单线激光标定
-  std::unique_ptr<calibration::CamLaserCalib> cl_calib_ptr;
+  std::unique_ptr<calibration::CamLaserCalib> cl_calib_ptr_;
+
+  // 两个单线激光标定
+  std::unique_ptr<calibration::TwoLasersCalib> tl_calib_ptr_;
 
   // 热键标记(ALT)
-  bool is_hotkey_alt_pressed = false;
+  bool is_hotkey_alt_pressed_ = false;
   // 选中的物体集合
   // std::set<int> selected_id;
 
   // ui显示标记
-  bool is_show_imgui_demo{false};
+  bool is_show_imgui_demo_{false};
 };

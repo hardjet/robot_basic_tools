@@ -40,7 +40,7 @@ class BaseCalib {
     // 如果没有传感器对象，需要提示
     auto sensors_iter = sensor_manager_ptr_->sensors_map.find(type);
     if (sensors_iter == sensor_manager_ptr_->sensors_map.end()) {
-      ImGui::TextColored(ImVec4{1.0, 0., 0., 1.}, "please add %s first!", name.c_str());
+      ImGui::TextColored(ImVec4{1.0, 0., 0., 1.}, "please add %s first!", dev::dev_type_str[type].c_str());
     } else {
       // 保存传感器对象名称
       std::vector<std::string> sensor_names;

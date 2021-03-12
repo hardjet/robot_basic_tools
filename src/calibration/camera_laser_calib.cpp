@@ -1,8 +1,6 @@
 #include <fstream>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core.hpp>
-// ransac_detect_2D_lines
-#include <mrpt/math/ransac_applications.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
@@ -129,7 +127,6 @@ bool CamLaserCalib::get_pose_and_points() {
     Eigen::Quaterniond q_wc(R_wc);
     calib_data_->q_wc = q_wc;
 
-    // std::lock_guard<std::mutex> lock(mtx_);
     show_cam_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
     calib_data_->cam_img_ptr_ = show_cam_img_ptr_;
 
@@ -163,7 +160,7 @@ void CamLaserCalib::check_and_save() {
   for (auto& data : calib_valid_data_vec_) {
     double theta = 2 * std::acos((data.q_wc.inverse() * calib_data_vec_.at(2).q_wc).w());
     // 保证间隔5°以上
-    if (theta < DEG2RAD(5.0)) {
+    if (theta < DEG2RAD_RBT(5.0)) {
       is_need_to_save = false;
       break;
     }
@@ -344,7 +341,6 @@ void CamLaserCalib::calibration() {
       if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) {
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
-          // std::lock_guard<std::mutex> lock(mtx_);
           im_show_dev_ptr_->update_image(show_cam_img_ptr_);
           laser_show_dev_ptr_->update_image(show_laser_img_ptr_);
           cur_state_ = STATE_CHECK_STEADY;
@@ -361,9 +357,9 @@ void CamLaserCalib::calibration() {
         double dist = (calib_data_vec_.at(0).t_wc - calib_data_->t_wc).norm();
         // 四元数的转角是原本的1/2
         double theta = 2 * std::acos((calib_data_vec_.at(0).q_wc.inverse() * calib_data_->q_wc).w());
-        std::cout << "dist:" << dist << ", theta:" << RAD2DEG(theta) << std::endl;
+        std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
         // 抖动小于1cm与0.5°
-        if (dist < 0.01 && theta < DEG2RAD(0.8)) {
+        if (dist < 0.01 && theta < DEG2RAD_RBT(0.8)) {
           calib_data_vec_.push_back(*calib_data_);
           // 足够稳定才保存
           if (calib_data_vec_.size() > 3) {
@@ -460,6 +456,7 @@ void CamLaserCalib::draw_ui() {
   // 激光选择
   draw_sensor_selector<dev::Laser>("laser", dev::LASER, laser_ptr_);
 
+  // 设备就绪后才能标定
   if (cam_ptr_ && laser_ptr_) {
     ImGui::SameLine();
     // 选择是否显示图像
@@ -475,29 +472,29 @@ void CamLaserCalib::draw_ui() {
 
     // 标定逻辑
     calibration();
-  }
 
-  if (next_state_ == STATE_IDLE) {
-    if (ImGui::Button("start")) {
-      next_state_ = STATE_START;
+    if (next_state_ == STATE_IDLE) {
+      if (ImGui::Button("start")) {
+        next_state_ = STATE_START;
+      }
+    } else {
+      if (ImGui::Button("stop")) {
+        next_state_ = STATE_IDLE;
+      }
     }
-  } else {
-    if (ImGui::Button("stop")) {
+
+    // 标定状态只需要设定一次
+    if (cur_state_ == STATE_IN_CALIB) {
       next_state_ = STATE_IDLE;
     }
-  }
 
-  // 标定状态只需要设定一次
-  if (cur_state_ == STATE_IN_CALIB) {
-    next_state_ = STATE_IDLE;
-  }
-
-  // 大于6帧数据就可以开始进行标定操作了
-  if (calib_valid_data_vec_.size() > 6) {
-    ImGui::SameLine();
-    // 开始执行标定
-    if (ImGui::Button("calib")) {
-      next_state_ = STATE_START_CALIB;
+    // 大于6帧数据就可以开始进行标定操作了
+    if (calib_valid_data_vec_.size() > 6) {
+      ImGui::SameLine();
+      // 开始执行标定
+      if (ImGui::Button("calib")) {
+        next_state_ = STATE_START_CALIB;
+      }
     }
   }
 
@@ -507,8 +504,10 @@ void CamLaserCalib::draw_ui() {
   ImGui::End();
 
   // 显示图像
-  im_show_dev_ptr_->show_image(is_show_image_);
-  laser_show_dev_ptr_->show_image(is_show_image_);
+  if (is_show_image_) {
+    im_show_dev_ptr_->show_image(is_show_image_);
+    laser_show_dev_ptr_->show_image(is_show_image_);
+  }
 }
 
 }  // namespace calibration

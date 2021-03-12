@@ -14,7 +14,7 @@
 
 namespace dev {
 
-Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::CAMERA, "CAMERA") {
+Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::CAMERA) {
   sensor_topic_list_.resize(2);
   // 设置图像数据接收
   image_data_ptr_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);

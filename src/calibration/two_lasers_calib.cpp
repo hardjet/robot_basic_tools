@@ -3,8 +3,8 @@
 #include <cv_bridge/cv_bridge.h>
 
 #include "imgui.h"
-#include "portable-file-dialogs.h"
-#include "nlohmann/json.hpp"
+// #include "portable-file-dialogs.h"
+// #include "nlohmann/json.hpp"
 
 #include "dev/laser.hpp"
 #include "dev/sensor_manager.hpp"
@@ -13,7 +13,7 @@
 #include "calibration/task_back_ground.hpp"
 #include "calibration/two_lasers_calib.hpp"
 #include "algorithm/line.h"
-#include "algorithm/util.h"
+// #include "algorithm/util.h"
 
 // ---- 相机-单线激光标定状态
 // 空闲
@@ -77,7 +77,7 @@ bool TwoLasersCalib::get_valid_points() {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_show;
     algorithm::Line line(*laser_inst.calib_data_ptr, 180.0, 4.0);
-    std::vector<Eigen::Vector3d> line_pts;
+    std::vector<std::vector<Eigen::Vector3d>> line_pts;
     if (line.find_line_ransac(line_pts, laser_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;

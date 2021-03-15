@@ -43,13 +43,13 @@ void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) {
+bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines_pts, cv::Mat& img) {
   img = img_ptr_->clone();
-  best_line_pts.clear();
+  two_lines_pts.resize(2);
 
   // ransac 数据
   mrpt::math::CVectorDouble xs, ys;
-  // 检测到的直线
+  // 检测到的直线 <点数，直线方程系数Ax+By+C=0>
   std::vector<std::pair<size_t, mrpt::math::TLine2D>> detectedLines;
   // 时间统计
   mrpt::system::CTicTac tictac;
@@ -74,6 +74,22 @@ bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat
     img.at<cv::Vec3b>(row, col) = color_value;
   }
 
+  // ---- 画坐标
+  // x轴向前，y轴向左
+  int orig_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+  int orig_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+
+  int x_axis_col = (int)(0.2 / img_z_ * img_focal_ + img_w_ / 2);
+  int x_axis_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+  cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{x_axis_col, x_axis_row}, cv::Scalar(255, 0, 0), 4);
+
+  int y_axis_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+  int y_axis_row = (int)(-0.2 / img_z_ * img_focal_ + img_w_ / 2);
+
+  cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
+
+  std::cout << "valid pts num: " << xs.size() << std::endl;
+
   // 点数过少
   if (xs.size() < 100) {
     return false;
@@ -83,10 +99,57 @@ bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat
   tictac.Tic();
 
   // 直线内点距离门限5cm，有效点数门限50个
-  ransac_detect_2D_lines(xs, ys, detectedLines, 0.05, 50);
+  double thd = 0.03;
+  ransac_detect_2D_lines(xs, ys, detectedLines, thd, 50);
 
+  // 检测到两条直线认为有效
+  if (detectedLines.size() != 2) {
+    std::cout << "detected lines num != 2. " << detectedLines.size() << std::endl;
+    return false;
+  }
+
+  // 提取出直线对应的点 todo ransac算法里已经有，后面直接把数据传出来
+  double dist, x, y;
+  for (size_t i = 0; i < xs.size(); i++) {
+    mrpt::math::TPoint2D pt{xs(i, 0), ys(i, 0)};
+    dist = detectedLines[0].second.distance(pt);
+    if (dist < thd) {
+      two_lines_pts[0].emplace_back(Eigen::Vector3d{x, y, 0.});
+    } else {
+      dist = detectedLines[1].second.distance(pt);
+      if (dist < thd) {
+        two_lines_pts[1].emplace_back(Eigen::Vector3d{x, y, 0.});
+      }
+    }
+  }
+
+  // 打印直线提取相关信息
   std::cout << " ransac_detect_2D_lines using: " << tictac.Tac() * 1000.0 << " ms" << std::endl;
-  std::cout << " " << detectedLines.size() << " lines detected." << std::endl;
+  for (int i = 0; i < 2; i++) {
+    printf("line %d: ransac pts[%lu]-[%zu], line param:[%f, %f, %f]\n", i, detectedLines[i].first,
+           two_lines_pts[i].size(), detectedLines[i].second.coefs[0], detectedLines[i].second.coefs[1],
+           detectedLines[i].second.coefs[2]);
+
+    // 在2d图上画直线
+    double y1 = -2.0;
+    double x1 =
+        (-detectedLines[i].second.coefs[1] * y1 - detectedLines[i].second.coefs[2]) / detectedLines[i].second.coefs[0];
+    int col_1 = (int)(x1 / img_z_ * img_focal_ + img_w_ / 2);
+    // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+    int row_1 = (int)(-y1 / img_z_ * img_focal_ + img_w_ / 2);
+
+    double y2 = 2.0;
+    double x2 =
+        (-detectedLines[i].second.coefs[1] * y2 - detectedLines[i].second.coefs[2]) / detectedLines[i].second.coefs[0];
+    int col_2 = (int)(x2 / img_z_ * img_focal_ + img_w_ / 2);
+    // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+    int row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
+
+    // printf("[%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+
+    cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(150, 0, 0), 1);
+  }
+
   return true;
 }
 

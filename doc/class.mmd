@@ -221,17 +221,15 @@ class CoordinateSystem{
  %%坐标系
 }
 
-Drawable "*" <--o "1" Primitives : D
+Icosahedron <-- Primitives : A
+Cone <-- Primitives : A
+Cube <-- Primitives : A
+Grid <-- Primitives : A
+CoordinateSystem <-- Primitives : A
+Lines "*" <--o "1" Primitives : D
+Mesh "*" <--o "1" Primitives : D
 
-Icosahedron <-- Primitives : DP
-Cone <-- Primitives : DP
-Cube <-- Primitives : DP
-Grid <-- Primitives : DP
-CoordinateSystem <-- Primitives : DP
-Lines <-- Primitives : DP
-Mesh <-- Primitives : DP
-
-Primitives <-- RobotBasicTools : DP
+Primitives <-- RobotBasicTools : A
 
 class ProgressInterface{
  %%GUI进度条接口
@@ -373,7 +371,7 @@ SensorData <--o Laser : D
 SensorData <--o Camera : D
 Sensor <|-- Laser : I
 Sensor <|-- Camera : I
-ImageShow <--o Camera
+ImageShow <--o Camera : D
 
 class AprilBoard{
  %%标定板封装
@@ -421,12 +419,12 @@ class CamLaserCalib{
 }
 
 
-AprilBoard <--o CamLaserCalib
-Camera <--o CamLaserCalib
-Laser <--o CamLaserCalib
-ImageShow "2" <--o CamLaserCalib
-Task <--o CamLaserCalib
-BaseCalib <|-- CamLaserCalib
+AprilBoard <--o CamLaserCalib : D
+Camera <--o CamLaserCalib : D
+Laser <--o CamLaserCalib : D
+ImageShow "2" <--o CamLaserCalib : D
+Task <--o CamLaserCalib : D
+BaseCalib <|-- CamLaserCalib : I
 
 class Task{
  %%标定流程后台任务抽象类

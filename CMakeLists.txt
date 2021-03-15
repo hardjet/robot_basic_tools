@@ -213,6 +213,7 @@ target_link_libraries(imgui
 # build target  guik
 add_library(guik SHARED
         src/glk/mesh.cpp
+        src/glk/simple_lines.cpp
         src/glk/lines.cpp
         src/glk/colormap.cpp
         src/glk/glsl_shader.cpp

@@ -44,16 +44,18 @@ void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines_pts, cv::Mat& img) {
+bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat& img) {
   img = img_ptr_->clone();
-  two_lines_pts.resize(2);
+  std::vector<std::vector<Eigen::Vector3d>> two_lines_pts(2);
+  // 两条直线
+  lines_params.resize(2);
 
   // ransac 数据
   mrpt::math::CVectorDouble xs, ys;
   // 检测到的直线 <点数，直线方程系数Ax+By+C=0>
   std::vector<std::pair<size_t, mrpt::math::TLine2D>> detectedLines;
   // 时间统计
-  mrpt::system::CTicTac tictac;
+  // mrpt::system::CTicTac tictac;
 
   // 先显示所有点
   // 范围内的点
@@ -97,7 +99,7 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
   }
 
   // 开始计时
-  tictac.Tic();
+  // tictac.Tic();
 
   // 直线内点距离门限5cm，有效点数门限50个
   double thd = 0.03;
@@ -125,11 +127,11 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
   }
 
   // 打印直线提取相关信息
-  std::cout << " ransac_detect_2D_lines using: " << tictac.Tac() * 1000.0 << " ms" << std::endl;
+  // std::cout << " ransac_detect_2D_lines using: " << tictac.Tac() * 1000.0 << " ms" << std::endl;
   for (int i = 0; i < 2; i++) {
-    printf("line %d: ransac pts[%lu]-[%zu], line param:[%f, %f, %f]\n", i, detectedLines[i].first,
-           two_lines_pts[i].size(), detectedLines[i].second.coefs[0], detectedLines[i].second.coefs[1],
-           detectedLines[i].second.coefs[2]);
+    // printf("line %d: ransac pts[%lu]-[%zu], line param:[%f, %f, %f]\n", i, detectedLines[i].first,
+    //        two_lines_pts[i].size(), detectedLines[i].second.coefs[0], detectedLines[i].second.coefs[1],
+    //        detectedLines[i].second.coefs[2]);
 
     // 在2d图上画直线
     double y1 = -2.0;
@@ -146,7 +148,7 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
     // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
     int row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
 
-    printf("ransan [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+    // printf("ransan [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
 
     // 画直线
     cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(150, 0, 0), 1);
@@ -156,7 +158,7 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
     Eigen::Vector2d fitting_line;
     algorithm::LineFittingCeres(two_lines_pts[i], fitting_line);
 
-    printf("fitting line(Ax+By+1=0):[%f, %f]\n", fitting_line[0], fitting_line[1]);
+    // printf("fitting line(Ax+By+1=0):[%f, %f]\n", fitting_line[0], fitting_line[1]);
 
     x1 = (-fitting_line[1] * y1 - 1.) / fitting_line[0];
     col_1 = (int)(x1 / img_z_ * img_focal_ + img_w_ / 2);
@@ -166,9 +168,12 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
     col_2 = (int)(x2 / img_z_ * img_focal_ + img_w_ / 2);
     row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
 
-    printf("fitting [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+    // printf("fitting [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
     // 画直线
     cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(0, 0, 150), 1);
+
+    // 保存直线方程系数
+    lines_params[i] = Eigen::Vector3d{fitting_line[0], fitting_line[1], 1.};
   }
 
   return true;

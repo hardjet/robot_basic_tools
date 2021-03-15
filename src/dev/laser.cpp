@@ -40,7 +40,7 @@ static pcl::PointCloud<pcl::PointXYZI>::Ptr convert_laserscan_to_pc(sensor_msgs:
     pcl::PointXYZI p{};
     p.x = std::cos(cur_angle) * laser_scan->ranges.at(i);
     p.y = std::sin(cur_angle) * laser_scan->ranges.at(i);
-    p.z = 0;
+    p.z = 0.;
     p.intensity = laser_scan->intensities.empty() ? float(0.) : laser_scan->intensities.at(i);
     pc->push_back(p);
   }
@@ -70,7 +70,8 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
     if (pointcloud_buffer_ptr_) {
       // 画图
       shader.set_uniform("color_mode", 1);
-      shader.set_uniform("info_values", Eigen::Vector4i(1, 0, 0, 0));
+      shader.set_uniform("model_matrix", Eigen::Matrix4f::Identity().eval());
+      // shader.set_uniform("info_values", Eigen::Vector4i(1, 0, 0, 0));
       shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
       pointcloud_buffer_ptr_->draw(shader);
     }

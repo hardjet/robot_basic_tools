@@ -83,8 +83,13 @@ bool TwoLasersCalib::get_valid_points() {
       double time_used = (end_time - start_time).toSec() * 1000;
 
       // 显示用时
-      cv::putText(laser_show, "time used (ms):  " + std::to_string(time_used), cv::Point2f(10, 20),
+      cv::putText(laser_show, "time used (ms):  " + std::to_string(time_used), cv::Point2f(10, 15),
                   cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 0, 0));
+      // 显示图例
+      cv::putText(laser_show, "RANSAC -", cv::Point2f(10, 30),
+                  cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(150, 0, 0));
+      cv::putText(laser_show, "FITTING -", cv::Point2f(10, 45),
+                  cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 150));
 
       // 保存图象数据
       laser_inst.img_ptr.reset(new const cv_bridge::CvImage(laser_inst.calib_data_ptr->header, "rgb8", laser_show));

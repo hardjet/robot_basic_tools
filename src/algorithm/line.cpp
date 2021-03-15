@@ -5,6 +5,7 @@
 
 #include "algorithm/util.h"
 #include "algorithm/line.h"
+#include "algorithm/laser_cam_ceres.h"
 
 namespace algorithm {
 
@@ -109,16 +110,16 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
   }
 
   // 提取出直线对应的点 todo ransac算法里已经有，后面直接把数据传出来
-  double dist, x, y;
+  double dist;
   for (size_t i = 0; i < xs.size(); i++) {
     mrpt::math::TPoint2D pt{xs(i, 0), ys(i, 0)};
     dist = detectedLines[0].second.distance(pt);
     if (dist < thd) {
-      two_lines_pts[0].emplace_back(Eigen::Vector3d{x, y, 0.});
+      two_lines_pts[0].emplace_back(Eigen::Vector3d{pt.x, pt.y, 0.});
     } else {
       dist = detectedLines[1].second.distance(pt);
       if (dist < thd) {
-        two_lines_pts[1].emplace_back(Eigen::Vector3d{x, y, 0.});
+        two_lines_pts[1].emplace_back(Eigen::Vector3d{pt.x, pt.y, 0.});
       }
     }
   }
@@ -145,9 +146,29 @@ bool Line::find_line_ransac(std::vector<std::vector<Eigen::Vector3d>>& two_lines
     // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
     int row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
 
-    // printf("[%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+    printf("ransan [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
 
+    // 画直线
     cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(150, 0, 0), 1);
+
+    // 最小二乘拟合
+    // 直线模型 Ax + By + 1 = 0
+    Eigen::Vector2d fitting_line;
+    algorithm::LineFittingCeres(two_lines_pts[i], fitting_line);
+
+    printf("fitting line(Ax+By+1=0):[%f, %f]\n", fitting_line[0], fitting_line[1]);
+
+    x1 = (-fitting_line[1] * y1 - 1.) / fitting_line[0];
+    col_1 = (int)(x1 / img_z_ * img_focal_ + img_w_ / 2);
+    row_1 = (int)(-y1 / img_z_ * img_focal_ + img_w_ / 2);
+
+    x2 = (-fitting_line[1] * y2 - 1.) / fitting_line[0];
+    col_2 = (int)(x2 / img_z_ * img_focal_ + img_w_ / 2);
+    row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
+
+    printf("fitting [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+    // 画直线
+    cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(0, 0, 150), 1);
   }
 
   return true;

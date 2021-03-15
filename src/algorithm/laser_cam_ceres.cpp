@@ -367,12 +367,22 @@ struct LineFittingResidfual {
   const double y_;
 };
 
+/**
+ *
+ * @param Points
+ * @param Line 直线模型 Ax + By + 1 = 0
+ */
 void LineFittingCeres(const std::vector<Eigen::Vector3d> &Points, Eigen::Vector2d &Line) {
   double line[3] = {Line(0), Line(1)};
 
   ceres::Problem problem;
   for (size_t i = 0; i < Points.size(); ++i) {
     Eigen::Vector3d obi = Points[i];
+
+    // debug
+    // if (i % 5 == 0) {
+    //   std::cout << obi.transpose() << std::endl;
+    // }
 
     ceres::CostFunction *costfunction =
         new ceres::AutoDiffCostFunction<LineFittingResidfual, 1, 2>(new LineFittingResidfual(obi.x(), obi.y()));
@@ -392,6 +402,8 @@ void LineFittingCeres(const std::vector<Eigen::Vector3d> &Points, Eigen::Vector2
 
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
+
+  // std::cout << summary.FullReport() << std::endl;
 
   Line(0) = line[0];
   Line(1) = line[1];

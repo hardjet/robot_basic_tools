@@ -4,8 +4,8 @@
 
 #include "imgui.h"
 
-// #include "portable-file-dialogs.h"
-// #include "nlohmann/json.hpp"
+#include "portable-file-dialogs.h"
+#include "nlohmann/json.hpp"
 
 #include "glk/simple_lines.hpp"
 #include "glk/glsl_shader.hpp"
@@ -27,11 +27,13 @@
 // 启动
 #define STATE_START 1
 // 获取一对儿打在标定墙上的激光数据
-#define STATE_GET_VALID_PNTS 2
+#define STATE_GET_VALID_LINES 2
 // 检查数据稳定性,连续5帧姿态没有大的变化，取中间帧作为候选
 #define STATE_CHECK_STEADY 3
+// 开始标定
+#define STATE_START_CALIB 4
 // 在标定过程中
-#define STATE_IN_CALIB 4
+#define STATE_IN_CALIB 5
 
 namespace calibration {
 
@@ -72,6 +74,10 @@ void TwoLasersCalib::update_show() {
   double x_start, x_end;
   double y_start, y_end;
 
+  // 设置标定数据
+  // 时间
+  calib_data_.timestamp = laser_insts_[0].calib_data_ptr->header.stamp.toSec();
+
   for (auto& laser_inst : laser_insts_) {
     // 更新显示图象
     laser_inst.img_show_dev_ptr->update_image(laser_inst.img_ptr);
@@ -85,6 +91,9 @@ void TwoLasersCalib::update_show() {
     const double extend_len = 0.1;
     // 直线与x轴的夹角
     double theta, delta_len;
+
+    // 设置直线参数
+    calib_data_.lines_params[laser_inst.id] = laser_inst.laser_lines_params;
 
     for (int i = 0; i < 2; i++) {
       const auto& line_params = laser_inst.laser_lines_params[i];
@@ -118,12 +127,20 @@ void TwoLasersCalib::update_show() {
       // 添加额外信息
       infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 1, 0);
       infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 2, 0);
+
+      // 计算直线上的中点
+      double mid_y = (line_min_max(0) + line_min_max(1)) / 2.;
+      double mid_x = -(line_params(1) * mid_y + line_params(2)) / line_params(0);
+      calib_data_.mid_pts_on_line[laser_inst.id][i] = Eigen::Vector2d{mid_x, mid_y};
     }
 
     // 重置3d直线
     laser_inst.laser_lines_drawable_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
     // std::cout << "laser_lines_drawable_ptr: " << laser_inst.laser_lines_drawable_ptr << std::endl;
   }
+
+  calib_data_.angle = atan(calib_data_.lines_params[0][0](0) / calib_data_.lines_params[0][0](1));
+  calib_data_.angle *= 180. / M_PI;
 }
 
 void TwoLasersCalib::update() {
@@ -184,6 +201,80 @@ bool TwoLasersCalib::get_valid_lines() {
   return res;
 }
 
+void TwoLasersCalib::check_and_save() {
+  bool is_need_to_save = true;
+  // 逐个检测角度值与第3帧比较
+  for (auto& data : calib_valid_data_vec_) {
+    double theta = abs(data.angle - calib_data_vec_.at(2).angle);
+    // 保证间隔5°以上
+    if (theta < 5.0) {
+      is_need_to_save = false;
+      break;
+    }
+  }
+
+  if (is_need_to_save) {
+    // 取第3帧保存
+    calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
+    printf("!!!!!!!!!!!!!angle: %f saved!\n", calib_valid_data_vec_.back().angle);
+  }
+}
+
+static nlohmann::json convert_parmas_to_json(const std::array<std::array<Eigen::Vector3d, 2>, 2>& lines_params) {
+  std::vector<nlohmann::json> json_pts(4);
+  json_pts.at(0) = {lines_params[0][0].x(), lines_params[0][0].y(), lines_params[0][0].z()};
+  json_pts.at(1) = {lines_params[0][1].x(), lines_params[0][1].y(), lines_params[0][1].z()};
+  json_pts.at(2) = {lines_params[1][0].x(), lines_params[1][0].y(), lines_params[1][0].z()};
+  json_pts.at(3) = {lines_params[1][1].x(), lines_params[1][1].y(), lines_params[1][1].z()};
+  return json_pts;
+}
+
+static nlohmann::json convert_pts_to_json(const std::array<std::array<Eigen::Vector2d, 2>, 2>& pts) {
+  std::vector<nlohmann::json> json_pts(4);
+  json_pts.at(0) = {pts[0][0].x(), pts[0][0].y()};
+  json_pts.at(1) = {pts[0][1].x(), pts[0][1].y()};
+  json_pts.at(2) = {pts[1][0].x(), pts[1][0].y()};
+  json_pts.at(3) = {pts[1][1].x(), pts[1][1].y()};
+  return json_pts;
+}
+
+bool TwoLasersCalib::save_calib_data(const std::string& file_path) {
+  if (calib_valid_data_vec_.empty()) {
+    return false;
+  }
+
+  nlohmann::json js_whole;
+  js_whole["type"] = "two_lasers_calibration";
+
+  // 整理数据
+  std::vector<nlohmann::json> js_data;
+  for (const auto& data : calib_valid_data_vec_) {
+    nlohmann::json js = {{"timestamp", data.timestamp},
+                         {"angle", data.angle},
+                         {"lines_params", convert_parmas_to_json(data.lines_params)},
+                         {"mid_pts_on_line", convert_pts_to_json(data.mid_pts_on_line)}};
+    js_data.push_back(js);
+  }
+  js_whole["data"] = js_data;
+
+
+  // 保存文件 not std::ios::binary
+  std::ofstream ofs(file_path, std::ios::out);
+
+  if (ofs.is_open()) {
+    std::cout << "save data to " << file_path.c_str() << std::endl;
+    // const auto msgpack = nlohmann::json::to_msgpack(js_data);
+    // ofs.write(reinterpret_cast<const char*>(msgpack.data()), msgpack.size() * sizeof(uint8_t));
+    // 设置显示格式
+    ofs << std::setw(2) << js_whole << std::endl;
+    ofs.close();
+    return true;
+  } else {
+    std::cout << "cannot create a file at " << file_path.c_str() << std::endl;
+    return false;
+  }
+}
+
 void TwoLasersCalib::calibration() {
   // 首先获取最新的数据
   update();
@@ -197,24 +288,57 @@ void TwoLasersCalib::calibration() {
       if (laser_insts_[0].is_new_data && laser_insts_[1].is_new_data) {
         laser_insts_[0].is_new_data = false;
         laser_insts_[1].is_new_data = false;
-        cur_state_ = STATE_GET_VALID_PNTS;
+        cur_state_ = STATE_GET_VALID_LINES;
       } else {
         cur_state_ = STATE_IDLE;
       }
       break;
-    case STATE_GET_VALID_PNTS:
+    case STATE_GET_VALID_LINES:
       // 执行任务
-      if (task_ptr_->do_task("get_pose_and_points", std::bind(&TwoLasersCalib::get_valid_lines, this))) {
+      if (task_ptr_->do_task("get_pose_and_points", std::bind(&TwoLasersCalib::get_valid_lines, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           update_show();
-
-          // cur_state_ = STATE_CHECK_STEADY;
-          cur_state_ = STATE_IDLE;
+          cur_state_ = STATE_CHECK_STEADY;
         } else {
           cur_state_ = STATE_IDLE;
         }
       }
+      break;
+    case STATE_CHECK_STEADY:
+      if (calib_data_vec_.empty()) {
+        calib_data_vec_.push_back(calib_data_);
+      } else {
+        // 检查相机位姿是否一致
+        double delta = abs(calib_data_vec_.at(0).angle - calib_data_.angle);
+        std::cout << "delta: " << delta << " deg" << std::endl;
+        // 抖动小于0.2°
+        if (delta < 0.2) {
+          calib_data_vec_.push_back(calib_data_);
+          // 足够稳定才保存
+          if (calib_data_vec_.size() > 4) {
+            check_and_save();
+          }
+        } else {
+          // 抖动大则重新开始检测
+          calib_data_vec_.clear();
+          calib_data_vec_.push_back(calib_data_);
+          std::cout << "moved!!!" << std::endl;
+        }
+      }
+      cur_state_ = STATE_IDLE;
+      break;
+    case STATE_START_CALIB:
+      cur_state_ = STATE_IN_CALIB;
+      break;
+    case STATE_IN_CALIB:
+      // 执行任务
+      // if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {
+      //   // 结束后需要读取结果
+      //   if (task_ptr_->result<bool>()) {
+      //     cur_state_ = STATE_IDLE;
+      //   }
+      // }
       break;
   }
 }
@@ -270,6 +394,65 @@ void TwoLasersCalib::draw_ui() {
     }
   }
 
+  // 从文件加载标定数据
+  // ImGui::SameLine();
+  // if (ImGui::Button("R")) {
+  //   // 选择加载文件路径
+  //   std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+  //   std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
+  //   while (!dialog->ready()) {
+  //     usleep(1000);
+  //   }
+  //
+  //   auto file_paths = dialog->result();
+  //   if (!file_paths.empty()) {
+  //     // 从文件读数据
+  //     if (load_calib_data(file_paths.front())) {
+  //       std::string msg = "load calib data from " + file_paths.front() + " ok!";
+  //       dev::show_pfd_info("load calib data", msg);
+  //     } else {
+  //       std::string msg = "load calib data from " + file_paths.front() + " failed!";
+  //       dev::show_pfd_info("load calib data", msg);
+  //     }
+  //   }
+  // }
+  // // tips
+  // if (ImGui::IsItemHovered()) {
+  //   ImGui::SetTooltip("load from .json");
+  // }
+
+  if (!calib_valid_data_vec_.empty()) {
+    ImGui::SameLine();
+    // 保存标定数据
+    if (ImGui::Button("W")) {
+      // 选择保存文件路径
+      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+      while (!dialog->ready()) {
+        usleep(1000);
+      }
+
+      auto file_path = dialog->result();
+      if (!file_path.empty()) {
+        // 导出标定数据
+        if (!save_calib_data(file_path)) {
+          std::string msg = "save calib data to " + file_path + " failed!";
+          dev::show_pfd_info("save calib data", msg);
+        } else {
+          std::string msg = "save calib data to " + file_path + " ok!";
+          dev::show_pfd_info("save calib data", msg);
+        }
+      }
+    }
+
+    // tips
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("save calib data to .json file");
+    }
+  }
+
+  // 显示当前有效数据个数
+  ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
   ImGui::End();
 
   // 显示图像

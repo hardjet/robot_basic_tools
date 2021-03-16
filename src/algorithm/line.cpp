@@ -152,8 +152,8 @@ bool Line::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::arr
   }
 
   // 打印最大最小值
-  printf("0 min: %f, max:%f\n", lines_min_max[0](0), lines_min_max[0](1));
-  printf("1 min: %f, max:%f\n", lines_min_max[1](0), lines_min_max[1](1));
+  // printf("0 min: %f, max:%f\n", lines_min_max[0](0), lines_min_max[0](1));
+  // printf("1 min: %f, max:%f\n", lines_min_max[1](0), lines_min_max[1](1));
 
   // 打印直线提取相关信息
   // std::cout << " ransac_detect_2D_lines using: " << tictac.Tac() * 1000.0 << " ms" << std::endl;

@@ -29,20 +29,6 @@ class Task;
 
 class CamLaserCalib : public BaseCalib {
  public:
-  // 标定数据
-  struct CalibData {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    double timestamp;
-    // 相机坐标系到世界坐标系的变换
-    Eigen::Quaterniond q_wc;
-    Eigen::Vector3d t_wc;
-    // 检测到的激光点数据
-    std::vector<Eigen::Vector3d> line_pts;
-    // 显示使用的image
-    boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
-    // 显示激光使用的image
-    boost::shared_ptr<const cv_bridge::CvImage> laser_img_ptr_{nullptr};
-  };
 
   CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
                 std::shared_ptr<dev::AprilBoard>& april_board_ptr_);
@@ -69,6 +55,21 @@ class CamLaserCalib : public BaseCalib {
   bool save_calib_data(const std::string& file_path);
 
  private:
+  // 标定数据
+  struct CalibData {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    double timestamp;
+    // 相机坐标系到世界坐标系的变换
+    Eigen::Quaterniond q_wc;
+    Eigen::Vector3d t_wc;
+    // 检测到的激光点数据
+    std::vector<Eigen::Vector3d> line_pts;
+    // 显示使用的image
+    boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
+    // 显示激光使用的image
+    boost::shared_ptr<const cv_bridge::CvImage> laser_img_ptr_{nullptr};
+  };
+
   // 是否显示图像
   bool is_show_image_{false};
   // 是否有新图像数据

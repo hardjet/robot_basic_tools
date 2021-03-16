@@ -154,8 +154,8 @@ void RobotBasicTools::draw_gl() {
 
     // draw coordinate system
     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
-    main_canvas_ptr_->shader->set_uniform("model_matrix",
-                                         (Eigen::UniformScaling<float>(1.0f) * Eigen::Isometry3f::Identity()).matrix());
+    main_canvas_ptr_->shader->set_uniform(
+        "model_matrix", (Eigen::UniformScaling<float>(1.0f) * Eigen::Isometry3f::Identity()).matrix());
     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
     coord.draw(*main_canvas_ptr_->shader);
 

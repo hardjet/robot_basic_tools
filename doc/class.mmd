@@ -60,7 +60,6 @@ class Singleton{
 
 SensorManager <--o Singleton
 
-
 Application <|-- RobotBasicTools : I
 GLCanvas <--o RobotBasicTools : D
 ProgressModal <--o RobotBasicTools : D
@@ -176,7 +175,7 @@ class Lines{
 }
 
 class Mesh{
- %%openGL_mesh对象
+ %%openGL mesh对象
  +free()
  +draw(shader)
 }
@@ -187,9 +186,15 @@ class PointCloudBuffer{
  +draw(shader)
 }
 
+class SimpleLines{
+ %%openGL简单直线对象
+ +draw(shader)
+}
+
 Drawable <|-- Lines : I
 Drawable <|-- Mesh : I
 Drawable <|-- PointCloudBuffer : I
+Drawable <|-- SimpleLines : I
 
 class Primitives{
  %%openGL图元工厂类
@@ -381,6 +386,19 @@ class AprilBoard{
  cameras::GridCalibrationTargetAprilgrid> board
 }
 
+class Task{
+ %%标定流程后台任务抽象类
+ +T_do_task(task_name, task, args) bool
+ +T_create(task_name, task, args)
+ +T_result() T
+ +is_terminated(task_name) bool
+
+ -string task_name_
+ -atomic_bool is_running_
+ -thread thread_
+ -boost_any result_
+}
+
 class BaseCalib{
  %%标定基础类
  +show()
@@ -392,6 +410,8 @@ class BaseCalib{
  dev::SensorManager> sensor_manager_ptr_
  #...
 }
+
+SensorManager <--o BaseCalib : D
 
 class CamLaserCalib{
  %%相机与单线激光标定类 
@@ -426,16 +446,23 @@ ImageShow "2" <--o CamLaserCalib : D
 Task <--o CamLaserCalib : D
 BaseCalib <|-- CamLaserCalib : I
 
-class Task{
- %%标定流程后台任务抽象类
- +T_do_task(task_name, task, args) bool
- +T_create(task_name, task, args)
- +T_result() T
- +is_terminated(task_name) bool
+class TwoLasersCalib{
+ %%两个单线激光标定
+ +draw_gl(shader)
+ +draw_ui()
 
- -string task_name_
- -atomic_bool is_running_
- -thread thread_
- -boost_any result_
+ -update()
+ -calibration()
+ -get_valid_lines()
+
+ -std::array<LaserInstType, 2> laser_insts_
+ -std::shared_ptr<Task> task_ptr_
+ -...
 }
+
+Laser "2" <--o TwoLasersCalib : D
+Task <--o TwoLasersCalib : D
+BaseCalib <|-- TwoLasersCalib : I
+ImageShow "2" <--o TwoLasersCalib : D
+SimpleLines "2" <--o TwoLasersCalib : D
 

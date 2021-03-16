@@ -51,7 +51,6 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
 }
 
 void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
-
   if (!laser_insts_[0].laser_lines_drawable_ptr) {
     return;
   }
@@ -70,9 +69,8 @@ void TwoLasersCalib::update_show() {
   std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors;
   std::vector<Eigen::Vector4i, Eigen::aligned_allocator<Eigen::Vector4i>> infos;
 
-  const double y_start = -2.;
-  const double y_end = 2.;
   double x_start, x_end;
+  double y_start, y_end;
 
   for (auto& laser_inst : laser_insts_) {
     // 更新显示图象
@@ -83,7 +81,24 @@ void TwoLasersCalib::update_show() {
     colors.clear();
     infos.clear();
 
-    for (const auto& line_params : laser_inst.laser_lines_params) {
+    // 外扩的长度
+    const double extend_len = 0.1;
+    // 直线与x轴的夹角
+    double theta, delta_len;
+
+    for (int i = 0; i < 2; i++) {
+      const auto& line_params = laser_inst.laser_lines_params[i];
+      const auto& line_min_max = laser_inst.lines_min_max[i];
+
+      // 计算角度
+      theta = atan(line_params(0) / line_params(1));
+      delta_len = abs(extend_len * sin(theta));
+      // printf("theta: %f, delta_len: %f\n", theta * 180. / M_PI, delta_len);
+
+      // 外扩一定长度
+      y_start = line_min_max(0) - delta_len;
+      y_end = line_min_max(1) + delta_len;
+
       x_start = -(line_params(1) * y_start + line_params(2)) / line_params(0);
       x_end = -(line_params(1) * y_end + line_params(2)) / line_params(0);
 
@@ -111,7 +126,7 @@ void TwoLasersCalib::update_show() {
   }
 }
 
-void TwoLasersCalib::update_data() {
+void TwoLasersCalib::update() {
   std::lock_guard<std::mutex> lock(mtx_);
 
   // 更新数据
@@ -131,7 +146,7 @@ void TwoLasersCalib::update_data() {
   }
 }
 
-bool TwoLasersCalib::get_valid_points() {
+bool TwoLasersCalib::get_valid_lines() {
   // 将激光锁定
   {
     std::lock_guard<std::mutex> lock(mtx_);
@@ -146,7 +161,7 @@ bool TwoLasersCalib::get_valid_points() {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
     algorithm::Line line(*laser_inst.calib_data_ptr, 180.0, 4.0);
-    if (line.find_line_ransac(laser_inst.laser_lines_params, laser_img_show)) {
+    if (line.find_two_lines(laser_inst.laser_lines_params, laser_inst.lines_min_max, laser_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -171,7 +186,7 @@ bool TwoLasersCalib::get_valid_points() {
 
 void TwoLasersCalib::calibration() {
   // 首先获取最新的数据
-  update_data();
+  update();
 
   switch (cur_state_) {
     case STATE_IDLE:
@@ -189,7 +204,7 @@ void TwoLasersCalib::calibration() {
       break;
     case STATE_GET_VALID_PNTS:
       // 执行任务
-      if (task_ptr_->do_task("get_pose_and_points", std::bind(&TwoLasersCalib::get_valid_points, this))) {
+      if (task_ptr_->do_task("get_pose_and_points", std::bind(&TwoLasersCalib::get_valid_lines, this))) {
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           update_show();

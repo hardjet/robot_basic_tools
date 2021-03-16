@@ -44,11 +44,11 @@ void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat& img) {
+bool Line::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
+                          cv::Mat& img) const {
   img = img_ptr_->clone();
+  // 直线点集合
   std::vector<std::vector<Eigen::Vector3d>> two_lines_pts(2);
-  // 两条直线
-  lines_params.resize(2);
 
   // ransac 数据
   mrpt::math::CVectorDouble xs, ys;
@@ -91,7 +91,7 @@ bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat&
 
   cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
 
-  std::cout << "valid pts num: " << xs.size() << std::endl;
+  // std::cout << "valid pts num: " << xs.size() << std::endl;
 
   // 点数过少
   if (xs.size() < 100) {
@@ -111,6 +111,12 @@ bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat&
     return false;
   }
 
+  // 初始化
+  lines_min_max[0](0) = 1000.;
+  lines_min_max[0](1) = -1000.;
+  lines_min_max[1](0) = 1000.;
+  lines_min_max[1](1) = -1000.;
+
   // 提取出直线对应的点 todo ransac算法里已经有，后面直接把数据传出来
   double dist;
   for (size_t i = 0; i < xs.size(); i++) {
@@ -118,13 +124,36 @@ bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat&
     dist = detectedLines[0].second.distance(pt);
     if (dist < thd) {
       two_lines_pts[0].emplace_back(Eigen::Vector3d{pt.x, pt.y, 0.});
+
+      // 更新最值
+      if (lines_min_max[0](1) < pt.y) {
+        lines_min_max[0](1) = pt.y;
+      }
+
+      if (lines_min_max[0](0) > pt.y) {
+        lines_min_max[0](0) = pt.y;
+      }
+
     } else {
       dist = detectedLines[1].second.distance(pt);
       if (dist < thd) {
         two_lines_pts[1].emplace_back(Eigen::Vector3d{pt.x, pt.y, 0.});
+
+        // 更新最值
+        if (lines_min_max[1](1) < pt.y) {
+          lines_min_max[1](1) = pt.y;
+        }
+
+        if (lines_min_max[1](0) > pt.y) {
+          lines_min_max[1](0) = pt.y;
+        }
       }
     }
   }
+
+  // 打印最大最小值
+  printf("0 min: %f, max:%f\n", lines_min_max[0](0), lines_min_max[0](1));
+  printf("1 min: %f, max:%f\n", lines_min_max[1](0), lines_min_max[1](1));
 
   // 打印直线提取相关信息
   // std::cout << " ransac_detect_2D_lines using: " << tictac.Tac() * 1000.0 << " ms" << std::endl;
@@ -179,7 +208,7 @@ bool Line::find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat&
   return true;
 }
 
-bool Line::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) {
+bool Line::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const {
   img = img_ptr_->clone();
   best_line_pts.clear();
 

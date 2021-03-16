@@ -42,13 +42,13 @@ class TwoLasersCalib : public BaseCalib {
 
  private:
   /// 更新数据
-  void update_data();
+  void update();
 
   /// 标定流程
   void calibration();
 
   /// 获取一对儿有效的激光数据
-  bool get_valid_points();
+  bool get_valid_lines();
 
   /// 更新显示相关的内容
   void update_show();
@@ -70,7 +70,9 @@ class TwoLasersCalib : public BaseCalib {
     // 显示激光使用的image
     boost::shared_ptr<const cv_bridge::CvImage> img_ptr{nullptr};
     // 检测到的2条直线参数 Ax+By+C=0
-    std::vector<Eigen::Vector3d> laser_lines_params;
+    std::array<Eigen::Vector3d, 2> laser_lines_params;
+    // 直线y方向最大和最小值 [[min, max], [min, max]]
+    std::array<Eigen::Vector2d, 2> lines_min_max;
     // 拟合出的两条直线
     std::shared_ptr<glk::SimpleLines> laser_lines_drawable_ptr{nullptr};
   };

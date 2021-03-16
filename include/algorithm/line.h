@@ -14,10 +14,11 @@ class Line {
   Line(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
 
   /// 找直线点
-  bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img);
+  bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const;
 
-  /// 使用ransac的方法找直线
-  bool find_line_ransac(std::vector<Eigen::Vector3d>& lines_params, cv::Mat& img);
+  /// 找两条直线(ransac + fitting)
+  bool find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
+                      cv::Mat& img) const;
 
  private:
   /// 将LaserScan转换为点云

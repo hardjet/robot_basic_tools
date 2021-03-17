@@ -297,7 +297,25 @@
                                 "data": {
                                     "id": "c9yniehank00",
                                     "created": 1615885238198,
-                                    "text": "保存有效数据",
+                                    "text": "保存标定数据",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c9z79nd682o0",
+                                    "created": 1615940974460,
+                                    "text": "加载标定数据",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c9z9x3psnvs0",
+                                    "created": 1615948454647,
+                                    "text": "计算位姿",
                                     "progress": 1
                                 },
                                 "children": []

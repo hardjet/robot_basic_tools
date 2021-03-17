@@ -4,9 +4,10 @@
 #include <mutex>
 #include <array>
 #include <Eigen/Core>
-#include <Eigen/Geometry>
+// #include <Eigen/Geometry>
 
 #include <sensor_msgs/LaserScan.h>
+
 #include "calib_base.hpp"
 
 namespace cv_bridge {
@@ -57,7 +58,7 @@ class TwoLasersCalib : public BaseCalib {
   void check_and_save();
 
   /// 从文件加载标定数据
-  // bool load_calib_data(const std::string& file_path);
+  bool load_calib_data(const std::string& file_path);
 
   /// 保存标定数据到文件
   bool save_calib_data(const std::string& file_path);

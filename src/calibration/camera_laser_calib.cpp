@@ -182,9 +182,6 @@ static void convert_json_to_pts(std::vector<Eigen::Vector3d>& pts, nlohmann::jso
 }
 
 bool CamLaserCalib::load_calib_data(const std::string& file_path) {
-  // 清空之前的数据
-  calib_valid_data_vec_.clear();
-
   // 读取文件
   std::ifstream ifs(file_path, std::ios::in);
 
@@ -200,6 +197,9 @@ bool CamLaserCalib::load_calib_data(const std::string& file_path) {
     std::cout << "cannot open file " << file_path.c_str() << std::endl;
     return false;
   }
+
+  // 清空之前的数据
+  calib_valid_data_vec_.clear();
 
   // 加载数据
   for (const auto& data : js_data.items()) {
@@ -338,7 +338,7 @@ void CamLaserCalib::calibration() {
       break;
     case STATE_GET_POSE_AND_PTS:
       // 执行任务
-      if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) {
+      if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) { //NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           im_show_dev_ptr_->update_image(show_cam_img_ptr_);
@@ -379,7 +379,7 @@ void CamLaserCalib::calibration() {
       break;
     case STATE_IN_CALIB:
       // 执行任务
-      if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {
+      if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) { //NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           cur_state_ = STATE_IDLE;
@@ -475,6 +475,8 @@ void CamLaserCalib::draw_ui() {
 
     if (next_state_ == STATE_IDLE) {
       if (ImGui::Button("start")) {
+        // 清空上次的标定数据
+        calib_valid_data_vec_.clear();
         next_state_ = STATE_START;
       }
     } else {
@@ -499,8 +501,8 @@ void CamLaserCalib::draw_ui() {
   }
 
   // 显示当前有效数据个数
+  ImGui::Separator();
   ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
-
   ImGui::End();
 
   // 显示图像

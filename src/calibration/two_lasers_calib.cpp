@@ -238,6 +238,58 @@ static nlohmann::json convert_pts_to_json(const std::array<std::array<Eigen::Vec
   return json_pts;
 }
 
+bool TwoLasersCalib::load_calib_data(const std::string& file_path) {
+  // 读取文件
+  std::ifstream ifs(file_path, std::ios::in);
+
+  nlohmann::json js_whole;
+  if (ifs.is_open()) {
+    std::cout << "load calib data from " << file_path.c_str() << std::endl;
+
+    // 设置显示格式
+    ifs >> js_whole;
+    ifs.close();
+
+  } else {
+    std::cout << "cannot open file " << file_path.c_str() << std::endl;
+    return false;
+  }
+
+  if (!js_whole.contains("type") || js_whole["type"] != "two_lasers_calibration") {
+    std::cout << "wrong file type!" << std::endl;
+    return false;
+  }
+
+  // 清空之前的数据
+  calib_valid_data_vec_.clear();
+
+  // 加载数据
+  for (const auto& data : js_whole["data"].items()) {
+    CalibData cd;
+    // 中间数据
+    std::vector<std::vector<double>> v;
+    cd.timestamp = data.value().at("timestamp").get<double>();
+    cd.angle = data.value().at("angle").get<double>();
+
+    data.value().at("lines_params").get_to<std::vector<std::vector<double>>>(v);
+    cd.lines_params[0][0] = Eigen::Map<Eigen::Vector3d>(v[0].data(), 3);
+    cd.lines_params[0][1] = Eigen::Map<Eigen::Vector3d>(v[1].data(), 3);
+    cd.lines_params[1][0] = Eigen::Map<Eigen::Vector3d>(v[2].data(), 3);
+    cd.lines_params[1][1] = Eigen::Map<Eigen::Vector3d>(v[3].data(), 3);
+
+    v.clear();
+    data.value().at("mid_pts_on_line").get_to<std::vector<std::vector<double>>>(v);
+    cd.mid_pts_on_line[0][0] = Eigen::Map<Eigen::Vector2d>(v[0].data(), 2);
+    cd.mid_pts_on_line[0][1] = Eigen::Map<Eigen::Vector2d>(v[1].data(), 2);
+    cd.mid_pts_on_line[1][0] = Eigen::Map<Eigen::Vector2d>(v[2].data(), 2);
+    cd.mid_pts_on_line[1][1] = Eigen::Map<Eigen::Vector2d>(v[3].data(), 2);
+
+    calib_valid_data_vec_.push_back(cd);
+  }
+
+  return true;
+}
+
 bool TwoLasersCalib::save_calib_data(const std::string& file_path) {
   if (calib_valid_data_vec_.empty()) {
     return false;
@@ -256,7 +308,6 @@ bool TwoLasersCalib::save_calib_data(const std::string& file_path) {
     js_data.push_back(js);
   }
   js_whole["data"] = js_data;
-
 
   // 保存文件 not std::ios::binary
   std::ofstream ofs(file_path, std::ios::out);
@@ -312,8 +363,8 @@ void TwoLasersCalib::calibration() {
         // 检查相机位姿是否一致
         double delta = abs(calib_data_vec_.at(0).angle - calib_data_.angle);
         std::cout << "delta: " << delta << " deg" << std::endl;
-        // 抖动小于0.2°
-        if (delta < 0.2) {
+        // 抖动小于0.1°
+        if (delta < 0.1) {
           calib_data_vec_.push_back(calib_data_);
           // 足够稳定才保存
           if (calib_data_vec_.size() > 4) {
@@ -352,74 +403,33 @@ void TwoLasersCalib::draw_ui() {
 
   // 激光选择
   draw_sensor_selector<dev::Laser>("laser 1", dev::LASER, laser_insts_[0].laser_dev_ptr);
-  // 激光选择
-  draw_sensor_selector<dev::Laser>("laser 2", dev::LASER, laser_insts_[1].laser_dev_ptr);
-
-  // 设备就绪后才能标定
-  if (laser_insts_[0].laser_dev_ptr && laser_insts_[1].laser_dev_ptr) {
-    ImGui::SameLine();
-    // 选择是否显示图像
-    if (ImGui::Checkbox("show image", &is_show_image_)) {
-      if (is_show_image_) {
-        laser_insts_[0].img_show_dev_ptr->enable("ts calib laser 1", false);
-        laser_insts_[1].img_show_dev_ptr->enable("ts calib laser 2", false);
-      } else {
-        laser_insts_[0].img_show_dev_ptr->disable();
-        laser_insts_[1].img_show_dev_ptr->disable();
-      }
-    }
-
-    // 标定逻辑
-    calibration();
-
-    if (next_state_ == STATE_IDLE) {
-      if (ImGui::Button("start")) {
-        // 两个设备名称不能一样
-        if (laser_insts_[0].laser_dev_ptr->sensor_id == laser_insts_[1].laser_dev_ptr->sensor_id) {
-          std::string msg = "two lasers are the same!";
-          dev::show_pfd_info("two lasers calibration", msg);
-        } else {
-          next_state_ = STATE_START;
-        }
-      }
-    } else {
-      if (ImGui::Button("stop")) {
-        next_state_ = STATE_IDLE;
-      }
-    }
-
-    // 标定状态只需要设定一次
-    if (cur_state_ == STATE_IN_CALIB) {
-      next_state_ = STATE_IDLE;
-    }
-  }
 
   // 从文件加载标定数据
-  // ImGui::SameLine();
-  // if (ImGui::Button("R")) {
-  //   // 选择加载文件路径
-  //   std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
-  //   std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
-  //   while (!dialog->ready()) {
-  //     usleep(1000);
-  //   }
-  //
-  //   auto file_paths = dialog->result();
-  //   if (!file_paths.empty()) {
-  //     // 从文件读数据
-  //     if (load_calib_data(file_paths.front())) {
-  //       std::string msg = "load calib data from " + file_paths.front() + " ok!";
-  //       dev::show_pfd_info("load calib data", msg);
-  //     } else {
-  //       std::string msg = "load calib data from " + file_paths.front() + " failed!";
-  //       dev::show_pfd_info("load calib data", msg);
-  //     }
-  //   }
-  // }
-  // // tips
-  // if (ImGui::IsItemHovered()) {
-  //   ImGui::SetTooltip("load from .json");
-  // }
+  ImGui::SameLine();
+  if (ImGui::Button("R")) {
+    // 选择加载文件路径
+    std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+    std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
+    while (!dialog->ready()) {
+      usleep(1000);
+    }
+
+    auto file_paths = dialog->result();
+    if (!file_paths.empty()) {
+      // 从文件读数据
+      if (load_calib_data(file_paths.front())) {
+        std::string msg = "load calib data from " + file_paths.front() + " ok!";
+        dev::show_pfd_info("load calib data", msg);
+      } else {
+        std::string msg = "load calib data from " + file_paths.front() + " failed!";
+        dev::show_pfd_info("load calib data", msg);
+      }
+    }
+  }
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("load from .json");
+  }
 
   if (!calib_valid_data_vec_.empty()) {
     ImGui::SameLine();
@@ -451,7 +461,61 @@ void TwoLasersCalib::draw_ui() {
     }
   }
 
+  // 激光选择
+  draw_sensor_selector<dev::Laser>("laser 2", dev::LASER, laser_insts_[1].laser_dev_ptr);
+
+  // 设备就绪后才能标定
+  if (laser_insts_[0].laser_dev_ptr && laser_insts_[1].laser_dev_ptr) {
+    ImGui::SameLine();
+    // 选择是否显示图像
+    if (ImGui::Checkbox("show image", &is_show_image_)) {
+      if (is_show_image_) {
+        laser_insts_[0].img_show_dev_ptr->enable("ts calib laser 1", false);
+        laser_insts_[1].img_show_dev_ptr->enable("ts calib laser 2", false);
+      } else {
+        laser_insts_[0].img_show_dev_ptr->disable();
+        laser_insts_[1].img_show_dev_ptr->disable();
+      }
+    }
+
+    // 标定逻辑
+    calibration();
+
+    if (next_state_ == STATE_IDLE) {
+      if (ImGui::Button("start")) {
+        // 两个设备名称不能一样
+        if (laser_insts_[0].laser_dev_ptr->sensor_id == laser_insts_[1].laser_dev_ptr->sensor_id) {
+          std::string msg = "two lasers are the same!";
+          dev::show_pfd_info("two lasers calibration", msg);
+        } else {
+          // 清空上次的标定数据
+          calib_valid_data_vec_.clear();
+          next_state_ = STATE_START;
+        }
+      }
+    } else {
+      if (ImGui::Button("stop")) {
+        next_state_ = STATE_IDLE;
+      }
+    }
+
+    // 标定状态只需要设定一次
+    if (cur_state_ == STATE_IN_CALIB) {
+      next_state_ = STATE_IDLE;
+    }
+
+    // 大于6帧数据就可以开始进行标定操作了
+    if (calib_valid_data_vec_.size() > 6) {
+      ImGui::SameLine();
+      // 开始执行标定
+      if (ImGui::Button("calib")) {
+        next_state_ = STATE_START_CALIB;
+      }
+    }
+  }
+
   // 显示当前有效数据个数
+  ImGui::Separator();
   ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
   ImGui::End();
 

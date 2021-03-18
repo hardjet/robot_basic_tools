@@ -246,6 +246,7 @@ add_library(algorithm SHARED
         src/algorithm/util.cpp
         src/algorithm/line.cpp
         src/algorithm/laser_cam_ceres.cpp
+        src/algorithm/two_lasers_ceres.cpp
         )
 
 set_target_properties(algorithm PROPERTIES

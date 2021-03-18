@@ -394,6 +394,12 @@ void TwoLasersCalib::calibration() {
   }
 }
 
+bool TwoLasersCalib::calc() {
+  // clang-format off
+  int c = 0; int d = 1;
+  // clang-format on
+}
+
 void TwoLasersCalib::draw_ui() {
   if (!is_show_window_) {
     return;

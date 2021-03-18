@@ -6,14 +6,20 @@
 
 namespace algorithm {
 
-class PointInPlaneFactor : public ceres::SizedCostFunction<1, 7> {
+class SamePlaneFactor : public ceres::SizedCostFunction<1, 7> {
  private:
-  Eigen::Vector4d planar_;
-  Eigen::Vector3d point_;
+  // 线段1单位向量
+  Eigen::Vector3d l1_;
+  // 线段1的中点坐标
+  Eigen::Vector3d c1_;
+  // 线段2单位向量
+  Eigen::Vector3d l2_;
+  // 线段2的中点坐标
+  Eigen::Vector3d c2_;
   double scale_ = 1.0;
 
  public:
-  PointInPlaneFactor(Eigen::Vector4d &planar, Eigen::Vector3d &point, double scale = 1.)
+  SamePlaneFactor(Eigen::Vector4d &planar, Eigen::Vector3d &point, double scale = 1.)
       : planar_(planar), point_(point) {
     scale_ = scale;
     // std::cout << scale_ << std::endl;

@@ -57,6 +57,9 @@ class TwoLasersCalib : public BaseCalib {
   /// 保证保存的帧角度不同
   void check_and_save();
 
+  /// 计算
+  bool calc();
+
   /// 从文件加载标定数据
   bool load_calib_data(const std::string& file_path);
 

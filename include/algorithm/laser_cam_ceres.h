@@ -5,9 +5,9 @@
 
 namespace algorithm {
 
-struct Oberserve {
+struct Observation {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Oberserve() {
+  Observation() {
     tag_pose_q_ca = Eigen::Quaterniond(1, 0, 0, 0);
     tag_pose_t_ca = Eigen::Vector3d::Zero();
   }
@@ -20,9 +20,8 @@ struct Oberserve {
   std::vector<Eigen::Vector3d> points_on_line;
 };
 
-void LineFittingCeres(const std::vector<Eigen::Vector3d>& Points, Eigen::Vector2d& Line);
-void CamLaserCalClosedSolution(const std::vector<Oberserve>& obs, Eigen::Matrix4d& Tlc);
-void CamLaserCalibration(const std::vector<Oberserve>& obs, Eigen::Matrix4d& Trc, bool use_linefitting_data = true,
+void CamLaserCalClosedSolution(const std::vector<Observation>& obs, Eigen::Matrix4d& Tlc);
+void CamLaserCalibration(const std::vector<Observation>& obs, Eigen::Matrix4d& Trc, bool use_linefitting_data = true,
                          bool use_boundary_constraint = false);
 
 }  // namespace algorithm

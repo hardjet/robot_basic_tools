@@ -14,7 +14,7 @@
 #include "dev/util.hpp"
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_laser_calib.hpp"
-#include "algorithm/line.h"
+#include "algorithm/line_detect.h"
 #include "algorithm/util.h"
 #include "algorithm/laser_cam_ceres.h"
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
@@ -132,8 +132,8 @@ bool CamLaserCalib::get_pose_and_points() {
 
     // 检测激光中的直线
     cv::Mat laser_show;
-    algorithm::Line line(*cur_laser_data, 60.0, 2.0);
-    if (line.find_line(calib_data_->line_pts, laser_show)) {
+    algorithm::LineDetect line_detector(*cur_laser_data, 60.0, 2.0);
+    if (line_detector.find_line(calib_data_->line_pts, laser_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -264,11 +264,11 @@ bool CamLaserCalib::save_calib_data(const std::string& file_path) {
 
 bool CamLaserCalib::calc() {
   // 准备标定数据
-  std::vector<algorithm::Oberserve> obs;
+  std::vector<algorithm::Observation> obs;
 
   for (const auto& data : calib_valid_data_vec_) {
     Eigen::Vector2d line;
-    algorithm::LineFittingCeres(data.line_pts, line);
+    algorithm::line_fitting_ceres(data.line_pts, line);
     std::vector<Eigen::Vector3d> points_on_line;
 
     // 激光所在直线不能垂直于某个轴
@@ -286,7 +286,7 @@ bool CamLaserCalib::calc() {
     points_on_line.emplace_back(x_start, y_start, 0);
     points_on_line.emplace_back(x_end, y_end, 0);
 
-    algorithm::Oberserve ob;
+    algorithm::Observation ob;
     ob.tag_pose_q_ca = data.q_wc.inverse();
     ob.tag_pose_t_ca = -ob.tag_pose_q_ca.toRotationMatrix() * data.t_wc;
     ob.points = data.line_pts;
@@ -308,7 +308,7 @@ bool CamLaserCalib::calc() {
   Eigen::Matrix3d Rlc(Tlc.block(0, 0, 3, 3));
   Eigen::Vector3d tlc(Tlc.block(0, 3, 3, 1));
   Eigen::Quaterniond q(Rlc);
-  algorithm::EulerAngles rpy = algorithm::ToEulerAngles(q);
+  algorithm::EulerAngles rpy = algorithm::quat2euler(q);
   std::cout << "q(x, y, z, w):" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
   std::cout << "q(x, y, z, w):" << q.coeffs().transpose() << std::endl;
   std::cout << "   roll(rad): " << rpy.roll << " pitch(rad): " << rpy.pitch << " yaw(rad): " << rpy.yaw << "\n"

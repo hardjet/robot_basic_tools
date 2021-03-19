@@ -8,10 +8,10 @@ class Mat;
 }
 
 namespace algorithm {
-class Line {
+class LineDetect {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Line(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
+  LineDetect(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
 
   /// 找直线点
   bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const;

@@ -4,8 +4,7 @@
 #include <mrpt/math/ransac_applications.h>
 
 #include "algorithm/util.h"
-#include "algorithm/line.h"
-#include "algorithm/laser_cam_ceres.h"
+#include "algorithm/line_detect.h"
 
 namespace algorithm {
 
@@ -15,7 +14,7 @@ struct LineSeg {
   double dist;
 };
 
-Line::Line(const sensor_msgs::LaserScan& scan, double angle_range, double max_range)
+LineDetect::LineDetect(const sensor_msgs::LaserScan& scan, double angle_range, double max_range)
     : angle_range_(DEG2RAD_RBT(angle_range)), max_range_(max_range) {
   points_.resize(0);
   outlier_points_.resize(0);
@@ -24,7 +23,7 @@ Line::Line(const sensor_msgs::LaserScan& scan, double angle_range, double max_ra
   scan2points(scan);
 }
 
-void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
+void LineDetect::scan2points(const sensor_msgs::LaserScan& scan_in) {
   size_t n_pts = scan_in.ranges.size();
 
   double angle = scan_in.angle_min;
@@ -44,7 +43,7 @@ void Line::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool Line::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
+bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
                           cv::Mat& img) const {
   img = img_ptr_->clone();
   // 直线点集合
@@ -185,7 +184,7 @@ bool Line::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::arr
     // 最小二乘拟合
     // 直线模型 Ax + By + 1 = 0
     Eigen::Vector2d fitting_line;
-    algorithm::LineFittingCeres(two_lines_pts[i], fitting_line);
+    line_fitting_ceres(two_lines_pts[i], fitting_line);
 
     // printf("fitting line(Ax+By+1=0):[%f, %f]\n", fitting_line[0], fitting_line[1]);
 
@@ -208,7 +207,7 @@ bool Line::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::arr
   return true;
 }
 
-bool Line::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const {
+bool LineDetect::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const {
   img = img_ptr_->clone();
   best_line_pts.clear();
 

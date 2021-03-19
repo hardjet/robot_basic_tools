@@ -18,8 +18,9 @@
 #include "calibration/task_back_ground.hpp"
 #include "calibration/two_lasers_calib.hpp"
 
-#include "algorithm/line.h"
-// #include "algorithm/util.h"
+#include "algorithm/line_detect.h"
+#include "algorithm/two_lasers_ceres.h"
+#include "algorithm/util.h"
 
 // ---- 相机-单线激光标定状态
 // 空闲
@@ -177,8 +178,8 @@ bool TwoLasersCalib::get_valid_lines() {
   for (auto& laser_inst : laser_insts_) {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
-    algorithm::Line line(*laser_inst.calib_data_ptr, 180.0, 4.0);
-    if (line.find_two_lines(laser_inst.laser_lines_params, laser_inst.lines_min_max, laser_img_show)) {
+    algorithm::LineDetect line_detector(*laser_inst.calib_data_ptr, 180.0, 4.0);
+    if (line_detector.find_two_lines(laser_inst.laser_lines_params, laser_inst.lines_min_max, laser_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -384,20 +385,48 @@ void TwoLasersCalib::calibration() {
       break;
     case STATE_IN_CALIB:
       // 执行任务
-      // if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {
-      //   // 结束后需要读取结果
-      //   if (task_ptr_->result<bool>()) {
-      //     cur_state_ = STATE_IDLE;
-      //   }
-      // }
+      if (task_ptr_->do_task("calc", std::bind(&TwoLasersCalib::calc, this))) {  // NOLINT
+        // 结束后需要读取结果
+        if (task_ptr_->result<bool>()) {
+          cur_state_ = STATE_IDLE;
+        }
+      }
       break;
   }
 }
 
 bool TwoLasersCalib::calc() {
-  // clang-format off
-  int c = 0; int d = 1;
-  // clang-format on
+  // 准备标定数据
+  std::vector<algorithm::Observation> obs;
+
+  double scale = 1. / sqrt(calib_valid_data_vec_.size());
+  for (const auto& data : calib_valid_data_vec_) {
+    algorithm::Observation ob;
+    ob.l_1_a = data.lines_params[0][0];
+    ob.c_1_a.setZero();
+    ob.c_1_a.head(2) = data.mid_pts_on_line[0][0];
+    ob.l_2_a = data.lines_params[0][1];
+    ob.c_2_a.setZero();
+    ob.c_2_a.head(2) = data.mid_pts_on_line[0][1];
+
+    ob.l_1_b = data.lines_params[1][0];
+    ob.c_1_b.setZero();
+    ob.c_1_b.head(2) = data.mid_pts_on_line[1][0];
+    ob.l_2_b = data.lines_params[1][1];
+    ob.c_2_b.setZero();
+    ob.c_2_b.head(2) = data.mid_pts_on_line[1][1];
+
+    ob.scale = scale;
+    obs.push_back(ob);
+  }
+
+  Eigen::Matrix4d T21_initial = Eigen::Matrix4d::Identity();
+  // init q
+  Eigen::Quaterniond q_init{0.805, 0.000, 0.593, 0.000};
+  T21_initial.block(0, 0, 3, 3) = q_init.toRotationMatrix();
+  algorithm::EulerAngles euler_init = algorithm::quat2euler(q_init);
+  printf("RPY:%.3f, %.3f, %.3f\n", euler_init.roll, euler_init.pitch, euler_init.yaw);
+
 }
 
 void TwoLasersCalib::draw_ui() {

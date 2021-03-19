@@ -4,26 +4,26 @@
 
 namespace algorithm {
 
-// Eigen::Quaterniond yprToQuaternion(double yaw, double pitch, double roll)  // yaw (Z), pitch (Y), roll (X)
-// {
-//   // Abbreviations for the various angular functions
-//   double cy = cos(yaw * 0.5);
-//   double sy = sin(yaw * 0.5);
-//   double cp = cos(pitch * 0.5);
-//   double sp = sin(pitch * 0.5);
-//   double cr = cos(roll * 0.5);
-//   double sr = sin(roll * 0.5);
-//
-//   Eigen::Quaterniond q;
-//   q.w() = cy * cp * cr + sy * sp * sr;
-//   q.x() = cy * cp * sr - sy * sp * cr;
-//   q.y() = sy * cp * sr + cy * sp * cr;
-//   q.z() = sy * cp * cr - cy * sp * sr;
-//
-//   return q;
-// }
+Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll)  // yaw (Z), pitch (Y), roll (X)
+{
+  // Abbreviations for the various angular functions
+  double cy = cos(yaw * 0.5);
+  double sy = sin(yaw * 0.5);
+  double cp = cos(pitch * 0.5);
+  double sp = sin(pitch * 0.5);
+  double cr = cos(roll * 0.5);
+  double sr = sin(roll * 0.5);
 
-EulerAngles ToEulerAngles(const Eigen::Quaterniond& q) {
+  Eigen::Quaterniond q;
+  q.w() = cy * cp * cr + sy * sp * sr;
+  q.x() = cy * cp * sr - sy * sp * cr;
+  q.y() = sy * cp * sr + cy * sp * cr;
+  q.z() = sy * cp * cr - cy * sp * sr;
+
+  return q;
+}
+
+EulerAngles quat2euler(const Eigen::Quaterniond& q) {
   EulerAngles angles{};
 
   // roll (x-axis rotation)
@@ -52,7 +52,7 @@ EulerAngles ToEulerAngles(const Eigen::Quaterniond& q) {
  (a,b,c)^T = vector(AO) cross vector(BO)
  d = O.dot(cross(AO,BO))
  */
-Eigen::Vector4d pi_from_ppp(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3) {
+Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3) {
   Eigen::Vector4d pi;
   pi << (x1 - x3).cross(x2 - x3),
       -x3.dot(x1.cross(x2));  // d = - x3.dot( (x1-x3).cross( x2-x3 ) ) = - x3.dot( x1.cross( x2 ) )

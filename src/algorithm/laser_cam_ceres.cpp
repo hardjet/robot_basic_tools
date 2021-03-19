@@ -35,7 +35,7 @@ bool PointInPlaneFactor::Evaluate(double const *const *parameters, double *resid
       Eigen::Map<Eigen::Matrix<double, 1, 7, Eigen::RowMajor>> jacobian_pose_i(jacobians[0]);
       Eigen::Matrix<double, 1, 6> jaco_i;
       jaco_i.leftCols<3>() = planar_.head(3);
-      jaco_i.rightCols<3>() = planar_.head(3).transpose() * (-qcl.toRotationMatrix() * skewSymmetric(point_));
+      jaco_i.rightCols<3>() = planar_.head(3).transpose() * (-qcl.toRotationMatrix() * skew_symmetric(point_));
 
       jacobian_pose_i.leftCols<6>() = scale_ * jaco_i;
       jacobian_pose_i.rightCols<1>().setZero();
@@ -45,7 +45,7 @@ bool PointInPlaneFactor::Evaluate(double const *const *parameters, double *resid
   return true;
 }
 
-void CamLaserCalClosedSolution(const std::vector<Oberserve> &obs, Eigen::Matrix4d &Tlc) {
+void CamLaserCalClosedSolution(const std::vector<Observation> &obs, Eigen::Matrix4d &Tlc) {
   int cnt = 0;
   for (const auto &ob : obs) {
     cnt += ob.points_on_line.size();
@@ -138,7 +138,7 @@ void CamLaserCalClosedSolution(const std::vector<Oberserve> &obs, Eigen::Matrix4
  *
  */
 #define LOSSFUNCTION
-void CamLaserCalibration(const std::vector<Oberserve> &obs, Eigen::Matrix4d &Tcl, bool use_linefitting_data,
+void CamLaserCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &Tcl, bool use_linefitting_data,
                          bool use_boundary_constraint) {
   Eigen::Quaterniond q(Tcl.block<3, 3>(0, 0));
 
@@ -193,8 +193,8 @@ void CamLaserCalibration(const std::vector<Oberserve> &obs, Eigen::Matrix4d &Tcl
       Eigen::Vector3d p3c = obi.tag_pose_q_ca.toRotationMatrix() * p3m + obi.tag_pose_t_ca;
 
       // 得到平面方程
-      Eigen::Vector4d pi1 = pi_from_ppp(p1c, p2c, Eigen::Vector3d(0, 0, 0));
-      Eigen::Vector4d pi2 = pi_from_ppp(p1c, p3c, Eigen::Vector3d(0, 0, 0));
+      Eigen::Vector4d pi1 = plane_from_3pts(p1c, p2c, Eigen::Vector3d(0, 0, 0));
+      Eigen::Vector4d pi2 = plane_from_3pts(p1c, p3c, Eigen::Vector3d(0, 0, 0));
 
       Eigen::Vector3d pt1 = obi.points.at(0);
       Eigen::Vector3d pt2 = obi.points.at(obi.points.size() - 1);
@@ -292,62 +292,6 @@ void CamLaserCalibration(const std::vector<Oberserve> &obs, Eigen::Matrix4d &Tcl
   }
 
   std::cout << "\nrecover chi2: " << chi / 2. << std::endl;
-}
-
-/////////////////////////////////////////////////////////////////
-struct LineFittingResidfual {
-  LineFittingResidfual(double x, double y) : x_(x), y_(y) {}
-
-  template <typename T>
-  bool operator()(const T *const m, T *residual) const {
-    residual[0] = m[0] * T(x_) + m[1] * T(y_) + T(1.);
-    return true;
-  }
-
- private:
-  // Observations for a sample.
-  const double x_;
-  const double y_;
-};
-
-/**
- *
- * @param Points
- * @param Line 直线模型 Ax + By + 1 = 0
- */
-void LineFittingCeres(const std::vector<Eigen::Vector3d> &Points, Eigen::Vector2d &Line) {
-  double line[3] = {Line(0), Line(1)};
-
-  ceres::Problem problem;
-  for (auto obi : Points) {
-    // debug
-    // if (i % 5 == 0) {
-    //   std::cout << obi.transpose() << std::endl;
-    // }
-
-    ceres::CostFunction *costfunction =
-        new ceres::AutoDiffCostFunction<LineFittingResidfual, 1, 2>(new LineFittingResidfual(obi.x(), obi.y()));
-
-#ifdef LOSSFUNCTION
-    // ceres::LossFunctionWrapper* loss_function(new ceres::HuberLoss(1.0), ceres::TAKE_OWNERSHIP);
-    ceres::LossFunction *loss_function = new ceres::CauchyLoss(0.05);
-    problem.AddResidualBlock(costfunction, loss_function, line);
-#else
-    problem.AddResidualBlock(costfunction, NULL, line);
-#endif
-  }
-
-  ceres::Solver::Options options;
-  options.linear_solver_type = ceres::DENSE_QR;
-  options.max_num_iterations = 10;
-
-  ceres::Solver::Summary summary;
-  ceres::Solve(options, &problem, &summary);
-
-  // std::cout << summary.FullReport() << std::endl;
-
-  Line(0) = line[0];
-  Line(1) = line[1];
 }
 
 }  // namespace algorithm

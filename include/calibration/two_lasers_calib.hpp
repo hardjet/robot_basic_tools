@@ -4,7 +4,7 @@
 #include <mutex>
 #include <array>
 #include <Eigen/Core>
-// #include <Eigen/Geometry>
+#include <Eigen/Geometry>
 
 #include <sensor_msgs/LaserScan.h>
 

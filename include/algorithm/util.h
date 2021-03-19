@@ -12,14 +12,37 @@ struct EulerAngles {
   double yaw, pitch, roll;
 };
 
-EulerAngles ToEulerAngles(const Eigen::Quaterniond& q);
+/// ZYX顺序转为四元数
+Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll);
 
-Eigen::Vector4d pi_from_ppp(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3);
+/// 四元数转欧拉角
+EulerAngles quat2euler(const Eigen::Quaterniond& q);
 
-Eigen::Matrix3d skewSymmetric(const Eigen::Vector3d &q) {
-  Eigen::Matrix3d ans;
-  ans << 0.0, -q(2), q(1), q(2), 0.0, -q(0), -q(1), q(0), 0.0;
-  return ans;
+/// 3个点确定一个平面
+Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3);
+
+/// 直线拟合
+void line_fitting_ceres(const std::vector<Eigen::Vector3d>& points, Eigen::Vector2d& line_params);
+
+/// 计算斜对称矩阵 reference to gtsam
+/**
+ * skew symmetric matrix returns this:
+ *   0  -wz   wy
+ *  wz    0  -wx
+ * -wy   wx    0
+ * @param wx 3 dimensional vector
+ * @param wy
+ * @param wz
+ * @return a 3*3 skew symmetric matrix
+ */
+inline Eigen::Matrix3d skew_symmetric(double wx, double wy, double wz) {
+  return (Eigen::Matrix3d() << 0.0, -wz, +wy, +wz, 0.0, -wx, -wy, +wx, 0.0).finished();
+}
+
+/// 计算斜对称矩阵
+template <class Derived>
+inline Eigen::Matrix3d skew_symmetric(const Eigen::MatrixBase<Derived>& w) {
+  return skew_symmetric(w(0), w(1), w(2));
 }
 
 }  // namespace algorithm

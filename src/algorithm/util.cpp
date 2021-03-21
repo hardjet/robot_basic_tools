@@ -4,6 +4,11 @@
 
 namespace algorithm {
 
+std::ostream& operator<<(std::ostream& os, const EulerAngles& euler) {
+  os << "roll: " << euler.roll << ", pitch: " << euler.pitch << ", yaw: " << euler.yaw;
+  return os;
+}
+
 Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll)  // yaw (Z), pitch (Y), roll (X)
 {
   // Abbreviations for the various angular functions

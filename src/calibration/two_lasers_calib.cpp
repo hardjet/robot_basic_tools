@@ -402,31 +402,32 @@ bool TwoLasersCalib::calc() {
   double scale = 1. / sqrt(calib_valid_data_vec_.size());
   for (const auto& data : calib_valid_data_vec_) {
     algorithm::Observation ob;
-    ob.l_1_a = data.lines_params[0][0];
-    ob.c_1_a.setZero();
-    ob.c_1_a.head(2) = data.mid_pts_on_line[0][0];
-    ob.l_2_a = data.lines_params[0][1];
-    ob.c_2_a.setZero();
-    ob.c_2_a.head(2) = data.mid_pts_on_line[0][1];
+    ob.l_1_a = data.lines_params[0][0].normalized();
+    ob.c_1_a = Eigen::Vector3d{data.mid_pts_on_line[0][0].x(), data.mid_pts_on_line[0][0].y(), 0.};
+    ob.l_2_a = data.lines_params[0][1].normalized();
+    ob.c_2_a = Eigen::Vector3d{data.mid_pts_on_line[0][1].x(), data.mid_pts_on_line[0][1].y(), 0.};
 
-    ob.l_1_b = data.lines_params[1][0];
-    ob.c_1_b.setZero();
-    ob.c_1_b.head(2) = data.mid_pts_on_line[1][0];
-    ob.l_2_b = data.lines_params[1][1];
-    ob.c_2_b.setZero();
-    ob.c_2_b.head(2) = data.mid_pts_on_line[1][1];
+    ob.l_1_b = data.lines_params[1][0].normalized();
+    ob.c_1_b = Eigen::Vector3d{data.mid_pts_on_line[1][0].x(), data.mid_pts_on_line[1][0].y(), 0.};
+    ob.l_2_b = data.lines_params[1][1].normalized();
+    ob.c_2_b = Eigen::Vector3d{data.mid_pts_on_line[1][1].x(), data.mid_pts_on_line[1][1].y(), 0.};
 
     ob.scale = scale;
-    obs.push_back(ob);
+    obs.emplace_back(ob);
   }
 
   Eigen::Matrix4d T21_initial = Eigen::Matrix4d::Identity();
-  // init q
+  // 设置旋转矩阵初始值
   Eigen::Quaterniond q_init{0.805, 0.000, 0.593, 0.000};
-  T21_initial.block(0, 0, 3, 3) = q_init.toRotationMatrix();
-  algorithm::EulerAngles euler_init = algorithm::quat2euler(q_init);
-  printf("RPY:%.3f, %.3f, %.3f\n", euler_init.roll, euler_init.pitch, euler_init.yaw);
+  T21_initial.block<3, 3>(0, 0) = q_init.toRotationMatrix();
+  // 设置平移向量
+  T21_initial.block<3, 1>(0, 3) = Eigen::Vector3d{0.113, 0.0, 1.248};
 
+  std::cout << "T21_initial:\n" << T21_initial << std::endl;
+
+  algorithm::TwoLasersCalibration(obs, T21_initial);
+
+  return true;
 }
 
 void TwoLasersCalib::draw_ui() {

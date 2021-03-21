@@ -7,13 +7,15 @@
 namespace algorithm {
 
 class PoseLocalParameterization : public ceres::LocalParameterization {
+
+  // x是7维数据，delta是切空间的增量6维，x_plus_delta是7维数据
   bool Plus(const double *x, const double *delta, double *x_plus_delta) const override {
     // 位置分量
     Eigen::Map<const Eigen::Vector3d> x_t(x);
-    // 角度分量
+    // 角度分量 内部内存排序为[x,y,z,w]
     Eigen::Map<const Eigen::Quaterniond> x_q(x + 3);
 
-    // 位置增量
+    // 切空间位置增量
     Eigen::Map<const Eigen::Vector3d> delta_t(delta);
     // 注意这里需要将切空间角度增量变换为四元数增量
     Eigen::Quaterniond delta_q = deltaQ(Eigen::Map<const Eigen::Vector3d>(delta + 3));

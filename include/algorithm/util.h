@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -9,7 +9,10 @@ namespace algorithm {
 #define RAD2DEG_RBT(x) (x * 180.0 / M_PI)
 
 struct EulerAngles {
-  double yaw, pitch, roll;
+  double yaw{0.};
+  double pitch{0.};
+  double roll{0.};
+  friend std::ostream& operator<<(std::ostream&, const EulerAngles&);
 };
 
 /// ZYX顺序转为四元数

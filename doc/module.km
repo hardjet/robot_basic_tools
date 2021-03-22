@@ -313,10 +313,19 @@
                             },
                             {
                                 "data": {
+                                    "id": "ca3h8gr2v340",
+                                    "created": 1616375332625,
+                                    "text": "标定数据可视化",
+                                    "progress": 1
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
                                     "id": "c9z9x3psnvs0",
                                     "created": 1615948454647,
                                     "text": "计算位姿",
-                                    "progress": 1
+                                    "progress": 8
                                 },
                                 "children": []
                             }

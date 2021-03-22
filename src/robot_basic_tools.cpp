@@ -68,6 +68,7 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   // initialize the main OpenGL canvas
   main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
   if (!main_canvas_ptr_->ready()) {
+    ros::shutdown();
     close();
   }
 
@@ -199,6 +200,7 @@ void RobotBasicTools::main_menu() {
     ImGui::Separator();
 
     if (ImGui::MenuItem("Quit")) {
+      ros::shutdown();
       close();
     }
 

@@ -3,6 +3,7 @@ cmake-build-debug/
 .vscode/
 data/calib_data/
 *.ini
+gitstats/
 include/version_info.h
 
 *png

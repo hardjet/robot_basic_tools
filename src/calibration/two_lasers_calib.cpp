@@ -8,6 +8,7 @@
 #include "nlohmann/json.hpp"
 
 #include "glk/simple_lines.hpp"
+#include "glk/primitives/primitives.hpp"
 #include "glk/glsl_shader.hpp"
 
 #include "dev/laser.hpp"
@@ -53,7 +54,101 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
   task_ptr_ = std::make_shared<calibration::Task>();
 }
 
+void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
+  if (!b_show_calib_data_) {
+    return;
+  }
+
+  // 更新显示直线
+  if (b_need_to_update_cd_) {
+    b_need_to_update_cd_ = false;
+    std::cout << "update calib data" << std::endl;
+    // 3d空间直线信息
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices(4);
+    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors(4);
+    std::vector<Eigen::Vector4i, Eigen::aligned_allocator<Eigen::Vector4i>> infos(4);
+
+    const auto& cur_calib_data = calib_valid_data_vec_[selected_calib_data_id_ - 1];
+    vertices.at(0) = cur_calib_data.lines_pts[0][0][0];
+    vertices.at(1) = cur_calib_data.lines_pts[0][0][1];
+    vertices.at(2) = cur_calib_data.lines_pts[0][1][0];
+    vertices.at(3) = cur_calib_data.lines_pts[0][1][1];
+
+    colors.at(0) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+    colors.at(1) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+    colors.at(2) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+    colors.at(3) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+
+    infos.at(0) = Eigen::Vector4i(0, 0, 1, 0);
+    infos.at(1) = Eigen::Vector4i(0, 0, 1, 0);
+    infos.at(2) = Eigen::Vector4i(0, 0, 1, 0);
+    infos.at(3) = Eigen::Vector4i(0, 0, 1, 0);
+
+    calib_show_data_[0].laser_lines_drawable_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
+    calib_show_data_[0].mid_pt_on_lines[0] = cur_calib_data.mid_pt_on_lines[0][0];
+    calib_show_data_[0].mid_pt_on_lines[1] = cur_calib_data.mid_pt_on_lines[0][1];
+
+    vertices.at(0) = cur_calib_data.lines_pts[1][0][0];
+    vertices.at(1) = cur_calib_data.lines_pts[1][0][1];
+    vertices.at(2) = cur_calib_data.lines_pts[1][1][0];
+    vertices.at(3) = cur_calib_data.lines_pts[1][1][1];
+
+    colors.at(0) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
+    colors.at(1) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
+    colors.at(2) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
+    colors.at(3) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
+
+    infos.at(0) = Eigen::Vector4i(0, 0, 2, 0);
+    infos.at(1) = Eigen::Vector4i(0, 0, 2, 0);
+    infos.at(2) = Eigen::Vector4i(0, 0, 2, 0);
+    infos.at(3) = Eigen::Vector4i(0, 0, 2, 0);
+
+    calib_show_data_[1].laser_lines_drawable_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
+    calib_show_data_[1].mid_pt_on_lines[0] = cur_calib_data.mid_pt_on_lines[1][0];
+    calib_show_data_[1].mid_pt_on_lines[1] = cur_calib_data.mid_pt_on_lines[1][1];
+  }
+
+  // 绘图
+  // 画直线上的中点
+  auto draw_pt = [&shader](Eigen::Matrix4f& model, const Eigen::Vector3d& pos) {
+    // 画直线中点
+    // 更改大小 设置球的半径大小
+    model.block<3, 3>(0, 0) *= 0.025;
+    // 改变位置
+    model.block<3, 1>(0, 3) = Eigen::Vector3f{float(pos.x()), float(pos.y()), float(pos.z())};
+    shader.set_uniform("model_matrix", model);
+    // 设置显示颜色
+    shader.set_uniform("material_color", Eigen::Vector4f(0.0f, 1.0f, 1.0f, 1.0f));
+
+    const auto& sphere = glk::Primitives::instance()->primitive(glk::Primitives::SPHERE);
+    sphere.draw(shader);
+  };
+
+  // 设置模式
+  shader.set_uniform("color_mode", 1);
+
+  // 后面需要设置为激光0的位姿
+  Eigen::Matrix4f model_matrix = Eigen::Matrix4f::Identity();
+  calib_show_data_[0].laser_lines_drawable_ptr->draw(shader);
+
+  model_matrix = Eigen::Matrix4f::Identity();
+  draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[0]);
+  model_matrix = Eigen::Matrix4f::Identity();
+  draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[1]);
+
+  // 后面需要设置为激光1的位姿
+  model_matrix = Eigen::Matrix4f::Identity();
+  calib_show_data_[1].laser_lines_drawable_ptr->draw(shader);
+
+  model_matrix = Eigen::Matrix4f::Identity();
+  draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[0]);
+  model_matrix = Eigen::Matrix4f::Identity();
+  draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[1]);
+}
+
 void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
+  draw_calib_data(shader);
+
   if (!laser_insts_[0].laser_lines_drawable_ptr) {
     return;
   }
@@ -94,10 +189,10 @@ void TwoLasersCalib::update_show() {
     double theta, delta_len;
 
     // 设置直线参数
-    calib_data_.lines_params[laser_inst.id] = laser_inst.laser_lines_params;
+    calib_data_.lines_params[laser_inst.id] = laser_inst.lines_params;
 
     for (int i = 0; i < 2; i++) {
-      const auto& line_params = laser_inst.laser_lines_params[i];
+      const auto& line_params = laser_inst.lines_params[i];
       const auto& line_min_max = laser_inst.lines_min_max[i];
 
       // 计算角度
@@ -132,7 +227,9 @@ void TwoLasersCalib::update_show() {
       // 计算直线上的中点
       double mid_y = (line_min_max(0) + line_min_max(1)) / 2.;
       double mid_x = -(line_params(1) * mid_y + line_params(2)) / line_params(0);
-      calib_data_.mid_pts_on_line[laser_inst.id][i] = Eigen::Vector2d{mid_x, mid_y};
+      calib_data_.mid_pt_on_lines[laser_inst.id][i] = Eigen::Vector3d{mid_x, mid_y, 0};
+      calib_data_.lines_pts[laser_inst.id][i][0] = Eigen::Vector3f{float(x_start), float(y_start), 0};
+      calib_data_.lines_pts[laser_inst.id][i][1] = Eigen::Vector3f{float(x_end), float(y_end), 0};
     }
 
     // 重置3d直线
@@ -179,7 +276,7 @@ bool TwoLasersCalib::get_valid_lines() {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
     algorithm::LineDetect line_detector(*laser_inst.calib_data_ptr, 180.0, 4.0);
-    if (line_detector.find_two_lines(laser_inst.laser_lines_params, laser_inst.lines_min_max, laser_img_show)) {
+    if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -203,18 +300,18 @@ bool TwoLasersCalib::get_valid_lines() {
 }
 
 void TwoLasersCalib::check_and_save() {
-  bool is_need_to_save = true;
+  bool b_need_to_save = true;
   // 逐个检测角度值与第3帧比较
   for (auto& data : calib_valid_data_vec_) {
     double theta = abs(data.angle - calib_data_vec_.at(2).angle);
     // 保证间隔5°以上
     if (theta < 5.0) {
-      is_need_to_save = false;
+      b_need_to_save = false;
       break;
     }
   }
 
-  if (is_need_to_save) {
+  if (b_need_to_save) {
     // 取第3帧保存
     calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
     printf("!!!!!!!!!!!!!angle: %f saved!\n", calib_valid_data_vec_.back().angle);
@@ -223,19 +320,44 @@ void TwoLasersCalib::check_and_save() {
 
 static nlohmann::json convert_parmas_to_json(const std::array<std::array<Eigen::Vector3d, 2>, 2>& lines_params) {
   std::vector<nlohmann::json> json_pts(4);
+  // 激光0 直线0
   json_pts.at(0) = {lines_params[0][0].x(), lines_params[0][0].y(), lines_params[0][0].z()};
+  // 激光0 直线1
   json_pts.at(1) = {lines_params[0][1].x(), lines_params[0][1].y(), lines_params[0][1].z()};
+  // 激光1 直线0
   json_pts.at(2) = {lines_params[1][0].x(), lines_params[1][0].y(), lines_params[1][0].z()};
+  // 激光1 直线1
   json_pts.at(3) = {lines_params[1][1].x(), lines_params[1][1].y(), lines_params[1][1].z()};
   return json_pts;
 }
 
-static nlohmann::json convert_pts_to_json(const std::array<std::array<Eigen::Vector2d, 2>, 2>& pts) {
+static nlohmann::json convert_pts_to_json(const std::array<std::array<Eigen::Vector3d, 2>, 2>& pts) {
   std::vector<nlohmann::json> json_pts(4);
-  json_pts.at(0) = {pts[0][0].x(), pts[0][0].y()};
-  json_pts.at(1) = {pts[0][1].x(), pts[0][1].y()};
-  json_pts.at(2) = {pts[1][0].x(), pts[1][0].y()};
-  json_pts.at(3) = {pts[1][1].x(), pts[1][1].y()};
+  // 激光0 直线0
+  json_pts.at(0) = {pts[0][0].x(), pts[0][0].y(), pts[0][0].z()};
+  // 激光0 直线1
+  json_pts.at(1) = {pts[0][1].x(), pts[0][1].y(), pts[0][1].z()};
+  // 激光1 直线0
+  json_pts.at(2) = {pts[1][0].x(), pts[1][0].y(), pts[1][0].z()};
+  // 激光1 直线1
+  json_pts.at(3) = {pts[1][1].x(), pts[1][1].y(), pts[1][1].z()};
+  return json_pts;
+}
+
+static nlohmann::json convert_pts_to_json(const std::array<std::array<std::array<Eigen::Vector3f, 2>, 2>, 2>& pts) {
+  std::vector<nlohmann::json> json_pts(8);
+  // 激光0 直线0
+  json_pts.at(0) = {pts[0][0][0].x(), pts[0][0][0].y(), pts[0][0][0].z()};
+  json_pts.at(1) = {pts[0][0][1].x(), pts[0][0][1].y(), pts[0][0][1].z()};
+  // 激光0 直线1
+  json_pts.at(2) = {pts[0][1][0].x(), pts[0][1][0].y(), pts[0][1][0].z()};
+  json_pts.at(3) = {pts[0][1][1].x(), pts[0][1][1].y(), pts[0][1][1].z()};
+  // 激光1 直线0
+  json_pts.at(4) = {pts[1][0][0].x(), pts[1][0][0].y(), pts[1][0][0].z()};
+  json_pts.at(5) = {pts[1][0][1].x(), pts[1][0][1].y(), pts[1][0][1].z()};
+  // 激光1 直线1
+  json_pts.at(6) = {pts[1][1][0].x(), pts[1][1][0].y(), pts[1][1][0].z()};
+  json_pts.at(7) = {pts[1][1][1].x(), pts[1][1][1].y(), pts[1][1][1].z()};
   return json_pts;
 }
 
@@ -279,11 +401,25 @@ bool TwoLasersCalib::load_calib_data(const std::string& file_path) {
     cd.lines_params[1][1] = Eigen::Map<Eigen::Vector3d>(v[3].data(), 3);
 
     v.clear();
-    data.value().at("mid_pts_on_line").get_to<std::vector<std::vector<double>>>(v);
-    cd.mid_pts_on_line[0][0] = Eigen::Map<Eigen::Vector2d>(v[0].data(), 2);
-    cd.mid_pts_on_line[0][1] = Eigen::Map<Eigen::Vector2d>(v[1].data(), 2);
-    cd.mid_pts_on_line[1][0] = Eigen::Map<Eigen::Vector2d>(v[2].data(), 2);
-    cd.mid_pts_on_line[1][1] = Eigen::Map<Eigen::Vector2d>(v[3].data(), 2);
+    data.value().at("mid_pt_on_lines").get_to<std::vector<std::vector<double>>>(v);
+    cd.mid_pt_on_lines[0][0] = Eigen::Map<Eigen::Vector3d>(v[0].data(), 3);
+    cd.mid_pt_on_lines[0][1] = Eigen::Map<Eigen::Vector3d>(v[1].data(), 3);
+    cd.mid_pt_on_lines[1][0] = Eigen::Map<Eigen::Vector3d>(v[2].data(), 3);
+    cd.mid_pt_on_lines[1][1] = Eigen::Map<Eigen::Vector3d>(v[3].data(), 3);
+
+    std::vector<std::vector<float>> v_f;
+    data.value().at("lines_pts").get_to<std::vector<std::vector<float>>>(v_f);
+    cd.lines_pts[0][0][0] = Eigen::Map<Eigen::Vector3f>(v_f[0].data(), 3);
+    cd.lines_pts[0][0][1] = Eigen::Map<Eigen::Vector3f>(v_f[1].data(), 3);
+    
+    cd.lines_pts[0][1][0] = Eigen::Map<Eigen::Vector3f>(v_f[2].data(), 3);
+    cd.lines_pts[0][1][1] = Eigen::Map<Eigen::Vector3f>(v_f[3].data(), 3);
+
+    cd.lines_pts[1][0][0] = Eigen::Map<Eigen::Vector3f>(v_f[4].data(), 3);
+    cd.lines_pts[1][0][1] = Eigen::Map<Eigen::Vector3f>(v_f[5].data(), 3);
+
+    cd.lines_pts[1][1][0] = Eigen::Map<Eigen::Vector3f>(v_f[6].data(), 3);
+    cd.lines_pts[1][1][1] = Eigen::Map<Eigen::Vector3f>(v_f[7].data(), 3);
 
     calib_valid_data_vec_.push_back(cd);
   }
@@ -305,7 +441,8 @@ bool TwoLasersCalib::save_calib_data(const std::string& file_path) {
     nlohmann::json js = {{"timestamp", data.timestamp},
                          {"angle", data.angle},
                          {"lines_params", convert_parmas_to_json(data.lines_params)},
-                         {"mid_pts_on_line", convert_pts_to_json(data.mid_pts_on_line)}};
+                         {"mid_pt_on_lines", convert_pts_to_json(data.mid_pt_on_lines)},
+                         {"lines_pts", convert_pts_to_json(data.lines_pts)}};
     js_data.push_back(js);
   }
   js_whole["data"] = js_data;
@@ -400,17 +537,19 @@ bool TwoLasersCalib::calc() {
   std::vector<algorithm::Observation> obs;
 
   double scale = 1. / sqrt(calib_valid_data_vec_.size());
+  std::cout << "scale: " << scale << std::endl;
+
   for (const auto& data : calib_valid_data_vec_) {
     algorithm::Observation ob;
     ob.l_1_a = data.lines_params[0][0].normalized();
-    ob.c_1_a = Eigen::Vector3d{data.mid_pts_on_line[0][0].x(), data.mid_pts_on_line[0][0].y(), 0.};
+    ob.c_1_a = data.mid_pt_on_lines[0][0];
     ob.l_2_a = data.lines_params[0][1].normalized();
-    ob.c_2_a = Eigen::Vector3d{data.mid_pts_on_line[0][1].x(), data.mid_pts_on_line[0][1].y(), 0.};
+    ob.c_2_a = data.mid_pt_on_lines[0][1];
 
     ob.l_1_b = data.lines_params[1][0].normalized();
-    ob.c_1_b = Eigen::Vector3d{data.mid_pts_on_line[1][0].x(), data.mid_pts_on_line[1][0].y(), 0.};
+    ob.c_1_b = data.mid_pt_on_lines[1][0];
     ob.l_2_b = data.lines_params[1][1].normalized();
-    ob.c_2_b = Eigen::Vector3d{data.mid_pts_on_line[1][1].x(), data.mid_pts_on_line[1][1].y(), 0.};
+    ob.c_2_b = data.mid_pt_on_lines[1][1];
 
     ob.scale = scale;
     obs.emplace_back(ob);
@@ -431,11 +570,11 @@ bool TwoLasersCalib::calc() {
 }
 
 void TwoLasersCalib::draw_ui() {
-  if (!is_show_window_) {
+  if (!b_show_window_) {
     return;
   }
   // 新建窗口
-  ImGui::Begin("Two Lasers Calibration", &is_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin("Two Lasers Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
   // 激光选择
   draw_sensor_selector<dev::Laser>("laser 1", dev::LASER, laser_insts_[0].laser_dev_ptr);
@@ -504,8 +643,8 @@ void TwoLasersCalib::draw_ui() {
   if (laser_insts_[0].laser_dev_ptr && laser_insts_[1].laser_dev_ptr) {
     ImGui::SameLine();
     // 选择是否显示图像
-    if (ImGui::Checkbox("show image", &is_show_image_)) {
-      if (is_show_image_) {
+    if (ImGui::Checkbox("show image", &b_show_image_)) {
+      if (b_show_image_) {
         laser_insts_[0].img_show_dev_ptr->enable("ts calib laser 1", false);
         laser_insts_[1].img_show_dev_ptr->enable("ts calib laser 2", false);
       } else {
@@ -550,15 +689,53 @@ void TwoLasersCalib::draw_ui() {
     }
   }
 
-  // 显示当前有效数据个数
-  ImGui::Separator();
-  ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
+  // 标定数据相关操作
+  if (!calib_valid_data_vec_.empty()) {
+    ImGui::Separator();
+    if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
+      if (b_show_calib_data_) {
+        b_need_to_update_cd_ = true;
+      }
+    }
+    if (ImGui::IsItemHovered()) {
+      if (b_show_calib_data_) {
+        ImGui::SetTooltip("click to not show calib data");
+      } else {
+        ImGui::SetTooltip("click to show calib data");
+      }
+    }
+
+    float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+    ImGui::PushButtonRepeat(true);
+    ImGui::SameLine(0.0f, spacing);
+    if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
+      if (selected_calib_data_id_ > 1) {
+        selected_calib_data_id_--;
+        if (b_show_calib_data_) {
+          b_need_to_update_cd_ = true;
+        }
+      }
+    }
+    ImGui::SameLine(0.0f, spacing);
+    if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
+      if (selected_calib_data_id_ < calib_valid_data_vec_.size()) {
+        selected_calib_data_id_++;
+        if (b_show_calib_data_) {
+          b_need_to_update_cd_ = true;
+        }
+      }
+    }
+    ImGui::PopButtonRepeat();
+    ImGui::SameLine();
+    ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
+  }
+
   ImGui::End();
 
   // 显示图像
-  if (is_show_image_) {
-    laser_insts_[0].img_show_dev_ptr->show_image(is_show_image_);
-    laser_insts_[1].img_show_dev_ptr->show_image(is_show_image_);
+  if (b_show_image_) {
+    laser_insts_[0].img_show_dev_ptr->show_image(b_show_image_);
+    laser_insts_[1].img_show_dev_ptr->show_image(b_show_image_);
   }
 }
 

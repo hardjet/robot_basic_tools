@@ -21,7 +21,7 @@ class BaseCalib {
   /**
    * @brief 打开显示ui开关
    */
-  void show() { is_show_window_ = true; }
+  void show() { b_show_window_ = true; }
 
   /**
    *
@@ -95,7 +95,7 @@ class BaseCalib {
 
  protected:
   // 是否显示ui窗口
-  bool is_show_window_{false};
+  bool b_show_window_{false};
   // 传感器管理器
   std::shared_ptr<dev::SensorManager> sensor_manager_ptr_;
   // 标定流程状态 当前

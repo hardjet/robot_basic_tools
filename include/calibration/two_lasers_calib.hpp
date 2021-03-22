@@ -54,6 +54,9 @@ class TwoLasersCalib : public BaseCalib {
   /// 更新显示相关的内容
   void update_show();
 
+  /// 在3d中显示标定数据
+  void draw_calib_data(glk::GLSLShader& shader);
+
   /// 保证保存的帧角度不同
   void check_and_save();
 
@@ -83,7 +86,7 @@ class TwoLasersCalib : public BaseCalib {
     // 显示激光使用的image
     boost::shared_ptr<const cv_bridge::CvImage> img_ptr{nullptr};
     // 检测到的2条直线参数 Ax+By+C=0
-    std::array<Eigen::Vector3d, 2> laser_lines_params;
+    std::array<Eigen::Vector3d, 2> lines_params;
     // 直线y方向最大和最小值 [[min, max], [min, max]]
     std::array<Eigen::Vector2d, 2> lines_min_max;
     // 拟合出的两条直线
@@ -96,14 +99,32 @@ class TwoLasersCalib : public BaseCalib {
     double timestamp{0.};
     // 取第一条直线的角度
     double angle{0.};
-    // 直线数据
+    // 直线参数数据
     std::array<std::array<Eigen::Vector3d, 2>, 2> lines_params;
+    // 直线点数据
+    std::array<std::array<std::array<Eigen::Vector3f, 2>, 2>, 2> lines_pts;
     // 直线上的中点坐标
-    std::array<std::array<Eigen::Vector2d, 2>, 2> mid_pts_on_line;
+    std::array<std::array<Eigen::Vector3d, 2>, 2> mid_pt_on_lines;
+  };
+
+  // 标定数据显示
+  struct CalibDataShow{
+    // 直线上的中点坐标
+    std::array<Eigen::Vector3d, 2> mid_pt_on_lines;
+    // 拟合出的两条直线
+    std::shared_ptr<glk::SimpleLines> laser_lines_drawable_ptr{nullptr};
   };
 
   // 是否显示图像
-  bool is_show_image_{false};
+  bool b_show_image_{false};
+  // 是否显示就绪的标定数据
+  bool b_show_calib_data_{false};
+  // 是否需要更新显示的标定数据
+  bool b_need_to_update_cd_{false};
+  // 当前选中的数据
+  uint32_t selected_calib_data_id_{1};
+  // 标定数据显示
+  std::array<CalibDataShow, 2> calib_show_data_;
   // 资源锁
   std::mutex mtx_;
   // 任务对象

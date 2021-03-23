@@ -62,7 +62,7 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
   // 更新显示直线
   if (b_need_to_update_cd_) {
     b_need_to_update_cd_ = false;
-    std::cout << "update calib data" << std::endl;
+    // std::cout << "update calib data" << std::endl;
     // 3d空间直线信息
     std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices(4);
     std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors(4);
@@ -76,8 +76,8 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
 
     colors.at(0) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
     colors.at(1) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
-    colors.at(2) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
-    colors.at(3) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+    colors.at(2) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
+    colors.at(3) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
 
     infos.at(0) = Eigen::Vector4i(0, 0, 1, 0);
     infos.at(1) = Eigen::Vector4i(0, 0, 1, 0);
@@ -93,11 +93,6 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
     vertices.at(2) = cur_calib_data.lines_pts[1][1][0];
     vertices.at(3) = cur_calib_data.lines_pts[1][1][1];
 
-    colors.at(0) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
-    colors.at(1) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
-    colors.at(2) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
-    colors.at(3) = Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f);
-
     infos.at(0) = Eigen::Vector4i(0, 0, 2, 0);
     infos.at(1) = Eigen::Vector4i(0, 0, 2, 0);
     infos.at(2) = Eigen::Vector4i(0, 0, 2, 0);
@@ -110,40 +105,42 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
 
   // 绘图
   // 画直线上的中点
-  auto draw_pt = [&shader](Eigen::Matrix4f& model, const Eigen::Vector3d& pos) {
+  auto draw_pt = [&shader](Eigen::Matrix4f& model, const Eigen::Vector3d& pos, const Eigen::Vector4f& color) {
     // 画直线中点
     // 更改大小 设置球的半径大小
     model.block<3, 3>(0, 0) *= 0.025;
     // 改变位置
     model.block<3, 1>(0, 3) = Eigen::Vector3f{float(pos.x()), float(pos.y()), float(pos.z())};
+    shader.set_uniform("color_mode", 1);
     shader.set_uniform("model_matrix", model);
     // 设置显示颜色
-    shader.set_uniform("material_color", Eigen::Vector4f(0.0f, 1.0f, 1.0f, 1.0f));
+    shader.set_uniform("material_color", color);
 
     const auto& sphere = glk::Primitives::instance()->primitive(glk::Primitives::SPHERE);
     sphere.draw(shader);
   };
 
-  // 设置模式
-  shader.set_uniform("color_mode", 1);
-
   // 后面需要设置为激光0的位姿
   Eigen::Matrix4f model_matrix = Eigen::Matrix4f::Identity();
+  shader.set_uniform("model_matrix", model_matrix);
+  shader.set_uniform("color_mode", 2);
   calib_show_data_[0].laser_lines_drawable_ptr->draw(shader);
 
   model_matrix = Eigen::Matrix4f::Identity();
-  draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[0]);
+  draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[0], Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f));
   model_matrix = Eigen::Matrix4f::Identity();
-  draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[1]);
+  draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 
   // 后面需要设置为激光1的位姿
   model_matrix = Eigen::Matrix4f::Identity();
+  shader.set_uniform("model_matrix", model_matrix);
+  shader.set_uniform("color_mode", 2);
   calib_show_data_[1].laser_lines_drawable_ptr->draw(shader);
 
   model_matrix = Eigen::Matrix4f::Identity();
-  draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[0]);
+  draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[0], Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f));
   model_matrix = Eigen::Matrix4f::Identity();
-  draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[1]);
+  draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 }
 
 void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
@@ -163,7 +160,7 @@ void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
 
 void TwoLasersCalib::update_show() {
   // 3d空间直线信息
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices(4);
   std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors;
   std::vector<Eigen::Vector4i, Eigen::aligned_allocator<Eigen::Vector4i>> infos;
 
@@ -174,12 +171,30 @@ void TwoLasersCalib::update_show() {
   // 时间
   calib_data_.timestamp = laser_insts_[0].calib_data_ptr->header.stamp.toSec();
 
+  bool b_need_to_swap{false};
+  // 需要判断是否需要调整保存顺序, 同一边的激光对应好
+  // 激光0序号0直线的角度
+  double theta_0_0 = atan(laser_insts_[0].lines_params[0](0) / laser_insts_[0].lines_params[0](1));
+  // 激光1序号0直线的角度
+  double theta_1_0 = atan(laser_insts_[1].lines_params[0](0) / laser_insts_[1].lines_params[0](1));
+  // 激光1序号1直线的角度
+  double theta_1_1 = atan(laser_insts_[1].lines_params[1](0) / laser_insts_[1].lines_params[1](1));
+  // 同一边的直线角度差一定比不同边直线角度差小
+  // 需要变换
+  if (abs(theta_0_0 - theta_1_0) > abs(theta_0_0 - theta_1_1)) {
+    b_need_to_swap = true;
+  }
+  printf("need_to_swap: %d, 0-0: %.3f, 1-0: %.3f, 1-1: %.3f\n", b_need_to_swap, RAD2DEG_RBT(theta_0_0),
+         RAD2DEG_RBT(theta_1_0), RAD2DEG_RBT(theta_1_1));
+  if (b_need_to_swap) {
+    std::cerr << "need_to_swap!!!!" << std::endl;
+  }
+
   for (auto& laser_inst : laser_insts_) {
     // 更新显示图象
     laser_inst.img_show_dev_ptr->update_image(laser_inst.img_ptr);
 
     // 计算3d空间直线顶点坐标
-    vertices.clear();
     colors.clear();
     infos.clear();
 
@@ -187,9 +202,13 @@ void TwoLasersCalib::update_show() {
     const double extend_len = 0.1;
     // 直线与x轴的夹角
     double theta, delta_len;
-
     // 设置直线参数
-    calib_data_.lines_params[laser_inst.id] = laser_inst.lines_params;
+    if (laser_inst.id == 1 && b_need_to_swap) {
+      calib_data_.lines_params[1][0] = laser_inst.lines_params[1];
+      calib_data_.lines_params[1][1] = laser_inst.lines_params[0];
+    } else {
+      calib_data_.lines_params[laser_inst.id] = laser_inst.lines_params;
+    }
 
     for (int i = 0; i < 2; i++) {
       const auto& line_params = laser_inst.lines_params[i];
@@ -207,38 +226,45 @@ void TwoLasersCalib::update_show() {
       x_start = -(line_params(1) * y_start + line_params(2)) / line_params(0);
       x_end = -(line_params(1) * y_end + line_params(2)) / line_params(0);
 
-      // 添加直线顶点
-      vertices.emplace_back(x_start, y_start, 0);
-      vertices.emplace_back(x_end, y_end, 0);
-
-      // 添加颜色信息
-      if (laser_inst.id == 0) {
-        colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
-        colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
-      } else {
-        colors.emplace_back(255.f, 0.f, 255.f, 1.0f);
-        colors.emplace_back(255.f, 0.f, 255.f, 1.0f);
-      }
-
-      // 添加额外信息
-      infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 1, 0);
-      infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 2, 0);
-
       // 计算直线上的中点
       double mid_y = (line_min_max(0) + line_min_max(1)) / 2.;
       double mid_x = -(line_params(1) * mid_y + line_params(2)) / line_params(0);
-      calib_data_.mid_pt_on_lines[laser_inst.id][i] = Eigen::Vector3d{mid_x, mid_y, 0};
-      calib_data_.lines_pts[laser_inst.id][i][0] = Eigen::Vector3f{float(x_start), float(y_start), 0};
-      calib_data_.lines_pts[laser_inst.id][i][1] = Eigen::Vector3f{float(x_end), float(y_end), 0};
+
+      // 添加直线顶点
+      if (laser_inst.id == 1 && b_need_to_swap) {
+        vertices[(1 - i) * 2 + 0] = Eigen::Vector3f{float(x_start), float(y_start), 0};
+        vertices[(1 - i) * 2 + 1] = Eigen::Vector3f{float(x_end), float(y_end), 0};
+        calib_data_.mid_pt_on_lines[laser_inst.id][1 - i] = Eigen::Vector3d{mid_x, mid_y, 0};
+        calib_data_.lines_pts[laser_inst.id][1 - i][0] = Eigen::Vector3f{float(x_start), float(y_start), 0};
+        calib_data_.lines_pts[laser_inst.id][1 - i][1] = Eigen::Vector3f{float(x_end), float(y_end), 0};
+      } else {
+        vertices[i * 2 + 0] = Eigen::Vector3f{float(x_start), float(y_start), 0};
+        vertices[i * 2 + 1] = Eigen::Vector3f{float(x_end), float(y_end), 0};
+        calib_data_.mid_pt_on_lines[laser_inst.id][i] = Eigen::Vector3d{mid_x, mid_y, 0};
+        calib_data_.lines_pts[laser_inst.id][i][0] = Eigen::Vector3f{float(x_start), float(y_start), 0};
+        calib_data_.lines_pts[laser_inst.id][i][1] = Eigen::Vector3f{float(x_end), float(y_end), 0};
+      }
     }
+
+    // 添加额外信息
+    infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 1, 0);
+    infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 2, 0);
+    infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 1, 0);
+    infos.emplace_back(laser_inst.laser_dev_ptr->sensor_id, laser_inst.id, 2, 0);
+
+    // 添加颜色信息
+    colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
+    colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
+    colors.emplace_back(255.f, 0.f, 255.f, 1.0f);
+    colors.emplace_back(255.f, 0.f, 255.f, 1.0f);
 
     // 重置3d直线
     laser_inst.laser_lines_drawable_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
     // std::cout << "laser_lines_drawable_ptr: " << laser_inst.laser_lines_drawable_ptr << std::endl;
   }
 
-  calib_data_.angle = atan(calib_data_.lines_params[0][0](0) / calib_data_.lines_params[0][0](1));
-  calib_data_.angle *= 180. / M_PI;
+  // 设置角度
+  calib_data_.angle = RAD2DEG_RBT(theta_0_0);
 }
 
 void TwoLasersCalib::update() {
@@ -411,7 +437,7 @@ bool TwoLasersCalib::load_calib_data(const std::string& file_path) {
     data.value().at("lines_pts").get_to<std::vector<std::vector<float>>>(v_f);
     cd.lines_pts[0][0][0] = Eigen::Map<Eigen::Vector3f>(v_f[0].data(), 3);
     cd.lines_pts[0][0][1] = Eigen::Map<Eigen::Vector3f>(v_f[1].data(), 3);
-    
+
     cd.lines_pts[0][1][0] = Eigen::Map<Eigen::Vector3f>(v_f[2].data(), 3);
     cd.lines_pts[0][1][1] = Eigen::Map<Eigen::Vector3f>(v_f[3].data(), 3);
 
@@ -658,6 +684,7 @@ void TwoLasersCalib::draw_ui() {
 
     if (next_state_ == STATE_IDLE) {
       if (ImGui::Button("start")) {
+        b_show_calib_data_ = false;
         // 两个设备名称不能一样
         if (laser_insts_[0].laser_dev_ptr->sensor_id == laser_insts_[1].laser_dev_ptr->sensor_id) {
           std::string msg = "two lasers are the same!";
@@ -680,7 +707,7 @@ void TwoLasersCalib::draw_ui() {
     }
 
     // 大于6帧数据就可以开始进行标定操作了
-    if (calib_valid_data_vec_.size() > 6) {
+    if (calib_valid_data_vec_.size() > 3) {
       ImGui::SameLine();
       // 开始执行标定
       if (ImGui::Button("calib")) {
@@ -726,6 +753,24 @@ void TwoLasersCalib::draw_ui() {
       }
     }
     ImGui::PopButtonRepeat();
+    ImGui::SameLine();
+    // 删除按钮
+    if (cur_state_ == STATE_IDLE) {
+      if (ImGui::Button("Del")) {
+        selected_calib_data_id_--;
+        // 删除数据
+        calib_valid_data_vec_.erase(calib_valid_data_vec_.begin() + selected_calib_data_id_);
+        b_need_to_update_cd_ = true;
+        if (selected_calib_data_id_ == 0) {
+          selected_calib_data_id_ = 1;
+        }
+      }
+      // tips
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("delete one item of calib data");
+      }
+    }
+
     ImGui::SameLine();
     ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
   }

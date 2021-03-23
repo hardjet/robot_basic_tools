@@ -5,7 +5,7 @@
 namespace algorithm {
 
 std::ostream& operator<<(std::ostream& os, const EulerAngles& euler) {
-  os << "roll: " << euler.roll << ", pitch: " << euler.pitch << ", yaw: " << euler.yaw;
+  os << "[deg] roll: " << RAD2DEG_RBT(euler.roll) << ", pitch: " << RAD2DEG_RBT(euler.pitch) << ", yaw: " << RAD2DEG_RBT(euler.yaw);
   return os;
 }
 

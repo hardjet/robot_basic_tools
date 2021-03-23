@@ -34,4 +34,6 @@ struct Observation {
 */
 void TwoLasersCalibration(const std::vector<Observation>& obs, Eigen::Matrix4d& T12);
 
+void TwoLasersCalibrationAutoDiff(const std::vector<Observation> &obs, Eigen::Matrix4d &T12);
+
 }  // namespace algorithm

@@ -8,6 +8,25 @@ namespace algorithm {
 
 // 共面因子
 class CoPlaneFactor : public ceres::SizedCostFunction<1, 7> {
+ public:
+  CoPlaneFactor(Eigen::Vector3d l1, Eigen::Vector3d l2, Eigen::Vector3d c1, Eigen::Vector3d c2, double scale = 1.)
+      : l1_(std::move(l1)), l2_(std::move(l2)), c1_(std::move(c1)), c2_(std::move(c2)), scale_(scale) {
+    std::cout << "Co: " << l1_.transpose() << ", " << c1_.transpose() << ", " << l2_.transpose() << ", "
+              << c2_.transpose() << std::endl;
+    // 数据检查
+    double dist = abs(l1_.x() * c1_.x() + l1_.y() * c1_.y() + l1.z()) / sqrt(l1_.x() * l1_.x() + l1_.y() * l1_.y());
+    if (dist > 0.01) {
+      std::cerr << "point c1 not on l1!!" << std::endl;
+    }
+    dist = abs(l2_.x() * c2_.x() + l2_.y() * c2_.y() + l2.z()) / sqrt(l2_.x() * l2_.x() + l2_.y() * l2_.y());
+    if (dist > 0.01) {
+      std::cerr << "point c2 not on l2!!" << std::endl;
+    }
+  }
+
+  bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const override;
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
   // 线段1单位向量
   const Eigen::Vector3d l1_;
@@ -18,12 +37,6 @@ class CoPlaneFactor : public ceres::SizedCostFunction<1, 7> {
   // 线段2的中点坐标
   const Eigen::Vector3d c2_;
   const double scale_;
-
- public:
-  CoPlaneFactor(Eigen::Vector3d l1, Eigen::Vector3d l2, Eigen::Vector3d c1, Eigen::Vector3d c2, double scale = 1.)
-      : l1_(std::move(l1)), l2_(std::move(l2)), c1_(std::move(c1)), c2_(std::move(c2)), scale_(scale) {}
-
-  bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const override;
 };
 
 bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
@@ -32,13 +45,16 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
   Eigen::Quaterniond q_12(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
   Eigen::Matrix3d R_12 = q_12.toRotationMatrix();
 
+  EulerAngles euler = quat2euler(q_12);
+  std::cout << "q_12: " << euler << ", t_12: " << t_12.transpose() << std::endl;
+
   // \mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 - \mathbf{t}
   Eigen::Vector3d l3 = c1_ - R_12 * c2_ - t_12;
   // \mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2
-  Eigen::Vector3d n3 = skew_symmetric(l1_) * R_12 * l2_;
+  Eigen::Vector3d n = skew_symmetric(l1_) * R_12 * l2_;
   // 计算残差 标量
-  residuals[0] = l3.dot(n3);
-  // std::cout << residuals[0] <<std::endl;
+  residuals[0] = l3.dot(n);
+  std::cout << "Co residual:" << residuals[0] << std::endl;
 
   if (jacobians) {
     if (jacobians[0]) {
@@ -46,7 +62,7 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
       Eigen::Matrix<double, 1, 6> jaco_i;
       // 误差关于位置分量的导数 前三个
       // -(\mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2)
-      Eigen::Vector3d partial_e_t = -n3;
+      Eigen::Vector3d partial_e_t = -n;
       jaco_i.leftCols<3>() = partial_e_t;
       // 误差关于角度分量的导数
       // -(\mathbf{R}\mathbf{c}^a_2) \times (\mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 - \mathbf{t})
@@ -55,6 +71,7 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
       // \mathbf{t})
       Eigen::Vector3d partial_e_w_2 = -skew_symmetric(R_12 * l2_) * skew_symmetric(l1_) * l3;
       jaco_i.rightCols<3>() = partial_e_w_1.transpose() + partial_e_w_2.transpose();
+      std::cout << "Co jacobi:" << jaco_i.leftCols<6>() << std::endl;
 
       // 传入参数使用的是四元数表示，这里面计算的实际上是关于切向量空间中的角度分量部分的导数
       // 在LocalParameterization中，ComputeJacobian已经不需要计算，这里已完全计算出雅克比
@@ -66,8 +83,85 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
   return true;
 }
 
+// 共面因子
+class CoPlaneErrorTerm {
+ public:
+  CoPlaneErrorTerm(Eigen::Vector3d l1, Eigen::Vector3d l2, Eigen::Vector3d c1, Eigen::Vector3d c2, double scale = 1.)
+      : l1_(std::move(l1)), l2_(std::move(l2)), c1_(std::move(c1)), c2_(std::move(c2)), scale_(scale) {
+    std::cout << "Co: " << l1_.transpose() << ", " << c1_.transpose() << ", " << l2_.transpose() << ", "
+              << c2_.transpose() << std::endl;
+    // 数据检查
+    double dist = abs(l1_.x() * c1_.x() + l1_.y() * c1_.y() + l1.z()) / sqrt(l1_.x() * l1_.x() + l1_.y() * l1_.y());
+    if (dist > 0.01) {
+      std::cerr << "point c1 not on l1!!" << std::endl;
+    }
+    dist = abs(l2_.x() * c2_.x() + l2_.y() * c2_.y() + l2.z()) / sqrt(l2_.x() * l2_.x() + l2_.y() * l2_.y());
+    if (dist > 0.01) {
+      std::cerr << "point c2 not on l2!!" << std::endl;
+    }
+  }
+
+  template <typename T>
+  bool operator()(const T *const t_12_ptr, const T *const q_12_ptr, T *residuals_ptr) const {
+    Eigen::Map<const Eigen::Matrix<T, 3, 1>> t_12(t_12_ptr);
+    Eigen::Map<const Eigen::Quaternion<T>> q_12(q_12_ptr);
+
+    const Eigen::Matrix<T, 3, 1> c1{T(c1_.x()), T(c1_.y()), T(c1_.z())};
+    const Eigen::Matrix<T, 3, 1> c2{T(c2_.x()), T(c2_.y()), T(c2_.z())};
+    const Eigen::Matrix<T, 3, 1> l1{T(l1_.x()), T(l1_.y()), T(l1_.z())};
+    const Eigen::Matrix<T, 3, 1> l2{T(l2_.x()), T(l2_.y()), T(l2_.z())};
+
+    Eigen::Matrix<T, 3, 3> R_12 = q_12.toRotationMatrix();
+
+    // EulerAngles euler = quat2euler(q_12);
+    // std::cout << "q_12: " << euler << ", t_12: " << t_12.transpose() << std::endl;
+
+    // \mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 - \mathbf{t}
+    Eigen::Matrix<T, 3, 1> l3 = c1 - R_12 * c2 - t_12;
+    // \mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2
+    Eigen::Matrix<T, 3, 1> n = skewSymmetric(l1) * R_12 * l2;
+    // 计算残差 标量
+    residuals_ptr[0] = l3.dot(n);
+    // std::cout << "Co residual:" << residuals_ptr[0] << std::endl;
+
+    return true;
+  }
+
+  static ceres::CostFunction *Create(const Eigen::Vector3d &l1, const Eigen::Vector3d &l2, const Eigen::Vector3d &c1,
+                                     const Eigen::Vector3d &c2, double scale = 1.) {
+    return new ceres::AutoDiffCostFunction<CoPlaneErrorTerm, 1, 3, 4>(new CoPlaneErrorTerm(l1, l2, c1, c2, scale));
+  }
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+ private:
+  // 线段1单位向量
+  const Eigen::Vector3d l1_;
+  // 线段1的中点坐标
+  const Eigen::Vector3d c1_;
+  // 线段2单位向量
+  const Eigen::Vector3d l2_;
+  // 线段2的中点坐标
+  const Eigen::Vector3d c2_;
+  const double scale_;
+};
+
 // 面垂直因子
 class PerpendicularPlaneFactor : public ceres::SizedCostFunction<1, 7> {
+ public:
+  PerpendicularPlaneFactor(Eigen::Vector3d l_1_a, Eigen::Vector3d l_1_b, Eigen::Vector3d l_2_a, Eigen::Vector3d l_2_b,
+                           double scale = 1.)
+      : l_1_a_(std::move(l_1_a)),
+        l_1_b_(std::move(l_1_b)),
+        l_2_a_(std::move(l_2_a)),
+        l_2_b_(std::move(l_2_b)),
+        scale_(scale) {
+    std::cout << "Pp: " << l_1_a_.transpose() << ", " << l_1_b_.transpose() << ", " << l_2_a_.transpose() << ". "
+              << l_2_b_.transpose() << std::endl;
+  }
+
+  bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const override;
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
   // 激光1在a面上线段的单位向量
   const Eigen::Vector3d l_1_a_;
@@ -79,17 +173,6 @@ class PerpendicularPlaneFactor : public ceres::SizedCostFunction<1, 7> {
   const Eigen::Vector3d l_2_b_;
   // 权重
   const double scale_;
-
- public:
-  PerpendicularPlaneFactor(Eigen::Vector3d l_1_a, Eigen::Vector3d l_1_b, Eigen::Vector3d l_2_a, Eigen::Vector3d l_2_b,
-                           double scale = 1.)
-      : l_1_a_(std::move(l_1_a)),
-        l_1_b_(std::move(l_1_b)),
-        l_2_a_(std::move(l_2_a)),
-        l_2_b_(std::move(l_2_b)),
-        scale_(scale) {}
-
-  bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const override;
 };
 
 bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
@@ -98,13 +181,16 @@ bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double 
   Eigen::Quaterniond q_12(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
   Eigen::Matrix3d R_12 = q_12.toRotationMatrix();
 
+  EulerAngles euler = quat2euler(q_12);
+  std::cout << "q_12: " << euler << ", t_12: " << t_12.transpose() << std::endl;
+
   // \mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2
   Eigen::Vector3d n_a = skew_symmetric(l_1_a_) * R_12 * l_2_a_;
   // \mathbf{l}^b_1 \times \mathbf{R}\mathbf{l}^b_2
   Eigen::Vector3d n_b = skew_symmetric(l_1_b_) * R_12 * l_2_b_;
   // 计算残差 标量
   residuals[0] = n_a.dot(n_b);
-  // std::cout << residuals[0] <<std::endl;
+  std::cout << "Pp residual:" << residuals[0] << std::endl;
 
   if (jacobians) {
     if (jacobians[0]) {
@@ -118,6 +204,7 @@ bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double 
       // - (\mathbf{R} \mathbf{l}^b_2) \times  (\mathbf{l}^b_1) \times (\mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2)
       Eigen::Vector3d partial_e_w_2 = -skew_symmetric(R_12 * l_2_b_) * skew_symmetric(l_1_b_) * n_a;
       jaco_i.rightCols<3>() = partial_e_w_1.transpose() + partial_e_w_2.transpose();
+      std::cout << "Pp jacobi:" << jaco_i.leftCols<6>() << std::endl;
 
       // 传入参数使用的是四元数表示，这里面计算的实际上是关于切向量空间中的角度分量部分的导数
       // 在LocalParameterization中，ComputeJacobian已经不需要计算，这里已完全计算出雅克比
@@ -129,6 +216,66 @@ bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double 
   return true;
 }
 
+// 面垂直因子
+class PerpendicularPlaneErrorTerm {
+ public:
+  PerpendicularPlaneErrorTerm(Eigen::Vector3d l_1_a, Eigen::Vector3d l_1_b, Eigen::Vector3d l_2_a,
+                              Eigen::Vector3d l_2_b, double scale = 1.)
+      : l_1_a_(std::move(l_1_a)),
+        l_1_b_(std::move(l_1_b)),
+        l_2_a_(std::move(l_2_a)),
+        l_2_b_(std::move(l_2_b)),
+        scale_(scale) {
+    std::cout << "Pp: " << l_1_a_.transpose() << ", " << l_1_b_.transpose() << ", " << l_2_a_.transpose() << ". "
+              << l_2_b_.transpose() << std::endl;
+  }
+
+  template <typename T>
+  bool operator()(const T *const t_12_ptr, const T *const q_12_ptr, T *residuals_ptr) const {
+    Eigen::Map<const Eigen::Matrix<T, 3, 1>> t_12(t_12_ptr);
+    Eigen::Map<const Eigen::Quaternion<T>> q_12(q_12_ptr);
+
+    Eigen::Matrix<T, 3, 3> R_12 = q_12.toRotationMatrix();
+
+    // EulerAngles euler = quat2euler(q_12);
+    // std::cout << "q_12: " << euler << ", t_12: " << t_12.transpose() << std::endl;
+
+    const Eigen::Matrix<T, 3, 1> l_1_a{T(l_1_a_.x()), T(l_1_a_.y()), T(l_1_a_.z())};
+    const Eigen::Matrix<T, 3, 1> l_1_b{T(l_1_b_.x()), T(l_1_b_.y()), T(l_1_b_.z())};
+    const Eigen::Matrix<T, 3, 1> l_2_a{T(l_2_a_.x()), T(l_2_a_.y()), T(l_2_a_.z())};
+    const Eigen::Matrix<T, 3, 1> l_2_b{T(l_2_b_.x()), T(l_2_b_.y()), T(l_2_b_.z())};
+
+    // \mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2
+    Eigen::Matrix<T, 3, 1> n_a = skewSymmetric(l_1_a) * R_12 * l_2_a;
+    // \mathbf{l}^b_1 \times \mathbf{R}\mathbf{l}^b_2
+    Eigen::Matrix<T, 3, 1> n_b = skewSymmetric(l_1_b) * R_12 * l_2_b;
+    // 计算残差 标量
+    residuals_ptr[0] = n_a.dot(n_b);
+    // std::cout << "Pp residual:" << residuals_ptr[0] << std::endl;
+
+    return true;
+  }
+
+  static ceres::CostFunction *Create(const Eigen::Vector3d &l_1_a, const Eigen::Vector3d &l_1_b,
+                                     const Eigen::Vector3d &l_2_a, const Eigen::Vector3d &l_2_b, double scale = 1.) {
+    return new ceres::AutoDiffCostFunction<PerpendicularPlaneErrorTerm, 1, 3, 4>(
+        new PerpendicularPlaneErrorTerm(l_1_a, l_1_b, l_2_a, l_2_b, scale));
+  }
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+ private:
+  // 激光1在a面上线段的单位向量
+  const Eigen::Vector3d l_1_a_;
+  // 激光1在b面上线段的单位向量
+  const Eigen::Vector3d l_1_b_;
+  // 激光2在a面上线段的单位向量
+  const Eigen::Vector3d l_2_a_;
+  // 激光2在b面上线段的单位向量
+  const Eigen::Vector3d l_2_b_;
+  // 权重
+  const double scale_;
+};
+
 void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &T12) {
   // 2到1的旋转变换
   Eigen::Quaterniond q_12(T12.block<3, 3>(0, 0));
@@ -138,7 +285,7 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
   transform_12 << T12(0, 3), T12(1, 3), T12(2, 3), q_12.x(), q_12.y(), q_12.z(), q_12.w();
 
   // 打印初始信息
-  algorithm::EulerAngles euler = algorithm::quat2euler(q_12);
+  EulerAngles euler = quat2euler(q_12);
   std::cout << "euler_init: " << euler << std::endl;
 
   // 构建优化问题
@@ -152,11 +299,14 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
     auto *costfunction_ab = new PerpendicularPlaneFactor(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
 
     // ceres::LossFunctionWrapper* loss_function(new ceres::HuberLoss(1.0), ceres::TAKE_OWNERSHIP);
-    ceres::LossFunction *loss_function = new ceres::CauchyLoss(0.05 * ob.scale);
+    // ceres::LossFunction *loss_function = new ceres::CauchyLoss(0.05 * ob.scale);
     // 添加残差块
-    problem.AddResidualBlock(costfunction_a, loss_function, transform_12.data());
-    problem.AddResidualBlock(costfunction_b, loss_function, transform_12.data());
-    problem.AddResidualBlock(costfunction_ab, loss_function, transform_12.data());
+    // problem.AddResidualBlock(costfunction_a, loss_function, transform_12.data());
+    // problem.AddResidualBlock(costfunction_b, loss_function, transform_12.data());
+    // problem.AddResidualBlock(costfunction_ab, loss_function, transform_12.data());
+    problem.AddResidualBlock(costfunction_a, nullptr, transform_12.data());
+    problem.AddResidualBlock(costfunction_b, nullptr, transform_12.data());
+    problem.AddResidualBlock(costfunction_ab, nullptr, transform_12.data());
   }
 
   // 添加参数块
@@ -260,6 +410,57 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
   // }
   //
   // std::cout << "\nrecover chi2: " << chi / 2. << std::endl;
+}
+
+void TwoLasersCalibrationAutoDiff(const std::vector<Observation> &obs, Eigen::Matrix4d &T12) {
+  // 2到1的旋转变换
+  Eigen::Quaterniond q_12(T12.block<3, 3>(0, 0));
+  Eigen::Vector3d t_12(T12.block<3, 1>(0, 3));
+
+  // 打印初始信息
+  EulerAngles euler = quat2euler(q_12);
+  std::cout << "euler_init: " << euler << std::endl;
+
+  // 构建优化问题
+  ceres::Problem problem;
+
+  ceres::LocalParameterization *quaternion_local_parameterization = new ceres::EigenQuaternionParameterization;
+  problem.AddParameterBlock(q_12.coeffs().data(), 4, quaternion_local_parameterization);
+  problem.AddParameterBlock(t_12.data(), 3);
+
+  for (const auto &ob : obs) {
+    // a面共勉约束
+    ceres::CostFunction *cost_function_a = CoPlaneErrorTerm::Create(ob.l_1_a, ob.l_2_a, ob.c_1_a, ob.c_2_a, ob.scale);
+    // b面共勉约束
+    ceres::CostFunction *cost_function_b = CoPlaneErrorTerm::Create(ob.l_1_b, ob.l_2_b, ob.c_1_b, ob.c_2_b, ob.scale);
+    // ab面垂直约束
+    ceres::CostFunction *cost_function_ab =
+        PerpendicularPlaneErrorTerm::Create(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
+
+    // ceres::LossFunctionWrapper* loss_function(new ceres::HuberLoss(1.0), ceres::TAKE_OWNERSHIP);
+    // ceres::LossFunction *loss_function = new ceres::CauchyLoss(0.05 * ob.scale);
+    // 添加残差块
+    problem.AddResidualBlock(cost_function_a, nullptr, t_12.data(), q_12.coeffs().data());
+    problem.AddResidualBlock(cost_function_b, nullptr, t_12.data(), q_12.coeffs().data());
+    problem.AddResidualBlock(cost_function_ab, nullptr, t_12.data(), q_12.coeffs().data());
+  }
+
+  // 设置求解器
+  ceres::Solver::Options options;
+  options.linear_solver_type = ceres::DENSE_QR;
+  options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+  options.max_num_iterations = 100;
+
+  ceres::Solver::Summary summary;
+  ceres::Solve(options, &problem, &summary);
+
+  std::cout << summary.FullReport() << std::endl;
+
+  T12.block<3, 3>(0, 0) = q_12.toRotationMatrix();
+  T12.block<3, 1>(0, 3) = t_12;
+  euler = algorithm::quat2euler(q_12);
+  std::cout << "afrer opt: " << euler << std::endl;
+  std::cout << "T12:\n" << T12 << std::endl;
 }
 
 }  // namespace algorithm

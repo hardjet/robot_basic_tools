@@ -48,4 +48,14 @@ inline Eigen::Matrix3d skew_symmetric(const Eigen::MatrixBase<Derived>& w) {
   return skew_symmetric(w(0), w(1), w(2));
 }
 
+template <typename Derived>
+static Eigen::Matrix<typename Derived::Scalar, 3, 3> skewSymmetric(const Eigen::MatrixBase<Derived> &q)
+{
+  Eigen::Matrix<typename Derived::Scalar, 3, 3> ans;
+  ans << typename Derived::Scalar(0), -q(2), q(1),
+      q(2), typename Derived::Scalar(0), -q(0),
+      -q(1), q(0), typename Derived::Scalar(0);
+  return ans;
+}
+
 }  // namespace algorithm

@@ -52,6 +52,18 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
 
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
+
+  // 测试
+  // Eigen::Vector3d l1{1, 2, 3};
+  // Eigen::Vector3d l2{-1, 6, 4};
+  // Eigen::Vector3d l3{7, 9, -20};
+  //
+  // Eigen::Vector3d a = algorithm::skew_symmetric(l1) * (algorithm::skew_symmetric(l2) * l3);
+  // Eigen::Vector3d b = algorithm::skew_symmetric(l1) * algorithm::skew_symmetric(l2) * l3;
+  // std::cout << "a: " << a.transpose() << "b: " << b.transpose() << std::endl;
+
+  // std::cout << "l1 x l2 " << l1.cross(l2).transpose() << "l1^l2: " << (algorithm::skew_symmetric(l1) * l2).transpose() << std::endl;
+
 }
 
 void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
@@ -329,9 +341,9 @@ void TwoLasersCalib::check_and_save() {
   bool b_need_to_save = true;
   // 逐个检测角度值与第3帧比较
   for (auto& data : calib_valid_data_vec_) {
-    double theta = abs(data.angle - calib_data_vec_.at(2).angle);
-    // 保证间隔5°以上
-    if (theta < 5.0) {
+    double theta = abs(data.angle - calib_data_vec_.at(3).angle);
+    // 保证间隔4°以上 todo 改为控件控制
+    if (theta < 4.0) {
       b_need_to_save = false;
       break;
     }
@@ -339,7 +351,7 @@ void TwoLasersCalib::check_and_save() {
 
   if (b_need_to_save) {
     // 取第3帧保存
-    calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
+    calib_valid_data_vec_.push_back(calib_data_vec_.at(3));
     printf("!!!!!!!!!!!!!angle: %f saved!\n", calib_valid_data_vec_.back().angle);
   }
 }
@@ -531,7 +543,7 @@ void TwoLasersCalib::calibration() {
         if (delta < 0.1) {
           calib_data_vec_.push_back(calib_data_);
           // 足够稳定才保存
-          if (calib_data_vec_.size() > 4) {
+          if (calib_data_vec_.size() > 6) {
             check_and_save();
           }
         } else {
@@ -567,14 +579,23 @@ bool TwoLasersCalib::calc() {
 
   for (const auto& data : calib_valid_data_vec_) {
     algorithm::Observation ob;
-    ob.l_1_a = data.lines_params[0][0].normalized();
+    // ob.l_1_a = data.lines_params[0][0].normalized();
+    // ob.c_1_a = data.mid_pt_on_lines[0][0];
+    // ob.l_1_b = data.lines_params[0][1].normalized();
+    // ob.c_1_b = data.mid_pt_on_lines[0][1];
+    //
+    // ob.l_2_a = data.lines_params[1][0].normalized();
+    // ob.c_2_a = data.mid_pt_on_lines[1][0];
+    // ob.l_2_b = data.lines_params[1][1].normalized();
+    // ob.c_2_b = data.mid_pt_on_lines[1][1];
+    ob.l_1_a = data.lines_params[0][0];
     ob.c_1_a = data.mid_pt_on_lines[0][0];
-    ob.l_2_a = data.lines_params[0][1].normalized();
-    ob.c_2_a = data.mid_pt_on_lines[0][1];
+    ob.l_1_b = data.lines_params[0][1];
+    ob.c_1_b = data.mid_pt_on_lines[0][1];
 
-    ob.l_1_b = data.lines_params[1][0].normalized();
-    ob.c_1_b = data.mid_pt_on_lines[1][0];
-    ob.l_2_b = data.lines_params[1][1].normalized();
+    ob.l_2_a = data.lines_params[1][0];
+    ob.c_2_a = data.mid_pt_on_lines[1][0];
+    ob.l_2_b = data.lines_params[1][1];
     ob.c_2_b = data.mid_pt_on_lines[1][1];
 
     ob.scale = scale;
@@ -590,7 +611,8 @@ bool TwoLasersCalib::calc() {
 
   std::cout << "T21_initial:\n" << T21_initial << std::endl;
 
-  algorithm::TwoLasersCalibration(obs, T21_initial);
+  // algorithm::TwoLasersCalibration(obs, T21_initial);
+  algorithm::TwoLasersCalibrationAutoDiff(obs, T21_initial);
 
   return true;
 }

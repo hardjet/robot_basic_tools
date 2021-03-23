@@ -99,11 +99,11 @@ class TwoLasersCalib : public BaseCalib {
     double timestamp{0.};
     // 取第一条直线的角度
     double angle{0.};
-    // 直线参数数据
+    // 直线参数数据 [[l_1_a,l_1_b], [l_2_a,l_2_b]]
     std::array<std::array<Eigen::Vector3d, 2>, 2> lines_params;
-    // 直线点数据
+    // 直线点数据 [[[l_1_a_s, l_1_a_e],[l_1_b_s, l_1_b_e]], [[l_2_a_s, l_2_a_e],[l_2_b_s, l_2_b_e]]]
     std::array<std::array<std::array<Eigen::Vector3f, 2>, 2>, 2> lines_pts;
-    // 直线上的中点坐标
+    // 直线上的中点坐标 [[c_1_a,c_1_b], [c_2_a,c_2_b]]
     std::array<std::array<Eigen::Vector3d, 2>, 2> mid_pt_on_lines;
   };
 

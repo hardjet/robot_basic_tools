@@ -62,8 +62,8 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
   // Eigen::Vector3d b = algorithm::skew_symmetric(l1) * algorithm::skew_symmetric(l2) * l3;
   // std::cout << "a: " << a.transpose() << "b: " << b.transpose() << std::endl;
 
-  // std::cout << "l1 x l2 " << l1.cross(l2).transpose() << "l1^l2: " << (algorithm::skew_symmetric(l1) * l2).transpose() << std::endl;
-
+  // std::cout << "l1 x l2 " << l1.cross(l2).transpose() << "l1^l2: " << (algorithm::skew_symmetric(l1) *
+  // l2).transpose() << std::endl;
 }
 
 void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
@@ -574,7 +574,7 @@ bool TwoLasersCalib::calc() {
   // 准备标定数据
   std::vector<algorithm::Observation> obs;
 
-  double scale = 1. / sqrt(calib_valid_data_vec_.size());
+  double scale = 1. / sqrt(calib_valid_data_vec_.size()) / 10.;
   std::cout << "scale: " << scale << std::endl;
 
   for (const auto& data : calib_valid_data_vec_) {
@@ -602,17 +602,19 @@ bool TwoLasersCalib::calc() {
     obs.emplace_back(ob);
   }
 
-  Eigen::Matrix4d T21_initial = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d T12_initial = Eigen::Matrix4d::Identity();
+
   // 设置旋转矩阵初始值
   Eigen::Quaterniond q_init{0.805, 0.000, 0.593, 0.000};
-  T21_initial.block<3, 3>(0, 0) = q_init.toRotationMatrix();
+  T12_initial.block<3, 3>(0, 0) = q_init.toRotationMatrix();
   // 设置平移向量
-  T21_initial.block<3, 1>(0, 3) = Eigen::Vector3d{0.113, 0.0, 1.248};
+  T12_initial.block<3, 1>(0, 3) = Eigen::Vector3d{0.113, 0.0, 1.248};
 
-  std::cout << "T21_initial:\n" << T21_initial << std::endl;
+  std::cout << "T12_initial:\n" << T12_initial << std::endl;
 
-  // algorithm::TwoLasersCalibration(obs, T21_initial);
-  algorithm::TwoLasersCalibrationAutoDiff(obs, T21_initial);
+  // algorithm::TwoLasersCalibration(obs, T12_initial);
+  // algorithm::TwoLasersCalibrationAutoDiff(obs, T12_initial);
+  algorithm::TwoLasersCalibrationNaive(obs, T12_initial);
 
   return true;
 }

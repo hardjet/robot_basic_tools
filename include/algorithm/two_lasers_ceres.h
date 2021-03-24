@@ -28,12 +28,24 @@ struct Observation {
 };
 
 /**
-*
-* @param obs 观测量集合
-* @param T 激光2到1的变换矩阵
-*/
-void TwoLasersCalibration(const std::vector<Observation>& obs, Eigen::Matrix4d& T12);
+ * 使用ceres求解，自己构建梯度求解以及LocalParameterization
+ * @param obs 观测量集合
+ * @param T 激光2到1的变换矩阵
+ */
+void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &T12);
 
+/**
+ * 使用ceres求解，使用AutoDiff以及ceres::EigenQuaternionParameterization
+ * @param obs 观测量集合
+ * @param T 激光2到1的变换矩阵
+ */
 void TwoLasersCalibrationAutoDiff(const std::vector<Observation> &obs, Eigen::Matrix4d &T12);
+
+/**
+ * 原生解法
+ * @param obs 观测量集合
+ * @param T 激光2到1的变换矩阵
+ */
+void TwoLasersCalibrationNaive(const std::vector<Observation> &obs, Eigen::Matrix4d &T12);
 
 }  // namespace algorithm

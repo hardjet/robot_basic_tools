@@ -121,6 +121,8 @@ class TwoLasersCalib : public BaseCalib {
   bool b_show_calib_data_{false};
   // 是否需要更新显示的标定数据
   bool b_need_to_update_cd_{false};
+  // 激光2到激光1的变换矩阵
+  Eigen::Matrix4f T12_;
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
   // 标定数据显示

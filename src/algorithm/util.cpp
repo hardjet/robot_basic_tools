@@ -5,8 +5,57 @@
 namespace algorithm {
 
 std::ostream& operator<<(std::ostream& os, const EulerAngles& euler) {
-  os << "[deg] roll: " << RAD2DEG_RBT(euler.roll) << ", pitch: " << RAD2DEG_RBT(euler.pitch) << ", yaw: " << RAD2DEG_RBT(euler.yaw);
+  os << "[deg] roll: " << RAD2DEG_RBT(euler.roll) << ", pitch: " << RAD2DEG_RBT(euler.pitch)
+     << ", yaw: " << RAD2DEG_RBT(euler.yaw);
   return os;
+}
+
+
+/**
+* converts a number constant to a number_t constant at compile time
+* to avoid having to cast everything to avoid warnings.
+**/
+inline constexpr double cst(long double v)
+{
+  return (double)v;
+}
+
+/**
+ *
+ * @param lie 旋转部分在前 平移部分在后
+ * @return
+ */
+Eigen::Matrix4d lie_to_se3(const Eigen::Matrix<double, 6, 1>& lie) {
+  Eigen::Vector3d omega;
+  for (int i = 0; i < 3; i++) omega[i] = lie[i];
+  Eigen::Vector3d upsilon;
+  for (int i = 0; i < 3; i++) upsilon[i] = lie[i + 3];
+
+  double theta = omega.norm();
+  Eigen::Matrix3d Omega = skew_symmetric(omega);
+
+  Eigen::Matrix3d R;
+  Eigen::Matrix3d V;
+  if (theta < cst(0.00001)) {
+    Eigen::Matrix3d Omega2 = Omega * Omega;
+
+    R = (Eigen::Matrix3d::Identity() + Omega + cst(0.5) * Omega2);
+
+    V = (Eigen::Matrix3d::Identity() + cst(0.5) * Omega + cst(1.) / cst(6.) * Omega2);
+  } else {
+    Eigen::Matrix3d Omega2 = Omega * Omega;
+
+    R = (Eigen::Matrix3d::Identity() + std::sin(theta) / theta * Omega + (1 - std::cos(theta)) / (theta * theta) * Omega2);
+
+    V = (Eigen::Matrix3d::Identity() + (1 - std::cos(theta)) / (theta * theta) * Omega +
+         (theta - std::sin(theta)) / (std::pow(theta, 3)) * Omega2);
+  }
+
+  Eigen::Matrix4d se3 = Eigen::Matrix4d::Identity();
+  se3.block<3,3>(0,0) = R;
+  se3.block<3,1>(0,3) = V * upsilon;
+
+  return se3;
 }
 
 Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll)  // yaw (Z), pitch (Y), roll (X)

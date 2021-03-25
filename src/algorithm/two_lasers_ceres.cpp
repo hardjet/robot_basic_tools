@@ -50,9 +50,15 @@ void CoPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Quaterniond &
   // std::cout << "q_12: " << euler << ", t_12: " << t_12.transpose() << std::endl;
 
   // \mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 - \mathbf{t}
+  std::cout << "c1:" << c1_.transpose() << ", c2:" << c2_.transpose() << std::endl;
   Eigen::Vector3d l3 = c1_ - R_12 * c2_ - t_12;
+  std::cout << "R_12:\n" << R_12 << "\nt_12: " << t_12.transpose() << std::endl;
+
   // \mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2
-  Eigen::Vector3d n = skew_symmetric(l1_) * R_12 * l2_;
+  Eigen::Vector3d n = skew_symmetric(l1_) * (R_12 * l2_);
+  std::cout << "l1:" << l1_.transpose() << ", l2:" << l2_.transpose() << std::endl;
+  std::cout << "n:" << n.transpose() << std::endl;
+  std::cout << "l3: " << l3.transpose() << std::endl;
   // 计算残差 标量
   residual = scale_ * l3.dot(n);
   std::cout << "Co residual:" << residual << std::endl;
@@ -66,8 +72,8 @@ void CoPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Quaterniond &
   jacobians.leftCols<3>() = partial_e_t;
   // jaco_i.leftCols<3>().setZero();
   // 误差关于角度分量的导数
-  // -(\mathbf{R}\mathbf{c}^a_2) \times (\mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 - \mathbf{t})
-  Eigen::Vector3d partial_e_w_1 = -skew_symmetric(R_12 * c2_) * l3;
+  // -(\mathbf{R}\mathbf{c}^a_2) \times (\mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2)
+  Eigen::Vector3d partial_e_w_1 = -skew_symmetric(R_12 * c2_) * n;
   // - (\mathbf{R} \mathbf{l}^a_2) \times  (\mathbf{l}^a_1) \times  (\mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 -
   // \mathbf{t})
   Eigen::Vector3d partial_e_w_2 = -skew_symmetric(R_12 * l2_) * skew_symmetric(l1_) * l3;
@@ -106,8 +112,8 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
       jaco_i.leftCols<3>() = partial_e_t;
       // jaco_i.leftCols<3>().setZero();
       // 误差关于角度分量的导数
-      // -(\mathbf{R}\mathbf{c}^a_2) \times (\mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 - \mathbf{t})
-      Eigen::Vector3d partial_e_w_1 = -skew_symmetric(R_12 * c2_) * l3;
+      // -(\mathbf{R}\mathbf{c}^a_2) \times (\mathbf{l}^a_1 \times \mathbf{R}\mathbf{l}^a_2)
+      Eigen::Vector3d partial_e_w_1 = -skew_symmetric(R_12 * c2_) * n;
       // - (\mathbf{R} \mathbf{l}^a_2) \times  (\mathbf{l}^a_1) \times  (\mathbf{c}^a_1 - \mathbf{R}\mathbf{c}^a_2 -
       // \mathbf{t})
       Eigen::Vector3d partial_e_w_2 = -skew_symmetric(R_12 * l2_) * skew_symmetric(l1_) * l3;
@@ -232,7 +238,7 @@ void PerpendicularPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Qu
   // \mathbf{l}^b_1 \times \mathbf{R}\mathbf{l}^b_2
   Eigen::Vector3d n_b = skew_symmetric(l_1_b_) * R_12 * l_2_b_;
   // 计算残差 标量
-  residual = scale_ * n_a.dot(n_b);
+  residual = scale_ * n_a.dot(n_b) * 0.2;
   std::cout << "Pp residual:" << residual << std::endl;
 
   // 计算雅克比
@@ -267,7 +273,7 @@ bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double 
   // \mathbf{l}^b_1 \times \mathbf{R}\mathbf{l}^b_2
   Eigen::Vector3d n_b = skew_symmetric(l_1_b_) * R_12 * l_2_b_;
   // 计算残差 标量
-  residuals[0] = scale_ * n_a.dot(n_b);
+  residuals[0] = scale_ * n_a.dot(n_b) * 0.1;
   std::cout << "Pp residual:" << residuals[0] << std::endl;
 
   if (jacobians) {
@@ -378,15 +384,15 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
     auto *costfunction_ab = new PerpendicularPlaneFactor(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
 
     // ceres::LossFunctionWrapper* loss_function(new ceres::HuberLoss(1.0), ceres::TAKE_OWNERSHIP);
-    ceres::LossFunction *loss_function = new ceres::CauchyLoss(0.05 * ob.scale);
-    // 添加残差块
-    problem.AddResidualBlock(costfunction_a, loss_function, transform_12.data());
-    problem.AddResidualBlock(costfunction_b, loss_function, transform_12.data());
-    problem.AddResidualBlock(costfunction_ab, loss_function, transform_12.data());
+    // ceres::LossFunction *loss_function = new ceres::CauchyLoss(0.05 * ob.scale);
+    // // 添加残差块
+    // problem.AddResidualBlock(costfunction_a, loss_function, transform_12.data());
+    // problem.AddResidualBlock(costfunction_b, loss_function, transform_12.data());
+    // problem.AddResidualBlock(costfunction_ab, loss_function, transform_12.data());
 
-    // problem.AddResidualBlock(costfunction_a, nullptr, transform_12.data());
-    // problem.AddResidualBlock(costfunction_b, nullptr, transform_12.data());
-    // problem.AddResidualBlock(costfunction_ab, nullptr, transform_12.data());
+    problem.AddResidualBlock(costfunction_a, nullptr, transform_12.data());
+    problem.AddResidualBlock(costfunction_b, nullptr, transform_12.data());
+    problem.AddResidualBlock(costfunction_ab, nullptr, transform_12.data());
   }
 
   // 添加参数块
@@ -439,64 +445,65 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
   //
   /// =============================  analysis code ==============================
   /// Get Information matrix from ceres, used to analysis the Gauge of the system
-  Eigen::MatrixXd H(6, 6);
-  Eigen::MatrixXd b(6, 1);
-  H.setZero();
-  b.setZero();
-  double chi = 0;
-
-  // 使用初始值
-  // transform_12 << T12(0, 3), T12(1, 3), T12(2, 3), q_12.x(), q_12.y(), q_12.z(), q_12.w();
-
-  for (const auto &ob : obs) {
-    // a面共勉约束
-    auto *costfunction_a = new CoPlaneFactor(ob.l_1_a, ob.l_2_a, ob.c_1_a, ob.c_2_a, ob.scale);
-    // b面共勉约束
-    auto *costfunction_b = new CoPlaneFactor(ob.l_1_b, ob.l_2_b, ob.c_1_b, ob.c_2_b, ob.scale);
-    // ab面垂直约束
-    auto *costfunction_ab = new PerpendicularPlaneFactor(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
-
-    double *residuals = new double[1];     // NOLINT
-    double **jacobians = new double *[1];  // NOLINT
-    jacobians[0] = new double[1 * 7];
-
-    Eigen::Map<Eigen::Matrix<double, 1, 7, Eigen::RowMajor>> jacobian_e(jacobians[0]);
-    Eigen::Map<Eigen::Matrix<double, 1, 1>> resd(residuals);
-
-    costfunction_a->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
-    std::cout << "jacobian_e_a:\n" << jacobian_e << std::endl;
-    H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
-    b -= jacobian_e.leftCols<6>().transpose() * resd;
-    chi += resd * resd;
-
-    costfunction_b->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
-    std::cout << "jacobian_e_b:\n" << jacobian_e << std::endl;
-    H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
-    b -= jacobian_e.leftCols<6>().transpose() * resd;
-    chi += resd * resd;
-
-    costfunction_ab->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
-    std::cout << "jacobian_e_ab:\n" << jacobian_e << std::endl;
-    H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
-    b -= jacobian_e.leftCols<6>().transpose() * resd;
-    chi += resd * resd;
-  }
-
-  std::cout << "H:\n" << H << std::endl;
-  std::cout << "----- H singular values--------:\n";
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  std::cout << svd.singularValues() << std::endl;
-  int n = 0;
-  for (size_t i = 0; i < svd.singularValues().size(); i++) {
-    if (svd.singularValues()[i] < 1e-8) n++;
-  }
-  if (n > 0) {
-    std::cout << "====== null space basis, it's means the unobservable direction for Tcl ======" << std::endl;
-    std::cout << "       please note the unobservable direction is for Tcl, not for Tlc        " << std::endl;
-    std::cout << svd.matrixV().rightCols(n) << std::endl;
-  }
-
-  std::cout << "\nrecover chi2: " << chi / 2. << std::endl;
+  // std::cout << "------------------------------" << std::endl;
+  // Eigen::MatrixXd H(6, 6);
+  // Eigen::MatrixXd b(6, 1);
+  // H.setZero();
+  // b.setZero();
+  // double chi = 0;
+  //
+  // // 使用初始值
+  // // transform_12 << T12(0, 3), T12(1, 3), T12(2, 3), q_12.x(), q_12.y(), q_12.z(), q_12.w();
+  //
+  // for (const auto &ob : obs) {
+  //   // a面共勉约束
+  //   auto *costfunction_a = new CoPlaneFactor(ob.l_1_a, ob.l_2_a, ob.c_1_a, ob.c_2_a, ob.scale);
+  //   // b面共勉约束
+  //   auto *costfunction_b = new CoPlaneFactor(ob.l_1_b, ob.l_2_b, ob.c_1_b, ob.c_2_b, ob.scale);
+  //   // ab面垂直约束
+  //   auto *costfunction_ab = new PerpendicularPlaneFactor(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
+  //
+  //   double *residuals = new double[1];     // NOLINT
+  //   double **jacobians = new double *[1];  // NOLINT
+  //   jacobians[0] = new double[1 * 7];
+  //
+  //   Eigen::Map<Eigen::Matrix<double, 1, 7, Eigen::RowMajor>> jacobian_e(jacobians[0]);
+  //   Eigen::Map<Eigen::Matrix<double, 1, 1>> resd(residuals);
+  //
+  //   costfunction_a->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
+  //   std::cout << "jacobian_e_a:\n" << jacobian_e << std::endl;
+  //   H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
+  //   b -= jacobian_e.leftCols<6>().transpose() * resd;
+  //   chi += resd * resd;
+  //
+  //   costfunction_b->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
+  //   std::cout << "jacobian_e_b:\n" << jacobian_e << std::endl;
+  //   H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
+  //   b -= jacobian_e.leftCols<6>().transpose() * resd;
+  //   chi += resd * resd;
+  //
+  //   costfunction_ab->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
+  //   std::cout << "jacobian_e_ab:\n" << jacobian_e << std::endl;
+  //   H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
+  //   b -= jacobian_e.leftCols<6>().transpose() * resd;
+  //   chi += resd * resd;
+  // }
+  //
+  // std::cout << "H:\n" << H << std::endl;
+  // std::cout << "----- H singular values--------:\n";
+  // Eigen::JacobiSVD<Eigen::MatrixXd> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  // std::cout << svd.singularValues() << std::endl;
+  // int n = 0;
+  // for (size_t i = 0; i < svd.singularValues().size(); i++) {
+  //   if (svd.singularValues()[i] < 1e-8) n++;
+  // }
+  // if (n > 0) {
+  //   std::cout << "====== null space basis, it's means the unobservable direction for Tcl ======" << std::endl;
+  //   std::cout << "       please note the unobservable direction is for Tcl, not for Tlc        " << std::endl;
+  //   std::cout << svd.matrixV().rightCols(n) << std::endl;
+  // }
+  //
+  // std::cout << "\nrecover chi2: " << chi / 2. << std::endl;
 }
 
 void TwoLasersCalibrationAutoDiff(const std::vector<Observation> &obs, Eigen::Matrix4d &T12) {
@@ -559,60 +566,86 @@ void TwoLasersCalibrationNaive(const std::vector<Observation> &obs, Eigen::Matri
   EulerAngles euler = quat2euler(q_12);
   std::cout << "euler_init: " << euler << ", t:" << t_12.transpose() << std::endl;
 
-  Eigen::Matrix<double, Eigen::Dynamic, 6> matJ(obs.size() * 3, 6);
-  Eigen::Matrix<double, 6, Eigen::Dynamic> matJt(6, obs.size() * 3);
-  Eigen::Matrix<double, Eigen::Dynamic, 1> f(obs.size() * 3, 1);
+  // 每组观测点提供约束的个数
+  const int constraint_cnt = 3;
+
+  Eigen::Matrix<double, Eigen::Dynamic, 6> matJ(obs.size() * constraint_cnt, 6);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> matJt(6, obs.size() * constraint_cnt);
+  Eigen::Matrix<double, Eigen::Dynamic, 1> f(obs.size() * constraint_cnt, 1);
   Eigen::Matrix<double, 6, 6> matJtJ;
   Eigen::Matrix<double, 6, 1> Jtf;
   Eigen::Matrix<double, 6, 1> delta_x;
 
-  matJ.setZero();
-  f.setZero();
-  size_t i = 0;
-  for (const auto &ob : obs) {
-    // a面共勉约束
-    CoPlaneFactor co_a(ob.l_1_a, ob.l_2_a, ob.c_1_a, ob.c_2_a, ob.scale);
-    Eigen::Matrix<double, 1, 6> jaco_a;
-    co_a.eval(t_12, q_12, f(i * 3), jaco_a);
-    matJ.block<1, 6>(i * 3, 0) = jaco_a;
+  auto calc_once = [&]() {
+    matJ.setZero();
+    f.setZero();
+    size_t i = 0;
+    for (const auto &ob : obs) {
+      // a面共勉约束
+      CoPlaneFactor co_a(ob.l_1_a, ob.l_2_a, ob.c_1_a, ob.c_2_a, ob.scale);
+      Eigen::Matrix<double, 1, 6> jaco_a;
+      co_a.eval(t_12, q_12, f(i * constraint_cnt), jaco_a);
+      matJ.block<1, 6>(i * constraint_cnt, 0) = jaco_a;
 
-    // b面共勉约束
-    CoPlaneFactor co_b(ob.l_1_b, ob.l_2_b, ob.c_1_b, ob.c_2_b, ob.scale);
-    Eigen::Matrix<double, 1, 6> jaco_b;
-    co_b.eval(t_12, q_12, f(i * 3 + 1), jaco_b);
-    matJ.block<1, 6>(i * 3 + 1, 0) = jaco_b;
+      // b面共勉约束
+      CoPlaneFactor co_b(ob.l_1_b, ob.l_2_b, ob.c_1_b, ob.c_2_b, ob.scale);
+      Eigen::Matrix<double, 1, 6> jaco_b;
+      co_b.eval(t_12, q_12, f(i * constraint_cnt + 1), jaco_b);
+      matJ.block<1, 6>(i * constraint_cnt + 1, 0) = jaco_b;
 
-    // ab面垂直约束
-    PerpendicularPlaneFactor co_ab(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
-    Eigen::Matrix<double, 1, 6> jaco_ab;
-    co_ab.eval(t_12, q_12, f(i * 3 + 2), jaco_ab);
-    matJ.block<1, 6>(i * 3 + 2, 0) = jaco_ab;
+      // ab面垂直约束
+      PerpendicularPlaneFactor pp_ab(ob.l_1_a, ob.l_1_b, ob.l_2_a, ob.l_2_b, ob.scale);
+      Eigen::Matrix<double, 1, 6> jaco_ab;
+      pp_ab.eval(t_12, q_12, f(i * constraint_cnt + 2), jaco_ab);
+      matJ.block<1, 6>(i * constraint_cnt + 2, 0) = jaco_ab;
 
-    i++;
+      i++;
+    }
+    std::cout << "matJ:\n" << matJ << std::endl;
+    std::cout << "f.transpose():\n" << f.transpose() << std::endl;
+
+    matJt = matJ.transpose();
+    matJtJ = matJt * matJ;
+
+    std::cout << "matJtJ:\n" << matJtJ << std::endl;
+
+    Jtf = matJt * f;
+    std::cout << "-Jtf:\n" << -Jtf.transpose() << std::endl;
+
+    // J^t * J * delta_x = -J^t * f
+    delta_x = matJtJ.colPivHouseholderQr().solve(-Jtf);
+    // 打印切空间增量结果
+    std::cout << "delta_x:\n" << delta_x.transpose() << std::endl;
+
+    std::cout << "matJtJ*delta_x:\n" << matJtJ * delta_x << std::endl;
+
+    Eigen::Matrix<double, 6, 1> delta_lie;
+    delta_lie << delta_x(3), delta_x(4), delta_x(5), delta_x(0), delta_x(1), delta_x(2);
+    // 将切空间增量变换回se3
+    Eigen::Matrix4d delta_se3 = lie_to_se3(delta_lie);
+
+    Eigen::Quaterniond q_se3(delta_se3.block<3, 3>(0, 0));
+    euler = quat2euler(q_se3);
+    std::cout << "euler_delta_se3: " << euler << ", t:" << delta_se3.block<3, 1>(0, 3).transpose() << std::endl;
+
+    t_12 = delta_se3.block<3, 3>(0, 0) * t_12 + delta_se3.block<3, 1>(0, 3);
+    q_12 = delta_se3.block<3, 3>(0, 0) * q_12.toRotationMatrix();
+
+    euler = quat2euler(q_12);
+    std::cout << "[updated]euler: " << euler << ", t: " << t_12.transpose() << std::endl;
+  };
+
+  for (int i = 0; i < 5; i++) {
+    std::cout << "--------------" << i << "-------------------" << std::endl;
+    calc_once();
   }
 
-  std::cout << "matJ:\n" << matJ << std::endl;
-  std::cout << "f.transpose():\n" << f.transpose() << std::endl;
-
-  matJt = matJ.transpose();
-  matJtJ = matJt * matJ;
-
-  std::cout << "matJtJ:\n" << matJtJ << std::endl;
-
-  Jtf = matJt * f;
-  std::cout << "-Jtf:\n" << -Jtf.transpose() << std::endl;
-
-  // J^t * J * delta_x = -J^t * f
-  delta_x = matJtJ.colPivHouseholderQr().solve(-Jtf);
-
-  std::cout << "delta_x:\n" << delta_x.transpose() << std::endl;
-
-  std::cout << "matJtJ*delta_x:\n" << matJtJ * delta_x << std::endl;
+  T12.block<3, 3>(0, 0) = q_12.toRotationMatrix();
+  T12.block<3, 1>(0, 3) = t_12;
 
   // std::cout << "----- matJtJ singular values--------:\n";
   // Eigen::JacobiSVD<Eigen::MatrixXd> svd(matJtJ, Eigen::ComputeThinU | Eigen::ComputeThinV);
   // std::cout << svd.singularValues() << std::endl;
-
 }
 
 }  // namespace algorithm

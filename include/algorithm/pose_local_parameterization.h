@@ -19,21 +19,26 @@ class PoseLocalParameterization : public ceres::LocalParameterization {
 
     // 切空间位置增量
     Eigen::Map<const Eigen::Vector3d> delta_t(delta);
-    // 注意这里需要将切空间角度增量变换为四元数增量
-    Eigen::Quaterniond delta_q = deltaQ(Eigen::Map<const Eigen::Vector3d>(delta + 3));
-    std::cout << "delta_t: " << delta_t.transpose()
-              << ", delta_q: " << Eigen::Map<const Eigen::Vector3d>(delta + 3).transpose() << std::endl;
 
+    Eigen::Matrix<double, 6, 1> delta_lie;
+    delta_lie << delta[3], delta[4], delta[5], delta[0], delta[1], delta[2];
+    std::cout << "delta_lie:[w, t] " << delta_lie.transpose() << std::endl;
+
+    Eigen::Matrix4d delta_se3 = lie_to_se3(delta_lie);
+
+    // 注意这里需要将切空间角度增量变换为四元数增量
+    Eigen::Quaterniond delta_q(delta_se3.block<3, 3>(0, 0));
     EulerAngles delta_euler = quat2euler(delta_q);
+    std::cout << "euler_delta_se3: " << delta_euler << ", t:" << delta_se3.block<3, 1>(0, 3).transpose() << std::endl;
 
     Eigen::Map<Eigen::Vector3d> p(x_plus_delta);
     Eigen::Map<Eigen::Quaterniond> q(x_plus_delta + 3);
 
-    p = x_t + delta_t;
-    q = (x_q * delta_q).normalized();
+    p = delta_se3.block<3, 3>(0, 0) * x_t + delta_t;
+    q = delta_se3.block<3, 3>(0, 0) * x_q.toRotationMatrix();
 
     EulerAngles euler = quat2euler(q);
-    std::cout << "delta_euler: " << delta_euler << ", q_euler: " << euler << std::endl;
+    std::cout << "[updated]euler: " << euler << ", t: " << p.transpose() << std::endl;
 
     return true;
   };

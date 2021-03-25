@@ -53,6 +53,18 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
 
+  T12_ = Eigen::Matrix4f::Identity();
+
+  // 设置旋转矩阵初始值
+  // Eigen::Quaternionf q_init{0.805, 0.000, 0.593, 0.000};
+
+  Eigen::Quaternionf q_init = algorithm::ypr2quaternion(0,DEG2RAD_RBT(72.766),0).cast<float>();
+  T12_.block<3, 3>(0, 0) = q_init.toRotationMatrix();
+  // 设置平移向量
+  T12_.block<3, 1>(0, 3) = Eigen::Vector3f{0.113, 0.0, 1.248};
+
+  std::cout << "T12_:\n" << T12_ << std::endl;
+
   // 测试
   // Eigen::Vector3d l1{1, 2, 3};
   // Eigen::Vector3d l2{-1, 6, 4};
@@ -117,12 +129,15 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
 
   // 绘图
   // 画直线上的中点
-  auto draw_pt = [&shader](Eigen::Matrix4f& model, const Eigen::Vector3d& pos, const Eigen::Vector4f& color) {
+  auto draw_pt = [&shader](Eigen::Matrix4f model, const Eigen::Vector3d& pos, const Eigen::Vector4f& color) {
+
+    model.block<3, 1>(0, 3) = model.block<3, 3>(0, 0) * pos.cast<float>() + model.block<3, 1>(0, 3);
+
     // 画直线中点
     // 更改大小 设置球的半径大小
     model.block<3, 3>(0, 0) *= 0.025;
     // 改变位置
-    model.block<3, 1>(0, 3) = Eigen::Vector3f{float(pos.x()), float(pos.y()), float(pos.z())};
+    // model.block<3, 1>(0, 3) = Eigen::Vector3f{float(pos.x()), float(pos.y()), float(pos.z())};
     shader.set_uniform("color_mode", 1);
     shader.set_uniform("model_matrix", model);
     // 设置显示颜色
@@ -138,20 +153,20 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
   shader.set_uniform("color_mode", 2);
   calib_show_data_[0].laser_lines_drawable_ptr->draw(shader);
 
-  model_matrix = Eigen::Matrix4f::Identity();
+  // model_matrix = Eigen::Matrix4f::Identity();
   draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[0], Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f));
-  model_matrix = Eigen::Matrix4f::Identity();
+  // model_matrix = Eigen::Matrix4f::Identity();
   draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 
   // 后面需要设置为激光1的位姿
-  model_matrix = Eigen::Matrix4f::Identity();
+  model_matrix = T12_;
   shader.set_uniform("model_matrix", model_matrix);
   shader.set_uniform("color_mode", 2);
   calib_show_data_[1].laser_lines_drawable_ptr->draw(shader);
 
-  model_matrix = Eigen::Matrix4f::Identity();
+  // model_matrix = T12_;
   draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[0], Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f));
-  model_matrix = Eigen::Matrix4f::Identity();
+  // model_matrix = T12_;
   draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 }
 
@@ -211,7 +226,7 @@ void TwoLasersCalib::update_show() {
     infos.clear();
 
     // 外扩的长度
-    const double extend_len = 0.1;
+    const double extend_len = 0.4;
     // 直线与x轴的夹角
     double theta, delta_len;
     // 设置直线参数
@@ -574,11 +589,12 @@ bool TwoLasersCalib::calc() {
   // 准备标定数据
   std::vector<algorithm::Observation> obs;
 
-  double scale = 1. / sqrt(calib_valid_data_vec_.size()) / 10.;
+  double scale = 1. / sqrt(calib_valid_data_vec_.size()) * 0.05;
   std::cout << "scale: " << scale << std::endl;
 
   for (const auto& data : calib_valid_data_vec_) {
     algorithm::Observation ob;
+    // 直线归一化
     // ob.l_1_a = data.lines_params[0][0].normalized();
     // ob.c_1_a = data.mid_pt_on_lines[0][0];
     // ob.l_1_b = data.lines_params[0][1].normalized();
@@ -588,6 +604,7 @@ bool TwoLasersCalib::calc() {
     // ob.c_2_a = data.mid_pt_on_lines[1][0];
     // ob.l_2_b = data.lines_params[1][1].normalized();
     // ob.c_2_b = data.mid_pt_on_lines[1][1];
+
     ob.l_1_a = data.lines_params[0][0];
     ob.c_1_a = data.mid_pt_on_lines[0][0];
     ob.l_1_b = data.lines_params[0][1];
@@ -602,19 +619,21 @@ bool TwoLasersCalib::calc() {
     obs.emplace_back(ob);
   }
 
-  Eigen::Matrix4d T12_initial = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d T12_initial = T12_.cast<double>();
 
-  // 设置旋转矩阵初始值
-  Eigen::Quaterniond q_init{0.805, 0.000, 0.593, 0.000};
-  T12_initial.block<3, 3>(0, 0) = q_init.toRotationMatrix();
-  // 设置平移向量
-  T12_initial.block<3, 1>(0, 3) = Eigen::Vector3d{0.113, 0.0, 1.248};
+  // // 设置旋转矩阵初始值
+  // Eigen::Quaterniond q_init{0.805, 0.000, 0.593, 0.000};
+  // T12_initial.block<3, 3>(0, 0) = q_init.toRotationMatrix();
+  // // 设置平移向量
+  // T12_initial.block<3, 1>(0, 3) = Eigen::Vector3d{0.113, 0.0, 1.248};
 
   std::cout << "T12_initial:\n" << T12_initial << std::endl;
 
   // algorithm::TwoLasersCalibration(obs, T12_initial);
   // algorithm::TwoLasersCalibrationAutoDiff(obs, T12_initial);
   algorithm::TwoLasersCalibrationNaive(obs, T12_initial);
+
+  T12_ = T12_initial.cast<float>();
 
   return true;
 }

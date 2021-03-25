@@ -15,6 +15,9 @@ struct EulerAngles {
   friend std::ostream& operator<<(std::ostream&, const EulerAngles&);
 };
 
+/// 切空间到se3
+Eigen::Matrix4d lie_to_se3(const Eigen::Matrix<double, 6, 1>& lie);
+
 /// ZYX顺序转为四元数
 Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll);
 

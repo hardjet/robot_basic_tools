@@ -115,7 +115,7 @@ void Camera::creat_instance(int current_camera_type) {
   inst_ptr_->writeParameters(inst_params_);
 }
 
-void Camera::draw_ui_parms() {
+void Camera::draw_ui_params() {
   static double const_0 = 0.0;
 
   // ImGui::BeginGroup();
@@ -210,13 +210,13 @@ void Camera::draw_ui_topic_name() {
   ImGui::Separator();
 
   // ---- 修改image topic名称
-  if (ImGui::Checkbox("##image_topic", &is_enable_topic_[0])) {
+  if (ImGui::Checkbox("##image_topic", &b_enable_topic_[0])) {
     // 选中状态
-    if (is_enable_topic_[0]) {
+    if (b_enable_topic_[0]) {
       // 如果topic有效才启用数据接收
       if (sensor_topic_list_[0].empty()) {
         show_pfd_info("warning", "please set topic name first!");
-        is_enable_topic_[0] = false;
+        b_enable_topic_[0] = false;
       } else {
         image_data_ptr_->subscribe(sensor_topic_list_[0], 5);
       }
@@ -242,7 +242,7 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[0] = image_topic_name_char;
       // 暂停接收
       image_data_ptr_->unsubscribe();
-      is_enable_topic_[0] = false;
+      b_enable_topic_[0] = false;
     }
   } else {
     // 恢复名称
@@ -274,20 +274,20 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
       image_data_ptr_->unsubscribe();
-      is_enable_topic_[0] = false;
+      b_enable_topic_[0] = false;
     }
 
     ImGui::EndPopup();
   }
 
   // ---- 修改depth points topic名称
-  if (ImGui::Checkbox("##depth_topic", &is_enable_topic_[1])) {
+  if (ImGui::Checkbox("##depth_topic", &b_enable_topic_[1])) {
     // 选中状态
-    if (is_enable_topic_[1]) {
+    if (b_enable_topic_[1]) {
       // 如果topic有效才启用数据接收
       if (sensor_topic_list_[1].empty()) {
         show_pfd_info("warning", "please set topic name first!");
-        is_enable_topic_[1] = false;
+        b_enable_topic_[1] = false;
       } else {
         points_data_ptr_->subscribe(sensor_topic_list_[1], 5);
       }
@@ -313,7 +313,7 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[1] = points_topic_name_char;
       // 暂停接收
       points_data_ptr_->unsubscribe();
-      is_enable_topic_[1] = false;
+      b_enable_topic_[1] = false;
     }
   } else {
     // 恢复名称
@@ -345,7 +345,7 @@ void Camera::draw_ui_topic_name() {
       sensor_topic_list_[1] = ros_topic_selector_[selected_id];
       // 暂停接收
       points_data_ptr_->unsubscribe();
-      is_enable_topic_[1] = false;
+      b_enable_topic_[1] = false;
     }
 
     ImGui::EndPopup();
@@ -359,7 +359,7 @@ void Camera::draw_ui() {
   // 相机类型控件变量
   const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
 
-  if (!is_show_window_) {
+  if (!b_show_window_) {
     return;
   }
 
@@ -369,7 +369,7 @@ void Camera::draw_ui() {
   // ImGui::SetNextWindowPos(ImVec2(300, 22), ImGuiCond_FirstUseEver);
   // 保证窗口名称唯一
   std::string win_name = sensor_name + "##" + std::to_string(sensor_id);
-  ImGui::Begin(win_name.c_str(), &is_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin(win_name.c_str(), &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
   // ImGui::BeginGroup();
 
@@ -501,8 +501,8 @@ void Camera::draw_ui() {
   } else {
     ImGui::SameLine();
     // 选择是否显示图像
-    if (ImGui::Checkbox("show image", &is_show_image_)) {
-      if (is_show_image_) {
+    if (ImGui::Checkbox("show image", &b_show_image_)) {
+      if (b_show_image_) {
         im_show_ptr_->enable(sensor_name, false);
       } else {
         im_show_ptr_->disable();
@@ -510,7 +510,7 @@ void Camera::draw_ui() {
     }
     // ImGui::EndGroup();
     // 展示当前相机参数
-    draw_ui_parms();
+    draw_ui_params();
     // 选择相机话题
     draw_ui_topic_name();
   }
@@ -520,7 +520,7 @@ void Camera::draw_ui() {
   // 检查设备在线状态
   check_online_status();
 
-  im_show_ptr_->show_image(is_show_image_);
+  im_show_ptr_->show_image(b_show_image_);
 }
 
 }  // namespace dev

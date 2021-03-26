@@ -37,9 +37,9 @@ class Laser : public Sensor {
 
  private:
   // 是否显示激光
-  bool is_show_laser_{false};
+  bool b_show_laser_{false};
   // ros topic 使能
-  bool is_enable_topic_{false};
+  bool b_enable_topic_{false};
   // 点云数据
   std::shared_ptr<SensorData<sensor_msgs::LaserScan>> laser_data_ptr_{nullptr};
   // 点云数据显示所用

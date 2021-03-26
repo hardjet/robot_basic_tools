@@ -63,6 +63,15 @@ class TwoLasersCalib : public BaseCalib {
   /// 计算
   bool calc();
 
+  /// 设定激光2到激光1的变换矩阵
+  void draw_ui_transform();
+
+  /// 更新transform的值
+  void update_ui_transform();
+
+  /// 更新激光2位姿
+  void update_laser2_pose();
+
   /// 从文件加载标定数据
   bool load_calib_data(const std::string& file_path);
 
@@ -108,7 +117,7 @@ class TwoLasersCalib : public BaseCalib {
   };
 
   // 标定数据显示
-  struct CalibDataShow{
+  struct CalibDataShow {
     // 直线上的中点坐标
     std::array<Eigen::Vector3d, 2> mid_pt_on_lines;
     // 拟合出的两条直线
@@ -121,6 +130,10 @@ class TwoLasersCalib : public BaseCalib {
   bool b_show_calib_data_{false};
   // 是否需要更新显示的标定数据
   bool b_need_to_update_cd_{false};
+  // 是否固定tx值
+  bool is_tx_fixed_{false};
+  // 控件使用，保存激光2到激光1变换相关的值 [tx, ty, tz, roll, pitch, yaw]
+  std::array<float, 6> transform_12_{};
   // 激光2到激光1的变换矩阵
   Eigen::Matrix4f T12_;
   // 当前选中的数据

@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <Eigen/Core>
 
 #include "glk/drawble.hpp"
 
@@ -22,7 +23,7 @@ extern std::string config_default_path;
 extern std::string data_default_path;
 
 // sensor type
-enum SENSOR_TYPE { UNDEF = 0, CAMERA = 1, LASER, LIDAR, IMU };
+enum SENSOR_TYPE { UNDEF = 0, CAMERA, LASER, LIDAR, IMU };
 extern const std::string dev_type_str[];
 
 /**
@@ -45,7 +46,9 @@ class Sensor {
         nh_(ros_nh),
         sensor_id(sensors_unique_id++),
         sensor_type(type),
-        sensor_type_str(dev_type_str[type]) {}
+        sensor_type_str(dev_type_str[type]) {
+    T_ = Eigen::Matrix4f::Identity();
+  }
 
   /**
    * @brief 虚析构函数
@@ -57,6 +60,17 @@ class Sensor {
    * @brief 释放资源
    */
   virtual void free() = 0;
+
+  /**
+   * @brief opengl渲染
+   * @param shader
+   */
+  virtual void draw_gl(glk::GLSLShader& shader) = 0;
+
+  /**
+   * @brief imgui绘图
+   */
+  virtual void draw_ui() = 0;
 
   /**
    * @brief 修改传感器名称
@@ -84,24 +98,25 @@ class Sensor {
   /**
    * @brief 将当前对象标记为删除状态
    */
-  void marked_to_be_deleted() { is_to_be_deleted_ = true; }
+  void marked_to_be_deleted() { b_to_be_deleted_ = true; }
 
   /**
    * @brief 获取当前对象删除标记
    * @return 当前状态是否需要被删除
    */
-  bool is_to_be_deleted() const { return is_to_be_deleted_; }
+  bool is_to_be_deleted() const { return b_to_be_deleted_; }
 
   /**
-   * @brief opengl渲染
-   * @param shader
+   * 获取sensor位姿
+   * @param pose
    */
-  virtual void draw_gl(glk::GLSLShader& shader) = 0;
+  const Eigen::Matrix4f& get_sensor_pose() const { return T_; }
 
   /**
-   * @brief imgui绘图
+   * 设置sensor位姿
+   * @param new_pose
    */
-  virtual void draw_ui() = 0;
+  void set_sensor_pose(const Eigen::Matrix4f& new_pose) { T_ = new_pose; }
 
  protected:
   /**
@@ -110,9 +125,9 @@ class Sensor {
   void draw_data_color_selector();
 
   /**
- * @brief 加载.ply模型文件
- * @return
- */
+   * @brief 加载.ply模型文件
+   * @return
+   */
   bool load_model();
 
   /**
@@ -148,13 +163,15 @@ class Sensor {
   // 选择ros话题列表
   std::vector<std::string> ros_topic_selector_;
   // 是否需要被删除
-  bool is_to_be_deleted_{false};
+  bool b_to_be_deleted_{false};
   // 在线状态
   bool is_online_{false};
   // 是否显示ui窗口
-  bool is_show_window_{false};
+  bool b_show_window_{false};
   // 相机3d模型
   std::unique_ptr<glk::Drawable> ply_model_ptr_{nullptr};
+  // 设备在世界坐标系下的位姿
+  Eigen::Matrix4f T_{};
 };
 
 }  // namespace dev

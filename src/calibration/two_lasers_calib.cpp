@@ -53,17 +53,18 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
 
+  // 设置相对位姿初始值
   T12_ = Eigen::Matrix4f::Identity();
 
-  // 设置旋转矩阵初始值
-  // Eigen::Quaternionf q_init{0.805, 0.000, 0.593, 0.000};
-
-  Eigen::Quaternionf q_init = algorithm::ypr2quaternion(0,DEG2RAD_RBT(72.766),0).cast<float>();
-  T12_.block<3, 3>(0, 0) = q_init.toRotationMatrix();
-  // 设置平移向量
-  T12_.block<3, 1>(0, 3) = Eigen::Vector3f{0.113, 0.0, 1.248};
-
-  std::cout << "T12_:\n" << T12_ << std::endl;
+  // // 设置旋转矩阵初始值
+  // // Eigen::Quaternionf q_init{0.805, 0.000, 0.593, 0.000};
+  //
+  // Eigen::Quaternionf q_init = algorithm::ypr2quaternion(0,DEG2RAD_RBT(60),0).cast<float>();
+  // T12_.block<3, 3>(0, 0) = q_init.toRotationMatrix();
+  // // 设置平移向量
+  // T12_.block<3, 1>(0, 3) = Eigen::Vector3f{0.0, 0.0, 1.248};
+  //
+  // std::cout << "T12_:\n" << T12_ << std::endl;
 
   // 测试
   // Eigen::Vector3d l1{1, 2, 3};
@@ -130,7 +131,6 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
   // 绘图
   // 画直线上的中点
   auto draw_pt = [&shader](Eigen::Matrix4f model, const Eigen::Vector3d& pos, const Eigen::Vector4f& color) {
-
     model.block<3, 1>(0, 3) = model.block<3, 3>(0, 0) * pos.cast<float>() + model.block<3, 1>(0, 3);
 
     // 画直线中点
@@ -173,14 +173,14 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
 void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
   draw_calib_data(shader);
 
-  if (!laser_insts_[0].laser_lines_drawable_ptr) {
+  if (next_state_ != STATE_START || !laser_insts_[0].laser_lines_drawable_ptr) {
     return;
   }
 
   shader.set_uniform("color_mode", 2);
 
   for (const auto& laser_inst : laser_insts_) {
-    shader.set_uniform("model_matrix", Eigen::Matrix4f::Identity().eval());
+    shader.set_uniform("model_matrix", laser_inst.laser_dev_ptr->get_sensor_pose());
     laser_inst.laser_lines_drawable_ptr->draw(shader);
   }
 }
@@ -578,6 +578,9 @@ void TwoLasersCalib::calibration() {
       if (task_ptr_->do_task("calc", std::bind(&TwoLasersCalib::calc, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
+          // 将计算结果更新到laser2
+          update_laser2_pose();
+          update_ui_transform();
           cur_state_ = STATE_IDLE;
         }
       }
@@ -589,9 +592,11 @@ bool TwoLasersCalib::calc() {
   // 准备标定数据
   std::vector<algorithm::Observation> obs;
 
-  double scale = 1. / sqrt(calib_valid_data_vec_.size()) * 0.05;
+  double scale = 1. / sqrt(calib_valid_data_vec_.size());
   std::cout << "scale: " << scale << std::endl;
 
+  // 直线的方向向量 {B, -A, 0}
+  Eigen::Vector3d l;
   for (const auto& data : calib_valid_data_vec_) {
     algorithm::Observation ob;
     // 直线归一化
@@ -605,14 +610,18 @@ bool TwoLasersCalib::calc() {
     // ob.l_2_b = data.lines_params[1][1].normalized();
     // ob.c_2_b = data.mid_pt_on_lines[1][1];
 
-    ob.l_1_a = data.lines_params[0][0];
+    l = Eigen::Vector3d{data.lines_params[0][0](1), -data.lines_params[0][0](0), 0.};
+    ob.l_1_a = l;
     ob.c_1_a = data.mid_pt_on_lines[0][0];
-    ob.l_1_b = data.lines_params[0][1];
+    l = Eigen::Vector3d{data.lines_params[0][1](1), -data.lines_params[0][1](0), 0.};
+    ob.l_1_b = l;
     ob.c_1_b = data.mid_pt_on_lines[0][1];
 
-    ob.l_2_a = data.lines_params[1][0];
+    l = Eigen::Vector3d{data.lines_params[1][0](1), -data.lines_params[1][0](0), 0.};
+    ob.l_2_a = l;
     ob.c_2_a = data.mid_pt_on_lines[1][0];
-    ob.l_2_b = data.lines_params[1][1];
+    l = Eigen::Vector3d{data.lines_params[1][1](1), -data.lines_params[1][1](0), 0.};
+    ob.l_2_b = l;
     ob.c_2_b = data.mid_pt_on_lines[1][1];
 
     ob.scale = scale;
@@ -620,22 +629,94 @@ bool TwoLasersCalib::calc() {
   }
 
   Eigen::Matrix4d T12_initial = T12_.cast<double>();
-
-  // // 设置旋转矩阵初始值
-  // Eigen::Quaterniond q_init{0.805, 0.000, 0.593, 0.000};
-  // T12_initial.block<3, 3>(0, 0) = q_init.toRotationMatrix();
-  // // 设置平移向量
-  // T12_initial.block<3, 1>(0, 3) = Eigen::Vector3d{0.113, 0.0, 1.248};
-
   std::cout << "T12_initial:\n" << T12_initial << std::endl;
 
-  // algorithm::TwoLasersCalibration(obs, T12_initial);
+  if (is_tx_fixed_) {
+    std::cout << "tx fixed!!!!!" << std::endl;
+  }
+  algorithm::TwoLasersCalibration(obs, T12_initial, is_tx_fixed_);
   // algorithm::TwoLasersCalibrationAutoDiff(obs, T12_initial);
-  algorithm::TwoLasersCalibrationNaive(obs, T12_initial);
+  // algorithm::TwoLasersCalibrationNaive(obs, T12_initial);
 
   T12_ = T12_initial.cast<float>();
 
   return true;
+}
+
+void TwoLasersCalib::update_laser2_pose() {
+  // 更新激光2的位姿（默认激光1是fix的）
+  if (laser_insts_[0].laser_dev_ptr->sensor_id != laser_insts_[1].laser_dev_ptr->sensor_id) {
+    // 激光1,2到世界坐标的变换
+    Eigen::Matrix4f T_w1, T_w2;
+    T_w1 = laser_insts_[0].laser_dev_ptr->get_sensor_pose();
+
+    // 计算激光2的位姿并更新
+    T_w2 = T_w1 * T12_;
+    laser_insts_[1].laser_dev_ptr->set_sensor_pose(T_w2);
+  }
+}
+
+void TwoLasersCalib::update_ui_transform() {
+  Eigen::Quaternionf q_12(T12_.block<3, 3>(0, 0));
+  auto euler = algorithm::quat2euler(q_12.cast<double>());
+  transform_12_[0] = T12_(0, 3);
+  transform_12_[1] = T12_(1, 3);
+  transform_12_[2] = T12_(2, 3);
+  transform_12_[3] = RAD2DEG_RBT(euler.roll);
+  transform_12_[4] = RAD2DEG_RBT(euler.pitch);
+  transform_12_[5] = RAD2DEG_RBT(euler.yaw);
+}
+
+void TwoLasersCalib::draw_ui_transform() {
+  ImGui::Separator();
+  ImGui::Text("T12:");
+  ImGui::SameLine();
+  ImGui::TextDisabled("the unit: m & deg");
+  ImGui::Text("set the transform from laser 2 to 1.");
+
+  // 变更后要更新矩阵
+  bool is_changed = false;
+  // 设定宽度
+  ImGui::PushItemWidth(80);
+  if (ImGui::DragScalar("tx", ImGuiDataType_Float, &transform_12_[0], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("ty", ImGuiDataType_Float, &transform_12_[1], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("tz", ImGuiDataType_Float, &transform_12_[2], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+
+  if (ImGui::DragScalar("roll", ImGuiDataType_Float, &transform_12_[3], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("pitch", ImGuiDataType_Float, &transform_12_[4], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("yaw", ImGuiDataType_Float, &transform_12_[5], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+
+  ImGui::PopItemWidth();
+  // 更新变换矩阵
+  if (is_changed) {
+    Eigen::Quaterniond q_12 = algorithm::ypr2quaternion(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
+                                                        DEG2RAD_RBT(transform_12_[3]));
+    Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
+    // 更新变换矩阵
+    T12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
+    T12_.block<3, 1>(0, 3) = t_12;
+    std::cout << "T12:\n" << T12_ << std::endl;
+
+    update_laser2_pose();
+  }
+
+  ImGui::Separator();
 }
 
 void TwoLasersCalib::draw_ui() {
@@ -722,6 +803,9 @@ void TwoLasersCalib::draw_ui() {
       }
     }
 
+    // 设置变换矩阵参数
+    draw_ui_transform();
+
     // 标定逻辑
     calibration();
 
@@ -734,7 +818,7 @@ void TwoLasersCalib::draw_ui() {
           dev::show_pfd_info("two lasers calibration", msg);
         } else {
           // 清空上次的标定数据
-          calib_valid_data_vec_.clear();
+          // calib_valid_data_vec_.clear();
           next_state_ = STATE_START;
         }
       }
@@ -756,12 +840,17 @@ void TwoLasersCalib::draw_ui() {
       if (ImGui::Button("calib")) {
         next_state_ = STATE_START_CALIB;
       }
+      ImGui::SameLine();
+      ImGui::Checkbox("fix_tz", &is_tx_fixed_);
+      // tips
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("fix tz value during calibration!");
+      }
     }
   }
 
   // 标定数据相关操作
-  if (!calib_valid_data_vec_.empty()) {
-    ImGui::Separator();
+  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         b_need_to_update_cd_ = true;
@@ -798,7 +887,7 @@ void TwoLasersCalib::draw_ui() {
     ImGui::PopButtonRepeat();
     ImGui::SameLine();
     // 删除按钮
-    if (cur_state_ == STATE_IDLE) {
+    if (!calib_valid_data_vec_.empty()) {
       if (ImGui::Button("Del")) {
         selected_calib_data_id_--;
         // 删除数据
@@ -816,6 +905,9 @@ void TwoLasersCalib::draw_ui() {
 
     ImGui::SameLine();
     ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
+  } else {
+    ImGui::SameLine();
+    ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
   }
 
   ImGui::End();

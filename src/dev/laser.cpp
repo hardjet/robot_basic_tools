@@ -56,6 +56,10 @@ void Laser::free() {
 }
 
 void Laser::draw_gl(glk::GLSLShader& shader) {
+  if (!b_show_laser_) {
+    return;
+  }
+
   // 获取最新的激光数据
   auto laser_data = data();
 
@@ -70,7 +74,7 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
     if (pointcloud_buffer_ptr_) {
       // 画图
       shader.set_uniform("color_mode", 1);
-      shader.set_uniform("model_matrix", Eigen::Matrix4f::Identity().eval());
+      shader.set_uniform("model_matrix", T_);
       // shader.set_uniform("info_values", Eigen::Vector4i(1, 0, 0, 0));
       shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
       pointcloud_buffer_ptr_->draw(shader);
@@ -79,8 +83,7 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
 
   if (ply_model_ptr_) {
     shader.set_uniform("color_mode", 1);
-    shader.set_uniform("model_matrix",
-                       (Eigen::Translation3f(Eigen::Vector3f{0.5, 0.5, 0.5}) * Eigen::Isometry3f::Identity()).matrix());
+    shader.set_uniform("model_matrix", T_);
     shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
     ply_model_ptr_->draw(shader);
   }
@@ -108,13 +111,13 @@ void Laser::draw_ui_topic_name() {
 
   ImGui::Separator();
 
-  if (ImGui::Checkbox("##laser_topic", &is_enable_topic_)) {
+  if (ImGui::Checkbox("##laser_topic", &b_enable_topic_)) {
     // 选中状态
-    if (is_enable_topic_) {
+    if (b_enable_topic_) {
       // 如果topic有效才启用数据接收
       if (sensor_topic_list_[0].empty()) {
         show_pfd_info("warning", "please set topic name first!");
-        is_enable_topic_ = false;
+        b_enable_topic_ = false;
       } else {
         laser_data_ptr_->subscribe(sensor_topic_list_[0], 5);
       }
@@ -140,7 +143,7 @@ void Laser::draw_ui_topic_name() {
       sensor_topic_list_[0] = laser_topic_name_char;
       // 暂停接收
       laser_data_ptr_->unsubscribe();
-      is_enable_topic_ = false;
+      b_enable_topic_ = false;
     }
   } else {
     // 恢复名称
@@ -172,7 +175,7 @@ void Laser::draw_ui_topic_name() {
       sensor_topic_list_[0] = ros_topic_selector_[selected_id];
       // 暂停接收
       laser_data_ptr_->unsubscribe();
-      is_enable_topic_ = false;
+      b_enable_topic_ = false;
     }
 
     ImGui::EndPopup();
@@ -183,7 +186,7 @@ void Laser::draw_ui() {
   // 名称控件变量
   char name_char[128]{""};
 
-  if (!is_show_window_) {
+  if (!b_show_window_) {
     return;
   }
 
@@ -192,7 +195,7 @@ void Laser::draw_ui() {
 
   // 保证窗口名称唯一
   std::string win_name = sensor_name + "##" + std::to_string(sensor_id);
-  ImGui::Begin(win_name.c_str(), &is_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin(win_name.c_str(), &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
   // 保证控件中文字对齐
   ImGui::AlignTextToFramePadding();
@@ -226,6 +229,15 @@ void Laser::draw_ui() {
   ImGui::SameLine();
   draw_data_color_selector();
 
+  // 使能数据显示
+  ImGui::SameLine();
+  ImGui::Checkbox("##show_laser", &b_show_laser_);
+  // 提示设备状态
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("enable/disable show laser data");
+  }
+
+  //选择数据topic
   draw_ui_topic_name();
 
   ImGui::End();

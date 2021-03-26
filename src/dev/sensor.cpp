@@ -18,7 +18,7 @@ const std::string dev_type_str[] = {"UNDEF", "CAMERA", "LASER", "LIDAR", "IMU"};
 
 uint32_t Sensor::sensors_unique_id = 0;
 
-void Sensor::show() { is_show_window_ = true; }
+void Sensor::show() { b_show_window_ = true; }
 
 bool Sensor::load_model() {
   // 选择加载文件路径

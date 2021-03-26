@@ -47,13 +47,13 @@ class Camera : public Sensor {
   // 当前类型
   int current_camera_type_{2};
   // 是否显示图像
-  bool is_show_image_{false};
+  bool b_show_image_{false};
+  // ros topic 使能
+  bool b_enable_topic_[2]{false, false};
   // 相机对象
   boost::shared_ptr<camera_model::Camera> inst_ptr_{nullptr};
   // 相机内参
   std::vector<double> inst_params_;
-  // ros topic 使能
-  bool is_enable_topic_[2]{false, false};
   // 获取图像数据
   std::shared_ptr<SensorData<sensor_msgs::Image>> image_data_ptr_;
   // 获取深度点云数据
@@ -67,7 +67,7 @@ class Camera : public Sensor {
   /// 创建指定类型的相机
   void creat_instance(int current_camera_type);
   /// 绘制参数ui
-  void draw_ui_parms();
+  void draw_ui_params();
   /// 绘制话题ui
   void draw_ui_topic_name();
   /// 检查当前设备在线状态

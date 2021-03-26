@@ -104,6 +104,15 @@
                             "progress": 9
                         },
                         "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "ca726va0pm80",
+                            "created": 1616739130695,
+                            "text": "增加模型位姿",
+                            "progress": 1
+                        },
+                        "children": []
                     }
                 ]
             },
@@ -316,6 +325,15 @@
                                     "id": "ca3h8gr2v340",
                                     "created": 1616375332625,
                                     "text": "标定数据可视化",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "ca71r757zdk0",
+                                    "created": 1616737902700,
+                                    "text": "增加位姿手动设置功能",
                                     "progress": 1
                                 },
                                 "children": []
@@ -325,7 +343,7 @@
                                     "id": "c9z9x3psnvs0",
                                     "created": 1615948454647,
                                     "text": "计算位姿",
-                                    "progress": 8
+                                    "progress": 9
                                 },
                                 "children": []
                             }

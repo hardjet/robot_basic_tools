@@ -32,7 +32,7 @@ struct Observation {
  * @param obs 观测量集合
  * @param T 激光2到1的变换矩阵
  */
-void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &T12);
+void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &T12, bool is_tx_fixed);
 
 /**
  * 使用ceres求解，使用AutoDiff以及ceres::EigenQuaternionParameterization

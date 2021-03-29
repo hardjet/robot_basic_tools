@@ -1,7 +1,9 @@
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/imgproc.hpp>
+
+#include "algorithm/ransac.h"
 // ransac_detect_2D_lines
-#include <mrpt/math/ransac_applications.h>
+// #include <mrpt/math/ransac_applications.h>
 
 #include "algorithm/util.h"
 #include "algorithm/line_detect.h"

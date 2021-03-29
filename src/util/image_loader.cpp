@@ -3,7 +3,9 @@
 // #include <opencv2/imgproc.hpp>
 
 #include "GL/gl3w.h"
-#include "image_loader.hpp"
+#include "util/image_loader.hpp"
+
+namespace util {
 
 // Simple helper function to load an image into a OpenGL texture with common settings
 bool LoadTextureFromFile(const std::string &filename, GLuint &img_texture, int &img_width, int &img_height) {
@@ -42,3 +44,4 @@ bool LoadTextureFromFile(const std::string &filename, GLuint &img_texture, int &
   img_texture = image_texture;
   return true;
 }
+}  // namespace util

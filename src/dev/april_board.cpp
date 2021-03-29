@@ -1,7 +1,7 @@
 #include <boost/make_shared.hpp>
 #include "imgui.h"
 
-#include "image_loader.hpp"
+#include "util/image_loader.hpp"
 #include "dev/april_board.hpp"
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 
@@ -9,7 +9,7 @@ namespace dev {
 AprilBoard::AprilBoard(std::string &data_path) {
   board = boost::make_shared<aslam::cameras::GridCalibrationTargetAprilgrid>(6, 6, tag_size_, tag_spacing_);
   // 加载图像
-  if (!LoadTextureFromFile(data_path + "/imgs/april_board.png", texture_id_, img_width_, img_height_)) {
+  if (!util::LoadTextureFromFile(data_path + "/imgs/april_board.png", texture_id_, img_width_, img_height_)) {
     texture_id_ = 0;
   }
 }

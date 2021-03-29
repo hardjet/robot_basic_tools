@@ -239,6 +239,7 @@ target_include_directories(guik PUBLIC
 target_link_libraries(guik
         PUBLIC
         imgui
+        ${PCL_LIBRARIES}
         )
 
 # build target algorithm
@@ -261,7 +262,7 @@ target_include_directories(algorithm PUBLIC
 target_link_libraries(algorithm
         PUBLIC
 #        ${PCL_LIBRARIES}
-#        ${OpenCV_LIBRARIES}
+        ${OpenCV_LIBRARIES}
         ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
         )
@@ -277,7 +278,7 @@ add_executable(${PROJECT_NAME}
         src/dev/util.cpp
         src/calibration/camera_laser_calib.cpp
         src/calibration/two_lasers_calib.cpp
-        src/image_loader.cpp
+        src/util/image_loader.cpp
         src/robot_basic_tools.cpp
         )
 
@@ -289,8 +290,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-        ${PCL_LIBRARIES}
-        ${OpenCV_LIBRARIES}
+#        ${PCL_LIBRARIES}
+#        ${OpenCV_LIBRARIES}
         guik
         camera_model
         algorithm

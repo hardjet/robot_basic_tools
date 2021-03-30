@@ -245,6 +245,7 @@ target_link_libraries(guik
 # build target algorithm
 add_library(algorithm SHARED
         src/algorithm/random/RandomGenerator.cpp
+        src/algorithm/ransac/ransac_applications.cpp
         src/algorithm/util.cpp
         src/algorithm/line_detect.cpp
         src/algorithm/line_fitting.cpp

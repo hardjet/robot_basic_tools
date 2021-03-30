@@ -1,12 +1,9 @@
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/imgproc.hpp>
 
-#include "algorithm/ransac.h"
-// ransac_detect_2D_lines
-// #include <mrpt/math/ransac_applications.h>
-
 #include "algorithm/util.h"
 #include "algorithm/line_detect.h"
+#include "algorithm/ransac/ransac_applications.h"
 
 namespace algorithm {
 
@@ -45,16 +42,17 @@ void LineDetect::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
-                          cv::Mat& img) const {
+bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
+                                std::array<Eigen::Vector2d, 2>& lines_min_max, cv::Mat& img) const {
   img = img_ptr_->clone();
   // 直线点集合
   std::vector<std::vector<Eigen::Vector3d>> two_lines_pts(2);
 
   // ransac 数据
-  mrpt::math::CVectorDouble xs, ys;
+  std::vector<double> xs;
+  std::vector<double> ys;
   // 检测到的直线 <点数，直线方程系数Ax+By+C=0>
-  std::vector<std::pair<size_t, mrpt::math::TLine2D>> detectedLines;
+  std::vector<std::pair<size_t, Eigen::Vector3d>> detectedLines;
   // 时间统计
   // mrpt::system::CTicTac tictac;
 
@@ -99,12 +97,20 @@ bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, st
     return false;
   }
 
-  // 开始计时
-  // tictac.Tic();
+  for (int i = 0; i < xs.size();) {
+    printf("[%d]:%f, %f\n", i, xs[i], ys[i]);
+    i += 10;
+  }
 
   // 直线内点距离门限5cm，有效点数门限50个
+  Eigen::Map<Eigen::VectorXd> x_e(xs.data(), xs.size());
+  Eigen::Map<Eigen::VectorXd> y_e(ys.data(), ys.size());
+
+  std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
+
   double thd = 0.03;
-  ransac_detect_2D_lines(xs, ys, detectedLines, thd, 50);
+  algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, 50);
+  std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
 
   // 检测到两条直线认为有效
   if (detectedLines.size() != 2) {
@@ -118,35 +124,41 @@ bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, st
   lines_min_max[1](0) = 1000.;
   lines_min_max[1](1) = -1000.;
 
+  // 计算点到直线的距离
+  auto distance = [](const Eigen::Vector3d& line, double x, double y) {
+    return std::abs(line[0] * x + line[1] * y + line[2]) / sqrt(line[0] * line[0] + line[1] * line[1]);
+  };
+
   // 提取出直线对应的点 todo ransac算法里已经有，后面直接把数据传出来
   double dist;
   for (size_t i = 0; i < xs.size(); i++) {
-    mrpt::math::TPoint2D pt{xs(i, 0), ys(i, 0)};
-    dist = detectedLines[0].second.distance(pt);
+    // mrpt::math::TPoint2D pt{xs(i, 0), ys(i, 0)};
+    // dist = detectedLines[0].second.distance(pt);
+    dist = distance(detectedLines[0].second, xs.at(i), ys.at(i));
     if (dist < thd) {
-      two_lines_pts[0].emplace_back(Eigen::Vector3d{pt.x, pt.y, 0.});
+      two_lines_pts[0].emplace_back(Eigen::Vector3d{xs.at(i), ys.at(i), 0.});
 
       // 更新最值
-      if (lines_min_max[0](1) < pt.y) {
-        lines_min_max[0](1) = pt.y;
+      if (lines_min_max[0](1) < ys.at(i)) {
+        lines_min_max[0](1) = ys.at(i);
       }
 
-      if (lines_min_max[0](0) > pt.y) {
-        lines_min_max[0](0) = pt.y;
+      if (lines_min_max[0](0) > ys.at(i)) {
+        lines_min_max[0](0) = ys.at(i);
       }
 
     } else {
-      dist = detectedLines[1].second.distance(pt);
+      dist = distance(detectedLines[1].second, xs.at(i), ys.at(i));
       if (dist < thd) {
-        two_lines_pts[1].emplace_back(Eigen::Vector3d{pt.x, pt.y, 0.});
+        two_lines_pts[1].emplace_back(Eigen::Vector3d{xs.at(i), ys.at(i), 0.});
 
         // 更新最值
-        if (lines_min_max[1](1) < pt.y) {
-          lines_min_max[1](1) = pt.y;
+        if (lines_min_max[1](1) < ys.at(i)) {
+          lines_min_max[1](1) = ys.at(i);
         }
 
-        if (lines_min_max[1](0) > pt.y) {
-          lines_min_max[1](0) = pt.y;
+        if (lines_min_max[1](0) > ys.at(i)) {
+          lines_min_max[1](0) = ys.at(i);
         }
       }
     }
@@ -165,15 +177,13 @@ bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, st
 
     // 在2d图上画直线
     double y1 = -2.0;
-    double x1 =
-        (-detectedLines[i].second.coefs[1] * y1 - detectedLines[i].second.coefs[2]) / detectedLines[i].second.coefs[0];
+    double x1 = (-detectedLines[i].second[1] * y1 - detectedLines[i].second[2]) / detectedLines[i].second[0];
     int col_1 = (int)(x1 / img_z_ * img_focal_ + img_w_ / 2);
     // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
     int row_1 = (int)(-y1 / img_z_ * img_focal_ + img_w_ / 2);
 
     double y2 = 2.0;
-    double x2 =
-        (-detectedLines[i].second.coefs[1] * y2 - detectedLines[i].second.coefs[2]) / detectedLines[i].second.coefs[0];
+    double x2 = (-detectedLines[i].second[1] * y2 - detectedLines[i].second[2]) / detectedLines[i].second[0];
     int col_2 = (int)(x2 / img_z_ * img_focal_ + img_w_ / 2);
     // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
     int row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);

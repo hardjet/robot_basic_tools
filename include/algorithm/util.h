@@ -52,13 +52,27 @@ inline Eigen::Matrix3d skew_symmetric(const Eigen::MatrixBase<Derived>& w) {
 }
 
 template <typename Derived>
-static Eigen::Matrix<typename Derived::Scalar, 3, 3> skewSymmetric(const Eigen::MatrixBase<Derived> &q)
-{
-  Eigen::Matrix<typename Derived::Scalar, 3, 3> ans;
-  ans << typename Derived::Scalar(0), -q(2), q(1),
-      q(2), typename Derived::Scalar(0), -q(0),
-      -q(1), q(0), typename Derived::Scalar(0);
-  return ans;
+static Eigen::Matrix<typename Derived::Scalar, 3, 3> skewSymmetric(const Eigen::MatrixBase<Derived>& m) {
+  Eigen::Matrix<typename Derived::Scalar, 3, 3> skew;
+  skew << typename Derived::Scalar(0), -m(2), m(1), m(2), typename Derived::Scalar(0), -m(0), -m(1), m(0),
+      typename Derived::Scalar(0);
+  return skew;
+}
+
+template <typename Derived>
+void remove_cols(Eigen::MatrixBase<Derived>& data, const std::vector<size_t>& idx_to_remove) {
+  std::vector<std::size_t> idxs = idx_to_remove;
+  std::sort(idxs.begin(), idxs.end());
+  auto itEnd = std::unique(idxs.begin(), idxs.end());
+  idxs.resize(itEnd - idxs.begin());
+
+  std::size_t k = 1;
+  const auto nR = data.rows();
+  for (auto it = idxs.rbegin(); it != idxs.rend(); ++it, ++k) {
+    const auto nC = data.cols() - *it - k;
+    if (nC > 0) data.block(0, *it, nR, nC) = data.block(0, *it + 1, nR, nC).eval();
+  }
+  data.resize(nR, data.cols() - idxs.size());
 }
 
 }  // namespace algorithm

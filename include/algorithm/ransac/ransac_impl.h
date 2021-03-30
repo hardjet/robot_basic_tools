@@ -16,8 +16,8 @@
 // To be included from ransac.h only
 
 namespace algorithm {
-template <typename NUMTYPE, typename DATASET, typename MODEL>
-bool RANSAC_Template<NUMTYPE, DATASET, MODEL>::execute(const DATASET& data, const TRansacFitFunctor& fit_func,
+template <typename Derived, typename DATASET, typename MODEL>
+bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, const TRansacFitFunctor& fit_func,
                                                        const TRansacDistanceFunctor& dist_func,
                                                        const TRansacDegenerateFunctor& degen_func,
                                                        const double distanceThreshold,
@@ -92,8 +92,8 @@ bool RANSAC_Template<NUMTYPE, DATASET, MODEL>::execute(const DATASET& data, cons
     unsigned int bestModelIdx = std::numeric_limits<unsigned int>::max();
     std::vector<size_t> inliers;
     if (!degenerate) {
-      dist_func(data, MODELS, static_cast<NUMTYPE>(distanceThreshold), bestModelIdx, inliers);
-      ASSERT_LT_(bestModelIdx, MODELS.size());
+      dist_func(data, MODELS, static_cast<typename Derived::Scalar>(distanceThreshold), bestModelIdx, inliers);
+      assert(bestModelIdx < MODELS.size());
     }
 
     // Find the number of inliers to this model.
@@ -128,7 +128,7 @@ bool RANSAC_Template<NUMTYPE, DATASET, MODEL>::execute(const DATASET& data, cons
 
     ++trialcount;
 
-    printf("trial %u out of %u\n", (unsigned int)trialcount, (unsigned int)ceil(static_cast<double>(N)));
+    // printf("trial %u out of %u\n", (unsigned int)trialcount, (unsigned int)ceil(static_cast<double>(N)));
 
     // Safeguard against being stuck in this loop forever
     if (trialcount > maxIter) {

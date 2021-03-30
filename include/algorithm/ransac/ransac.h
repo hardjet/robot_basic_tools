@@ -15,8 +15,8 @@ namespace algorithm {
 /** Define overloaded functions for user types as required.
  * This default implementation assumes datasets in matrices, with each sample
  * being a column, the dimensionality being the number of rows. */
-template <typename T>
-size_t ransacDatasetSize(const Eigen::MatrixBase<T>& dataset) {
+template <typename Derived>
+size_t ransacDatasetSize(const Eigen::MatrixBase<Derived>& dataset) {
   return dataset.cols();
 }
 
@@ -33,8 +33,8 @@ size_t ransacDatasetSize(const Eigen::MatrixBase<T>& dataset) {
  *
  * \note New in MRPT 2.0.2: The second and third template arguments.
  */
-template <typename NUMTYPE = double, typename DATASET = Eigen::MatrixBase<NUMTYPE>,
-          typename MODEL = Eigen::MatrixBase<NUMTYPE>>
+template <typename Derived, typename DATASET = Derived,
+          typename MODEL = Derived>
 class RANSAC_Template {
  public:
   RANSAC_Template() = default;
@@ -47,7 +47,7 @@ class RANSAC_Template {
   /** The type of the function passed to mrpt::math::ransac  - See the
    * documentation for that method for more info. */
   using TRansacDistanceFunctor =
-      std::function<void(const DATASET& allData, const std::vector<MODEL>& testModels, const NUMTYPE distanceThreshold,
+      std::function<void(const DATASET& allData, const std::vector<MODEL>& testModels, const typename Derived::Scalar distanceThreshold,
                          unsigned int& out_bestModelIndex, std::vector<size_t>& out_inlierIndices)>;
 
   /** The type of the function passed to mrpt::math::ransac  - See the
@@ -68,14 +68,11 @@ class RANSAC_Template {
    * COutputLogger settings.
    */
   bool execute(const DATASET& data, const TRansacFitFunctor& fit_func, const TRansacDistanceFunctor& dist_func,
-               const TRansacDegenerateFunctor& degen_func, const double distanceThreshold,
-               const unsigned int minimumSizeSamplesToFit, std::vector<size_t>& out_best_inliers, MODEL& out_best_model,
-               const double prob_good_sample = 0.999, const size_t maxIter = 2000) const;
+               const TRansacDegenerateFunctor& degen_func, double distanceThreshold,
+               unsigned int minimumSizeSamplesToFit, std::vector<size_t>& out_best_inliers, MODEL& out_best_model,
+               double prob_good_sample = 0.999, size_t maxIter = 2000) const;
 
 };  // end class
-
-/** The default instance of RANSAC, for double type */
-using RANSAC = RANSAC_Template<double>;
 
 /** @} */
 

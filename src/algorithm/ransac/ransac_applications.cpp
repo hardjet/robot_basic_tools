@@ -30,6 +30,13 @@ inline void ransac2Dline_fit(const Eigen::MatrixXd& allData, const std::vector<s
     line[1] = p1.x() - p2.x();
     line[2] = p2.x() * p1.y() - p2.y() * p1.x();
 
+    // std::cout << "fit: " << line.transpose() << std::endl;
+
+    // if(abs(line[0]) < 1e-4 || abs(line[1]) < 1e-4 || abs(line[2]) < 1e-4) {
+    //   std::cout << "p1:" << p1.transpose() << std::endl;
+    //   std::cout << "p2:" << p2.transpose() << std::endl;
+    // }
+
     fitModels.resize(1);
     Eigen::MatrixXd& M = fitModels[0];
 
@@ -93,15 +100,15 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
 
   // The running lists of remaining points after each plane, as a matrix:
   Eigen::MatrixXd remainingPoints(2, x.size());
-  for(size_t i=0; i<x.size(); i++) {
+  for (size_t i = 0; i < x.size(); i++) {
     remainingPoints(0, i) = x(i);
     remainingPoints(1, i) = y(i);
   }
 
-  for (int i = 0; i < x.size();) {
-    printf("remainingPoints[%d]:%f, %f\n", i, remainingPoints(0, i), remainingPoints(1, i));
-    i += 10;
-  }
+  // for (int i = 0; i < x.size();) {
+  //   printf("remainingPoints[%d]:%f, %f\n", i, remainingPoints(0, i), remainingPoints(1, i));
+  //   i += 10;
+  // }
 
   // ---------------------------------------------
   // For each line:
@@ -130,11 +137,22 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
       double s = sqrt(l[0] * l[0] + l[1] * l[1]);
       l /= s;
       out_detected_lines.back().second = l;
+      // std::cout << "line model:" << l.transpose() << std::endl;
 
       // Discard the selected points so they are not used again for
       // finding subsequent planes:
+      // std::cout << "before remove_cols:" << remainingPoints.cols() << std::endl;
       remove_cols(remainingPoints, this_best_inliers);
-      std::cout << "after remove_cols:" << remainingPoints.cols() << std::endl;
+      // std::cout << "after remove_cols:" << remainingPoints.cols() << std::endl;
+      // std::cout << "out_detected_lines:" << out_detected_lines.size() << std::endl;
+
+      // if (remainingPoints.cols()) {
+      //   for (int i = 0; i < remainingPoints.cols();) {
+      //     printf("remainingPoints[%d]:%f, %f\n", i, remainingPoints(0, i), remainingPoints(1, i));
+      //     i += 10;
+      //   }
+      // }
+
       max_try++;
       if (max_try == 10) {
         break;
@@ -146,13 +164,3 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
 }
 
 }  // namespace algorithm::ransac
-
-// Template explicit instantiations:
-// #define EXPLICIT_INSTANT_ransac_detect_2D_lines(_TYPE_)                        \
-// 	template void algorithm::ransac::ransac_detect_2D_lines<_TYPE_>(                  \
-// 		const Eigen::MatrixBase<_TYPE_>& x, const Eigen::MatrixBase<_TYPE_>& y,      \
-// 		std::vector<std::pair<size_t, Eigen::Vector3d>>& out_detected_lines,           \
-// 		const double threshold, const size_t min_inliers_for_valid_line)
-//
-//
-// EXPLICIT_INSTANT_ransac_detect_2D_lines(double);

@@ -59,20 +59,6 @@ static Eigen::Matrix<typename Derived::Scalar, 3, 3> skewSymmetric(const Eigen::
   return skew;
 }
 
-template <typename Derived>
-void remove_cols(Eigen::MatrixBase<Derived>& data, const std::vector<size_t>& idx_to_remove) {
-  std::vector<std::size_t> idxs = idx_to_remove;
-  std::sort(idxs.begin(), idxs.end());
-  auto itEnd = std::unique(idxs.begin(), idxs.end());
-  idxs.resize(itEnd - idxs.begin());
-
-  std::size_t k = 1;
-  const auto nR = data.rows();
-  for (auto it = idxs.rbegin(); it != idxs.rend(); ++it, ++k) {
-    const auto nC = data.cols() - *it - k;
-    if (nC > 0) data.block(0, *it, nR, nC) = data.block(0, *it + 1, nR, nC).eval();
-  }
-  data.resize(nR, data.cols() - idxs.size());
-}
+void remove_cols(Eigen::MatrixXd& data, const std::vector<size_t>& idx_to_remove);
 
 }  // namespace algorithm

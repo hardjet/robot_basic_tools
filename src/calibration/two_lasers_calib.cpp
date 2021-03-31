@@ -211,10 +211,10 @@ void TwoLasersCalib::update_show() {
   if (abs(theta_0_0 - theta_1_0) > abs(theta_0_0 - theta_1_1)) {
     b_need_to_swap = true;
   }
-  printf("need_to_swap: %d, 0-0: %.3f, 1-0: %.3f, 1-1: %.3f\n", b_need_to_swap, RAD2DEG_RBT(theta_0_0),
-         RAD2DEG_RBT(theta_1_0), RAD2DEG_RBT(theta_1_1));
+  // printf("need_to_swap: %d, 0-0: %.3f, 1-0: %.3f, 1-1: %.3f\n", b_need_to_swap, RAD2DEG_RBT(theta_0_0),
+  //        RAD2DEG_RBT(theta_1_0), RAD2DEG_RBT(theta_1_1));
   if (b_need_to_swap) {
-    std::cerr << "need_to_swap!!!!" << std::endl;
+    std::cout << "need_to_swap!!!!" << std::endl;
   }
 
   for (auto& laser_inst : laser_insts_) {

@@ -70,7 +70,7 @@ class RANSAC_Template {
   bool execute(const DATASET& data, const TRansacFitFunctor& fit_func, const TRansacDistanceFunctor& dist_func,
                const TRansacDegenerateFunctor& degen_func, double distanceThreshold,
                unsigned int minimumSizeSamplesToFit, std::vector<size_t>& out_best_inliers, MODEL& out_best_model,
-               double prob_good_sample = 0.999, size_t maxIter = 2000) const;
+               double prob_good_sample = 0.999, size_t maxIter = 100) const;
 
 };  // end class
 

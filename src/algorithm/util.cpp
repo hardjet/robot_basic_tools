@@ -10,15 +10,11 @@ std::ostream& operator<<(std::ostream& os, const EulerAngles& euler) {
   return os;
 }
 
-
 /**
-* converts a number constant to a number_t constant at compile time
-* to avoid having to cast everything to avoid warnings.
-**/
-inline constexpr double cst(long double v)
-{
-  return (double)v;
-}
+ * converts a number constant to a number_t constant at compile time
+ * to avoid having to cast everything to avoid warnings.
+ **/
+inline constexpr double cst(long double v) { return (double)v; }
 
 /**
  *
@@ -45,15 +41,16 @@ Eigen::Matrix4d lie_to_se3(const Eigen::Matrix<double, 6, 1>& lie) {
   } else {
     Eigen::Matrix3d Omega2 = Omega * Omega;
 
-    R = (Eigen::Matrix3d::Identity() + std::sin(theta) / theta * Omega + (1 - std::cos(theta)) / (theta * theta) * Omega2);
+    R = (Eigen::Matrix3d::Identity() + std::sin(theta) / theta * Omega +
+         (1 - std::cos(theta)) / (theta * theta) * Omega2);
 
     V = (Eigen::Matrix3d::Identity() + (1 - std::cos(theta)) / (theta * theta) * Omega +
          (theta - std::sin(theta)) / (std::pow(theta, 3)) * Omega2);
   }
 
   Eigen::Matrix4d se3 = Eigen::Matrix4d::Identity();
-  se3.block<3,3>(0,0) = R;
-  se3.block<3,1>(0,3) = V * upsilon;
+  se3.block<3, 3>(0, 0) = R;
+  se3.block<3, 1>(0, 3) = V * upsilon;
 
   return se3;
 }
@@ -113,4 +110,34 @@ Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d
 
   return pi;
 }
+
+void remove_cols(Eigen::MatrixXd& data, const std::vector<size_t>& idx_to_remove) {
+  std::vector<std::size_t> idxs = idx_to_remove;
+  std::sort(idxs.begin(), idxs.end());
+  auto itEnd = std::unique(idxs.begin(), idxs.end());
+  idxs.resize(itEnd - idxs.begin());
+
+  const auto nR = data.rows();
+  Eigen::MatrixXd data_after_remove(2, data.cols());
+
+  // idx_to_remove cnt
+  size_t idx = 0;
+  // data_after_remove cnt
+  size_t cnt = 0;
+  for (size_t i = 0; i < data.cols(); i++) {
+    if (i != idxs[idx]) {
+      data_after_remove.block<2, 1>(0, cnt) = data.block<2, 1>(0, i);
+      cnt++;
+    } else {
+      idx++;
+    }
+  }
+
+  Eigen::MatrixXd tmp(2, data.cols() - idxs.size());
+  tmp = data_after_remove.block(0, 0, 2, tmp.cols());
+  data.swap(tmp);
+
+  // printf("data size:[%ld], cnt = %zu, idx = %zu\n", data.cols(), cnt, idx);
+}
+
 }  // namespace algorithm

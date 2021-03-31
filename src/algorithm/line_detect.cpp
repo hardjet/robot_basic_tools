@@ -97,20 +97,20 @@ bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
     return false;
   }
 
-  for (int i = 0; i < xs.size();) {
-    printf("[%d]:%f, %f\n", i, xs[i], ys[i]);
-    i += 10;
-  }
+  // for (int i = 0; i < xs.size();) {
+  //   printf("[%d]:%f, %f\n", i, xs[i], ys[i]);
+  //   i += 10;
+  // }
 
   // 直线内点距离门限5cm，有效点数门限50个
   Eigen::Map<Eigen::VectorXd> x_e(xs.data(), xs.size());
   Eigen::Map<Eigen::VectorXd> y_e(ys.data(), ys.size());
 
-  std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
+  // std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
 
-  double thd = 0.03;
+  double thd = 0.05;
   algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, 50);
-  std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
+  // std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
 
   // 检测到两条直线认为有效
   if (detectedLines.size() != 2) {

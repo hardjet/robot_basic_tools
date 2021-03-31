@@ -61,6 +61,7 @@ bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, cons
       // converting from random double samples to size_t
       algorithm::random::getRandomGenerator().drawUniformVector(ind, 0.0, Npts - 1 + 0.999999);
 
+      // printf("ind: %d-%d\n", ind[0], ind[1]);
       // Test that these points are not a degenerate configuration.
       degenerate = degen_func(data, ind);
 
@@ -141,7 +142,7 @@ bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, cons
     // printf("Finished in %u iterations.\n", (unsigned)trialcount);
     return true;
   } else {
-    // printf("Finished without any proper solution\n");
+    printf("Finished without any proper solution\n");
     return false;
   }
 }

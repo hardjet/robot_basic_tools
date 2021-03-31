@@ -10,7 +10,8 @@
 #include "algorithm/ransac/ransac_applications.h"
 #include "algorithm/util.h"
 
-namespace algorithm::ransac {
+namespace algorithm {
+namespace ransac {
 
 /*---------------------------------------------------------------
                 Aux. functions needed by ransac_detect_2D_lines
@@ -118,9 +119,12 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
     std::vector<size_t> this_best_inliers;
     Eigen::MatrixXd this_best_model;
 
-    RANSAC_Template<Eigen::Matrix<double, -1, -1>> ransac;
-    ransac.execute(remainingPoints, ransac2Dline_fit, ransac2Dline_distance, ransac2Dline_degenerate, threshold,
-                   2,  // Minimum set of points
+    RANSAC ransac;
+    ransac.execute(remainingPoints, ransac2Dline_fit,
+                   ransac2Dline_distance,    //
+                   ransac2Dline_degenerate,  //
+                   threshold,                //
+                   2,                        // Minimum set of points
                    this_best_inliers, this_best_model,
                    0.99999  // Prob. of good result
     );
@@ -162,5 +166,5 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
     }
   }
 }
-
-}  // namespace algorithm::ransac
+}  // namespace ransac
+}  // namespace algorithm

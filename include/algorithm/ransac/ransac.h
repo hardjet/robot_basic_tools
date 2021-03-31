@@ -4,10 +4,12 @@
 
 #include <Eigen/Core>
 
+#include <vector>
 #include <functional>
 #include <set>
 
 namespace algorithm {
+namespace ransac {
 /** @addtogroup ransac_grp RANSAC and other model fitting algorithms
  * \ingroup mrpt_math_grp
  * @{ */
@@ -33,8 +35,7 @@ size_t ransacDatasetSize(const Eigen::MatrixBase<Derived>& dataset) {
  *
  * \note New in MRPT 2.0.2: The second and third template arguments.
  */
-template <typename Derived, typename DATASET = Derived,
-          typename MODEL = Derived>
+template <typename T>
 class RANSAC_Template {
  public:
   RANSAC_Template() = default;
@@ -42,17 +43,18 @@ class RANSAC_Template {
   /** The type of the function passed to mrpt::math::ransac - See the
    * documentation for that method for more info. */
   using TRansacFitFunctor =
-      std::function<void(const DATASET& allData, const std::vector<size_t>& useIndices, std::vector<MODEL>& fitModels)>;
+      std::function<void(const T& allData, const std::vector<size_t>& useIndices, std::vector<T>& fitModels)>;
 
   /** The type of the function passed to mrpt::math::ransac  - See the
    * documentation for that method for more info. */
   using TRansacDistanceFunctor =
-      std::function<void(const DATASET& allData, const std::vector<MODEL>& testModels, const typename Derived::Scalar distanceThreshold,
+      std::function<void(const T& allData, const std::vector<T>& testModels, const double distanceThreshold,
                          unsigned int& out_bestModelIndex, std::vector<size_t>& out_inlierIndices)>;
 
   /** The type of the function passed to mrpt::math::ransac  - See the
    * documentation for that method for more info. */
-  using TRansacDegenerateFunctor = std::function<bool(const DATASET& allData, const std::vector<size_t>& useIndices)>;
+  using TRansacDegenerateFunctor =
+      std::function<bool(const Eigen::MatrixXd& allData, const std::vector<size_t>& useIndices)>;
 
   /** An implementation of the RANSAC algorithm for robust fitting of models
    * to data.
@@ -67,15 +69,18 @@ class RANSAC_Template {
    * \note [MRPT 1.5.0] `verbose` parameter has been removed, supersedded by
    * COutputLogger settings.
    */
-  bool execute(const DATASET& data, const TRansacFitFunctor& fit_func, const TRansacDistanceFunctor& dist_func,
+  bool execute(const T& data, const TRansacFitFunctor& fit_func, const TRansacDistanceFunctor& dist_func,
                const TRansacDegenerateFunctor& degen_func, double distanceThreshold,
-               unsigned int minimumSizeSamplesToFit, std::vector<size_t>& out_best_inliers, MODEL& out_best_model,
+               unsigned int minimumSizeSamplesToFit, std::vector<size_t>& out_best_inliers, T& out_best_model,
                double prob_good_sample = 0.999, size_t maxIter = 100) const;
 
 };  // end class
 
-/** @} */
+/** The default instance of RANSAC, for double type */
+using RANSAC = RANSAC_Template<Eigen::MatrixXd>;
 
+/** @} */
+}  // namespace ransac
 }  // namespace algorithm
 
 #include "ransac_impl.h"

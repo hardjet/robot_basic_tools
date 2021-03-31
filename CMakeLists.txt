@@ -115,7 +115,6 @@ message(STATUS "exit thirdparty/camera_model")
 message("${Magenta}-------------- build thirdparty lib end ------------${ColourReset}")
 
 
-
 # ----- find package -----
 # GLM
 find_package(GLM REQUIRED)
@@ -181,7 +180,6 @@ catkin_package(
 )
 
 # ----- Build -----
-# add_subdirectory(hdl_graph_slam)
 
 # build target imgui
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
@@ -263,9 +261,9 @@ target_include_directories(algorithm PUBLIC
 
 target_link_libraries(algorithm
         PUBLIC
-#        ${PCL_LIBRARIES}
+        #        ${PCL_LIBRARIES}
         ${OpenCV_LIBRARIES}
-#        ${MRPT_LIBRARIES}
+        #        ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
         )
 
@@ -292,8 +290,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-#        ${PCL_LIBRARIES}
-#        ${OpenCV_LIBRARIES}
+        #        ${PCL_LIBRARIES}
+        #        ${OpenCV_LIBRARIES}
         guik
         camera_model
         algorithm

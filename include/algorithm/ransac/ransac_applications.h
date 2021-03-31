@@ -10,7 +10,8 @@
 
 #include "algorithm/ransac/ransac.h"
 
-namespace algorithm::ransac {
+namespace algorithm {
+namespace ransac {
 
 /** Fit a number of 2-D lines to a given point cloud, automatically determining
  * the number of existing lines by means of the provided threshold and minimum
@@ -27,4 +28,5 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
                             std::vector<std::pair<size_t, Eigen::Vector3d>>& out_detected_lines, double threshold,
                             size_t min_inliers_for_valid_line);
 
-}  // namespace algorithm::ransac
+}  // namespace ransac
+}  // namespace algorithm

@@ -19,7 +19,8 @@
 #include <type_traits>  // remove_reference
 #include <vector>
 
-namespace algorithm::random {
+namespace algorithm {
+namespace random {
 /** Portable MT19937 random generator, C++11 UniformRandomBitGenerator
  * compliant.
  *
@@ -437,5 +438,5 @@ template <typename T, typename MATRIX>
 void randomNormalMultiDimensional(const MATRIX& cov, std::vector<T>& out_result) {
   getRandomGenerator().drawGaussianMultivariate(out_result, cov);
 }
-
-}  // namespace algorithm::random
+}  // namespace random
+}  // namespace algorithm

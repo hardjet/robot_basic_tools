@@ -16,14 +16,13 @@
 // To be included from ransac.h only
 
 namespace algorithm {
-template <typename Derived, typename DATASET, typename MODEL>
-bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, const TRansacFitFunctor& fit_func,
-                                                       const TRansacDistanceFunctor& dist_func,
-                                                       const TRansacDegenerateFunctor& degen_func,
-                                                       const double distanceThreshold,
-                                                       const unsigned int minimumSizeSamplesToFit,
-                                                       std::vector<size_t>& out_best_inliers, MODEL& out_best_model,
-                                                       const double p, const size_t maxIter) const {
+namespace ransac {
+template <typename T>
+bool RANSAC_Template<T>::execute(const T& data, const TRansacFitFunctor& fit_func,
+                                 const TRansacDistanceFunctor& dist_func, const TRansacDegenerateFunctor& degen_func,
+                                 const double distanceThreshold, const unsigned int minimumSizeSamplesToFit,
+                                 std::vector<size_t>& out_best_inliers, T& out_best_model, const double p,
+                                 const size_t maxIter) const {
   // Highly inspired on http://www.csse.uwa.edu.au/~pk/
 
   assert(minimumSizeSamplesToFit > 1u);
@@ -36,7 +35,7 @@ bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, cons
   const size_t maxDataTrials = 100;
 
   // Sentinel value allowing detection of solution failure.
-  out_best_model = MODEL();
+  out_best_model = T();
   out_best_inliers.clear();
 
   size_t trialcount = 0;
@@ -51,7 +50,7 @@ bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, cons
     // a degenerate configuration.
     bool degenerate = true;
     size_t count = 1;
-    std::vector<MODEL> MODELS;
+    std::vector<T> MODELS;
 
     while (degenerate) {
       // Generate s random indicies in the range 1..npts
@@ -93,7 +92,7 @@ bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, cons
     unsigned int bestModelIdx = std::numeric_limits<unsigned int>::max();
     std::vector<size_t> inliers;
     if (!degenerate) {
-      dist_func(data, MODELS, static_cast<typename Derived::Scalar>(distanceThreshold), bestModelIdx, inliers);
+      dist_func(data, MODELS, double(distanceThreshold), bestModelIdx, inliers);
       assert(bestModelIdx < MODELS.size());
     }
 
@@ -146,5 +145,5 @@ bool RANSAC_Template<Derived, DATASET, MODEL>::execute(const DATASET& data, cons
     return false;
   }
 }
-
+}  // namespace ransac
 }  // namespace algorithm

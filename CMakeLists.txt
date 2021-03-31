@@ -172,9 +172,9 @@ message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
 #message(STATUS "EIGEN3_INCLUDE_DIR: ${EIGEN3_INCLUDE_DIR}")
 
 # MRPT
-find_package(MRPT 2.2 COMPONENTS math)
-message(STATUS "MRPT_VERSION: ${MRPT_VERSION}")
-message(STATUS "MRPT_LIBRARIES: ${MRPT_LIBRARIES}")
+#find_package(MRPT 2.2 COMPONENTS math)
+#message(STATUS "MRPT_VERSION: ${MRPT_VERSION}")
+#message(STATUS "MRPT_LIBRARIES: ${MRPT_LIBRARIES}")
 
 # ----- catking config -----
 catkin_package(
@@ -265,7 +265,7 @@ target_link_libraries(algorithm
         PUBLIC
 #        ${PCL_LIBRARIES}
         ${OpenCV_LIBRARIES}
-        ${MRPT_LIBRARIES}
+#        ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
         )
 

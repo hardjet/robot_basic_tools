@@ -66,6 +66,9 @@ class TwoLasersCalib : public BaseCalib {
   /// 设定激光2到激光1的变换矩阵
   void draw_ui_transform();
 
+  /// 设置标定参数
+  void draw_calib_params();
+
   /// 更新transform的值
   void update_ui_transform();
 
@@ -152,5 +155,11 @@ class TwoLasersCalib : public BaseCalib {
   std::vector<CalibData> calib_data_vec_;
   // 有效的标定数据
   std::vector<CalibData> calib_valid_data_vec_;
+  // 有效激光范围m
+  double max_range_{2.0};
+  // 激光角度范围 deg
+  double angle_range_{180.0};
+  // 不同数据角度间隔 deg
+  double between_angle_{1.0};
 };
 }  // namespace calibration

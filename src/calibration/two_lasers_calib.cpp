@@ -201,11 +201,11 @@ void TwoLasersCalib::update_show() {
   bool b_need_to_swap{false};
   // 需要判断是否需要调整保存顺序, 同一边的激光对应好
   // 激光0序号0直线的角度
-  double theta_0_0 = atan(laser_insts_[0].lines_params[0](0) / laser_insts_[0].lines_params[0](1));
+  double theta_0_0 = atan(-laser_insts_[0].lines_params[0](0) / laser_insts_[0].lines_params[0](1));
   // 激光1序号0直线的角度
-  double theta_1_0 = atan(laser_insts_[1].lines_params[0](0) / laser_insts_[1].lines_params[0](1));
+  double theta_1_0 = atan(-laser_insts_[1].lines_params[0](0) / laser_insts_[1].lines_params[0](1));
   // 激光1序号1直线的角度
-  double theta_1_1 = atan(laser_insts_[1].lines_params[1](0) / laser_insts_[1].lines_params[1](1));
+  double theta_1_1 = atan(-laser_insts_[1].lines_params[1](0) / laser_insts_[1].lines_params[1](1));
   // 同一边的直线角度差一定比不同边直线角度差小
   // 需要变换
   if (abs(theta_0_0 - theta_1_0) > abs(theta_0_0 - theta_1_1)) {
@@ -242,7 +242,7 @@ void TwoLasersCalib::update_show() {
       const auto& line_min_max = laser_inst.lines_min_max[i];
 
       // 计算角度
-      theta = atan(line_params(0) / line_params(1));
+      theta = atan(-line_params(0) / line_params(1));
       delta_len = abs(extend_len * sin(theta));
       // printf("theta: %f, delta_len: %f\n", theta * 180. / M_PI, delta_len);
 
@@ -328,7 +328,7 @@ bool TwoLasersCalib::get_valid_lines() {
   for (auto& laser_inst : laser_insts_) {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
-    algorithm::LineDetect line_detector(*laser_inst.calib_data_ptr, 180.0, 4.0);
+    algorithm::LineDetect line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_);
     if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
@@ -357,8 +357,8 @@ void TwoLasersCalib::check_and_save() {
   // 逐个检测角度值与第3帧比较
   for (auto& data : calib_valid_data_vec_) {
     double theta = abs(data.angle - calib_data_vec_.at(3).angle);
-    // 保证间隔4°以上 todo 改为控件控制
-    if (theta < 4.0) {
+    // 保证间隔x°以上
+    if (theta < between_angle_) {
       b_need_to_save = false;
       break;
     }
@@ -711,12 +711,39 @@ void TwoLasersCalib::draw_ui_transform() {
     // 更新变换矩阵
     T12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
     T12_.block<3, 1>(0, 3) = t_12;
-    std::cout << "T12:\n" << T12_ << std::endl;
+    // std::cout << "T12:\n" << T12_ << std::endl;
 
     update_laser2_pose();
   }
 
   ImGui::Separator();
+}
+
+void TwoLasersCalib::draw_calib_params() {
+  ImGui::Separator();
+  ImGui::Text("calib params:");
+
+  // 设定宽度
+  ImGui::PushItemWidth(80);
+  ImGui::DragScalar("max range(m)", ImGuiDataType_Double, &max_range_, 0.1, nullptr, nullptr, "%.2f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set max range for detecting lines.");
+  }
+  ImGui::SameLine();
+  ImGui::DragScalar("angle range(deg)", ImGuiDataType_Double, &angle_range_, 1.0, nullptr, nullptr, "%.1f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set angle range for detecting lines.");
+  }
+
+  ImGui::DragScalar("between angle(deg)", ImGuiDataType_Double, &between_angle_, 1.0, nullptr, nullptr, "%.1f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set angle between valid candidate.");
+  }
+
+  ImGui::PopItemWidth();
 }
 
 void TwoLasersCalib::draw_ui() {
@@ -801,6 +828,11 @@ void TwoLasersCalib::draw_ui() {
         laser_insts_[0].img_show_dev_ptr->disable();
         laser_insts_[1].img_show_dev_ptr->disable();
       }
+    }
+
+    // 闲置状态下才可以设置
+    if (next_state_ == STATE_IDLE) {
+      draw_calib_params();
     }
 
     // 设置变换矩阵参数

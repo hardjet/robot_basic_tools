@@ -61,7 +61,7 @@ void CoPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Quaterniond &
   // std::cout << "l3: " << l3.transpose() << std::endl;
   // 计算残差 标量
   residual = scale_ * l3.dot(n);
-  std::cout << "Co residual:" << residual << std::endl;
+  // std::cout << "Co residual:" << residual << std::endl;
 
   // 计算雅克比
   // Eigen::Map<Eigen::Matrix<double, 1, 6>> jacobians_m(jacobians);
@@ -82,7 +82,7 @@ void CoPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Quaterniond &
   // 传入参数使用的是四元数表示，这里面计算的实际上是关于切向量空间中的角度分量部分的导数
   // 在LocalParameterization中，ComputeJacobian已经不需要计算，这里已完全计算出雅克比
   // jacobians *= scale_;
-  std::cout << "Co jacobi:" << jacobians << std::endl;
+  // std::cout << "Co jacobi:" << jacobians << std::endl;
 }
 
 bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
@@ -100,7 +100,7 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
   Eigen::Vector3d n = skew_symmetric(l1_) * R_12 * l2_;
   // 计算残差 标量
   residuals[0] = scale_ * l3.dot(n);
-  std::cout << "Co residual:" << residuals[0] << std::endl;
+  // std::cout << "Co residual:" << residuals[0] << std::endl;
 
   if (jacobians) {
     if (jacobians[0]) {
@@ -240,7 +240,7 @@ void PerpendicularPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Qu
   Eigen::Vector3d n_b = skew_symmetric(l_1_b_) * R_12 * l_2_b_;
   // 计算残差 标量
   residual = scale_ * n_a.dot(n_b) * 0.2;
-  std::cout << "Pp residual:" << residual << std::endl;
+  // std::cout << "Pp residual:" << residual << std::endl;
 
   // 计算雅克比
   // Eigen::Map<Eigen::Matrix<double, 1, 6>> jacobians_m(jacobians);
@@ -257,7 +257,7 @@ void PerpendicularPlaneFactor::eval(const Eigen::Vector3d &t_12, const Eigen::Qu
   // 传入参数使用的是四元数表示，这里面计算的实际上是关于切向量空间中的角度分量部分的导数
   // 在LocalParameterization中，ComputeJacobian已经不需要计算，这里已完全计算出雅克比
   // jacobians *= scale_;
-  std::cout << "Pp jacobi:" << jacobians << std::endl;
+  // std::cout << "Pp jacobi:" << jacobians << std::endl;
 }
 
 bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
@@ -275,7 +275,7 @@ bool PerpendicularPlaneFactor::Evaluate(double const *const *parameters, double 
   Eigen::Vector3d n_b = skew_symmetric(l_1_b_) * R_12 * l_2_b_;
   // 计算残差 标量
   residuals[0] = scale_ * n_a.dot(n_b) * 0.2;
-  std::cout << "Pp residual:" << residuals[0] << std::endl;
+  // std::cout << "Pp residual:" << residuals[0] << std::endl;
 
   if (jacobians) {
     if (jacobians[0]) {
@@ -337,7 +337,7 @@ class PerpendicularPlaneErrorTerm {
     Eigen::Matrix<T, 3, 1> n_b = skewSymmetric(l_1_b) * R_12 * l_2_b;
     // 计算残差 标量
     residuals_ptr[0] = scale_ * n_a.dot(n_b);
-    std::cout << "Pp residual:" << residuals_ptr[0] << std::endl;
+    // std::cout << "Pp residual:" << residuals_ptr[0] << std::endl;
 
     return true;
   }
@@ -475,25 +475,25 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
     Eigen::Map<Eigen::Matrix<double, 1, 1>> resd(residuals);
 
     costfunction_a->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
-    std::cout << "jacobian_e_a:\n" << jacobian_e << std::endl;
+    // std::cout << "jacobian_e_a:\n" << jacobian_e << std::endl;
     H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
     b -= jacobian_e.leftCols<6>().transpose() * resd;
     chi += resd * resd;
 
     costfunction_b->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
-    std::cout << "jacobian_e_b:\n" << jacobian_e << std::endl;
+    // std::cout << "jacobian_e_b:\n" << jacobian_e << std::endl;
     H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
     b -= jacobian_e.leftCols<6>().transpose() * resd;
     chi += resd * resd;
 
     costfunction_ab->Evaluate(std::vector<double *>{transform_12.data()}.data(), residuals, jacobians);
-    std::cout << "jacobian_e_ab:\n" << jacobian_e << std::endl;
+    // std::cout << "jacobian_e_ab:\n" << jacobian_e << std::endl;
     H += jacobian_e.leftCols<6>().transpose() * jacobian_e.leftCols<6>();
     b -= jacobian_e.leftCols<6>().transpose() * resd;
     chi += resd * resd;
   }
 
-  std::cout << "H:\n" << H << std::endl;
+  // std::cout << "H:\n" << H << std::endl;
   std::cout << "----- H singular values--------:\n";
   Eigen::JacobiSVD<Eigen::MatrixXd> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
   std::cout << svd.singularValues() << std::endl;

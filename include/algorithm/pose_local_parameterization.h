@@ -30,15 +30,15 @@ class PoseLocalParameterization : public ceres::LocalParameterization {
 
     Eigen::Matrix<double, 6, 1> delta_lie;
     delta_lie << delta[3], delta[4], delta[5], delta[0], delta[1], delta[2];
-    std::cout << "x_t: " << x_t.transpose() << std::endl;
-    std::cout << "delta_lie:[w, t] " << delta_lie.transpose() << std::endl;
+    // std::cout << "x_t: " << x_t.transpose() << std::endl;
+    // std::cout << "delta_lie:[w, t] " << delta_lie.transpose() << std::endl;
 
     Eigen::Matrix4d delta_se3 = lie_to_se3(delta_lie);
 
     // 注意这里需要将切空间角度增量变换为四元数增量
     Eigen::Quaterniond delta_q(delta_se3.block<3, 3>(0, 0));
-    EulerAngles delta_euler = quat2euler(delta_q);
-    std::cout << "euler_delta_se3: " << delta_euler << ", t:" << delta_se3.block<3, 1>(0, 3).transpose() << std::endl;
+    // EulerAngles delta_euler = quat2euler(delta_q);
+    // std::cout << "euler_delta_se3: " << delta_euler << ", t:" << delta_se3.block<3, 1>(0, 3).transpose() << std::endl;
 
     Eigen::Map<Eigen::Vector3d> p(x_plus_delta);
     Eigen::Map<Eigen::Quaterniond> q(x_plus_delta + 3);
@@ -53,7 +53,7 @@ class PoseLocalParameterization : public ceres::LocalParameterization {
     }
 
     EulerAngles euler = quat2euler(q);
-    std::cout << "[updated]euler: " << euler << ", t: " << p.transpose() << std::endl;
+    // std::cout << "[updated]euler: " << euler << ", t: " << p.transpose() << std::endl;
 
     return true;
   };

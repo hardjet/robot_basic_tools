@@ -678,11 +678,11 @@ void TwoLasersCalib::draw_ui_transform() {
   bool is_changed = false;
   // 设定宽度
   ImGui::PushItemWidth(80);
-  if (ImGui::DragScalar("tx", ImGuiDataType_Float, &transform_12_[0], 0.1, nullptr, nullptr, "%.3f")) {
+  if (ImGui::DragScalar("tx  ", ImGuiDataType_Float, &transform_12_[0], 0.1, nullptr, nullptr, "%.3f")) {
     is_changed = true;
   }
   ImGui::SameLine();
-  if (ImGui::DragScalar("ty", ImGuiDataType_Float, &transform_12_[1], 0.1, nullptr, nullptr, "%.3f")) {
+  if (ImGui::DragScalar("ty   ", ImGuiDataType_Float, &transform_12_[1], 0.1, nullptr, nullptr, "%.3f")) {
     is_changed = true;
   }
   ImGui::SameLine();
@@ -720,24 +720,25 @@ void TwoLasersCalib::draw_ui_transform() {
 }
 
 void TwoLasersCalib::draw_calib_params() {
+  const double min_v = 0.;
   ImGui::Separator();
-  ImGui::Text("calib params:");
+  ImGui::Text("lines detecting params:");
 
   // 设定宽度
   ImGui::PushItemWidth(80);
-  ImGui::DragScalar("max range(m)", ImGuiDataType_Double, &max_range_, 0.1, nullptr, nullptr, "%.2f");
+  ImGui::DragScalar("max range(m)", ImGuiDataType_Double, &max_range_, 0.1, &min_v, nullptr, "%.2f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set max range for detecting lines.");
   }
   ImGui::SameLine();
-  ImGui::DragScalar("angle range(deg)", ImGuiDataType_Double, &angle_range_, 1.0, nullptr, nullptr, "%.1f");
+  ImGui::DragScalar("angle range(deg)", ImGuiDataType_Double, &angle_range_, 1.0, &min_v, nullptr, "%.1f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set angle range for detecting lines.");
   }
 
-  ImGui::DragScalar("between angle(deg)", ImGuiDataType_Double, &between_angle_, 1.0, nullptr, nullptr, "%.1f");
+  ImGui::DragScalar("between angle(deg)", ImGuiDataType_Double, &between_angle_, 1.0, &min_v, nullptr, "%.1f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set angle between valid candidate.");

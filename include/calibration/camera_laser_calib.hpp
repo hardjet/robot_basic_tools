@@ -43,6 +43,8 @@ class CamLaserCalib : public BaseCalib {
   void update_data();
   /// 检测图片是否有足够的apriltags
   bool get_pose_and_points();
+  /// 设置标定参数
+  void draw_calib_params();
   /// 标定流程
   void calibration();
   /// 保证保存的帧角度不同
@@ -64,10 +66,10 @@ class CamLaserCalib : public BaseCalib {
     Eigen::Vector3d t_wc;
     // 检测到的激光点数据
     std::vector<Eigen::Vector3d> line_pts;
-    // 显示使用的image
-    boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
+    // 显示图像使用的image
+    // boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
     // 显示激光使用的image
-    boost::shared_ptr<const cv_bridge::CvImage> laser_img_ptr_{nullptr};
+    // boost::shared_ptr<const cv_bridge::CvImage> laser_img_ptr_{nullptr};
   };
 
   // 是否显示图像
@@ -76,6 +78,10 @@ class CamLaserCalib : public BaseCalib {
   bool is_new_image_{false};
   // 是否有新激光数据
   bool is_new_laser_{false};
+  // 有效激光范围m
+  double max_range_{2.0};
+  // 激光角度范围 deg
+  double angle_range_{180.0};
   // 资源锁
   std::mutex mtx_;
   // 标定板对象

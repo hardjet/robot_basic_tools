@@ -128,7 +128,7 @@ bool CamLaserCalib::get_pose_and_points() {
     calib_data_->q_wc = q_wc;
 
     show_cam_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
-    calib_data_->cam_img_ptr_ = show_cam_img_ptr_;
+    // calib_data_->cam_img_ptr_ = show_cam_img_ptr_;
 
     // 检测激光中的直线
     cv::Mat laser_show;
@@ -142,7 +142,7 @@ bool CamLaserCalib::get_pose_and_points() {
                   cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 0, 0));
 
       show_laser_img_ptr_.reset(new const cv_bridge::CvImage(cur_laser_data->header, cur_image->encoding, laser_show));
-      calib_data_->laser_img_ptr_ = show_laser_img_ptr_;
+      // calib_data_->laser_img_ptr_ = show_laser_img_ptr_;
       return true;
     } else {
       return false;
@@ -338,7 +338,7 @@ void CamLaserCalib::calibration() {
       break;
     case STATE_GET_POSE_AND_PTS:
       // 执行任务
-      if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) { //NOLINT
+      if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           im_show_dev_ptr_->update_image(show_cam_img_ptr_);
@@ -379,7 +379,7 @@ void CamLaserCalib::calibration() {
       break;
     case STATE_IN_CALIB:
       // 执行任务
-      if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) { //NOLINT
+      if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           cur_state_ = STATE_IDLE;
@@ -387,6 +387,28 @@ void CamLaserCalib::calibration() {
       }
       break;
   }
+}
+
+void CamLaserCalib::draw_calib_params() {
+  const double min_v = 0.;
+  ImGui::Separator();
+  ImGui::Text("line detecting params:");
+
+  // 设定宽度
+  ImGui::PushItemWidth(80);
+  ImGui::DragScalar("max range(m)", ImGuiDataType_Double, &max_range_, 0.1, &min_v, nullptr, "%.2f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set max range for detecting line.");
+  }
+  ImGui::SameLine();
+  ImGui::DragScalar("angle range(deg)", ImGuiDataType_Double, &angle_range_, 1.0, &min_v, nullptr, "%.1f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set angle range for detecting line.");
+  }
+
+  ImGui::PopItemWidth();
 }
 
 void CamLaserCalib::draw_ui() {
@@ -454,7 +476,7 @@ void CamLaserCalib::draw_ui() {
   }
 
   // 激光选择
-  draw_sensor_selector<dev::Laser>("laser", dev::LASER, laser_ptr_);
+  draw_sensor_selector<dev::Laser>("laser ", dev::LASER, laser_ptr_);
 
   // 设备就绪后才能标定
   if (cam_ptr_ && laser_ptr_) {
@@ -474,6 +496,10 @@ void CamLaserCalib::draw_ui() {
     calibration();
 
     if (next_state_ == STATE_IDLE) {
+      // 闲置状态下才可以设置
+      draw_calib_params();
+      ImGui::Separator();
+
       if (ImGui::Button("start")) {
         // 清空上次的标定数据
         calib_valid_data_vec_.clear();

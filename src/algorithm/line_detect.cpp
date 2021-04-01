@@ -219,6 +219,151 @@ bool LineDetect::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
   return true;
 }
 
+bool LineDetect::find_line_ransac(Eigen::Vector3d& line_params, Eigen::Vector2d& line_min_max, cv::Mat& img) const {
+  img = img_ptr_->clone();
+  // 直线点集合
+  std::vector<Eigen::Vector3d> line_pts;
+
+  // ransac 数据
+  std::vector<double> xs;
+  std::vector<double> ys;
+  // 检测到的直线 <点数，直线方程系数Ax+By+C=0>
+  std::vector<std::pair<size_t, Eigen::Vector3d>> detectedLines;
+
+  // 先显示所有点
+  // 范围内的点
+  for (auto pt : points_) {
+    int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
+    // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+    int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);
+
+    // 添加数据 不能有0数据
+    if (fabs(pt.x()) > 1e-3 && fabs(pt.y()) > 1e-3) {
+      xs.push_back(pt.x());
+      ys.push_back(pt.y());
+      // std::cout << pt.x() << "," << pt.y() << std::endl;
+    }
+
+    if (col > img_w_ - 1 || col < 0 || row > img_w_ - 1 || row < 0) continue;
+
+    cv::Vec3b color_value(0, 255, 0);
+    img.at<cv::Vec3b>(row, col) = color_value;
+  }
+
+  // ---- 画坐标
+  // x轴向前，y轴向左
+  int orig_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+  int orig_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+
+  int x_axis_col = (int)(0.2 / img_z_ * img_focal_ + img_w_ / 2);
+  int x_axis_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+  cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{x_axis_col, x_axis_row}, cv::Scalar(255, 0, 0), 4);
+
+  int y_axis_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
+  int y_axis_row = (int)(-0.2 / img_z_ * img_focal_ + img_w_ / 2);
+
+  cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
+
+  // std::cout << "valid pts num: " << xs.size() << std::endl;
+
+  // 点数过少
+  if (xs.size() < 50) {
+    return false;
+  }
+
+  // for (int i = 0; i < xs.size();) {
+  //   printf("[%d]:%f, %f\n", i, xs[i], ys[i]);
+  //   i += 10;
+  // }
+
+  // 直线内点距离门限5cm，有效点数门限50个
+  Eigen::Map<Eigen::VectorXd> x_e(xs.data(), xs.size());
+  Eigen::Map<Eigen::VectorXd> y_e(ys.data(), ys.size());
+
+  // std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
+
+  double thd = 0.05;
+  algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, 25);
+  // std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
+
+  // 检测到两条直线认为有效
+  if (detectedLines.size() != 1) {
+    std::cout << "detected lines num != 1. " << detectedLines.size() << std::endl;
+    return false;
+  }
+
+  // 初始化
+  line_min_max(0) = 1000.;
+  line_min_max(1) = -1000.;
+
+  // 计算点到直线的距离
+  auto distance = [](const Eigen::Vector3d& line, double x, double y) {
+    return std::abs(line[0] * x + line[1] * y + line[2]) / sqrt(line[0] * line[0] + line[1] * line[1]);
+  };
+
+  // 提取出直线对应的点 todo ransac算法里已经有，后面直接把数据传出来
+  double dist;
+  for (size_t i = 0; i < xs.size(); i++) {
+    // mrpt::math::TPoint2D pt{xs(i, 0), ys(i, 0)};
+    // dist = detectedLines[0].second.distance(pt);
+    dist = distance(detectedLines[0].second, xs.at(i), ys.at(i));
+    if (dist < thd) {
+      line_pts.emplace_back(Eigen::Vector3d{xs.at(i), ys.at(i), 0.});
+
+      // 更新最值
+      if (line_min_max(1) < ys.at(i)) {
+        line_min_max(1) = ys.at(i);
+      }
+
+      if (line_min_max(0) > ys.at(i)) {
+        line_min_max(0) = ys.at(i);
+      }
+    }
+  }
+
+  // 在2d图上画直线
+  double y1 = -2.0;
+  double x1 = (-detectedLines[0].second[1] * y1 - detectedLines[0].second[2]) / detectedLines[0].second[0];
+  int col_1 = (int)(x1 / img_z_ * img_focal_ + img_w_ / 2);
+  // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+  int row_1 = (int)(-y1 / img_z_ * img_focal_ + img_w_ / 2);
+
+  double y2 = 2.0;
+  double x2 = (-detectedLines[0].second[1] * y2 - detectedLines[0].second[2]) / detectedLines[0].second[0];
+  int col_2 = (int)(x2 / img_z_ * img_focal_ + img_w_ / 2);
+  // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
+  int row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
+
+  // printf("ransan [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+
+  // 画直线
+  cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(150, 0, 0), 1);
+
+  // 最小二乘拟合
+  // 直线模型 Ax + By + 1 = 0
+  Eigen::Vector2d fitting_line;
+  line_fitting_ceres(line_pts, fitting_line);
+
+  // printf("fitting line(Ax+By+1=0):[%f, %f]\n", fitting_line[0], fitting_line[1]);
+
+  x1 = (-fitting_line[1] * y1 - 1.) / fitting_line[0];
+  col_1 = (int)(x1 / img_z_ * img_focal_ + img_w_ / 2);
+  row_1 = (int)(-y1 / img_z_ * img_focal_ + img_w_ / 2);
+
+  x2 = (-fitting_line[1] * y2 - 1.) / fitting_line[0];
+  col_2 = (int)(x2 / img_z_ * img_focal_ + img_w_ / 2);
+  row_2 = (int)(-y2 / img_z_ * img_focal_ + img_w_ / 2);
+
+  // printf("fitting [%f, %f]{%d, %d} - [%f, %f]{%d, %d}\n", y1, x1, row_1, col_1, y2, x2, row_2, col_2);
+  // 画直线
+  cv::line(img, cv::Point{col_1, row_1}, cv::Point{col_2, row_2}, cv::Scalar(0, 0, 150), 1);
+
+  // 保存直线方程系数
+  line_params = Eigen::Vector3d{fitting_line[0], fitting_line[1], 1.};
+
+  return true;
+}
+
 bool LineDetect::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const {
   img = img_ptr_->clone();
   best_line_pts.clear();

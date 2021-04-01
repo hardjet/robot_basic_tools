@@ -13,6 +13,9 @@ class LineDetect {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   LineDetect(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
 
+  /// 找直线点使用ransac
+  bool find_line_ransac(Eigen::Vector3d& line_params, Eigen::Vector2d& line_min_max, cv::Mat& img) const;
+
   /// 找直线点
   bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const;
 

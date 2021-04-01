@@ -232,9 +232,9 @@ void Camera::draw_ui_topic_name() {
   ImGui::SameLine();
   // 保证控件中文字对齐
   ImGui::AlignTextToFramePadding();
-  ImGui::Text("image topic name:");
+  ImGui::Text("image topic name  :");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.8f);
+  // ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.8f);
   // 只有按回车才保存
   if (ImGui::InputTextWithHint("##image_topic_name", "press 'ENTER' to save", image_topic_name_char, 128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
@@ -305,7 +305,7 @@ void Camera::draw_ui_topic_name() {
   ImGui::AlignTextToFramePadding();
   ImGui::Text("depth points topic:");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.86f);
+  // ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.86f);
   // 只有按回车才保存
   if (ImGui::InputTextWithHint("##depth_topic_name", "press 'ENTER' to save", points_topic_name_char, 128,
                                ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {

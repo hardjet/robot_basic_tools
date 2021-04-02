@@ -333,7 +333,7 @@ class Laser{
 
  -bool b_show_laser_
  -std::shared_ptr<SensorData<
- sensor_msgs::LaserScan>> laser_data_ptr_
+ sensor_msgs::LaserScan>> laser_raw_data_ptr_
  -std::shared_ptr<
  glk::PointCloudBuffer> pointcloud_buffer_ptr_
 }
@@ -428,12 +428,12 @@ class CamLaserCalib{
 
  -std::shared_ptr<
  dev::AprilBoard> april_board_ptr_
- -std::shared_ptr<dev::Camera> cam_ptr_
- -std::shared_ptr<dev::Laser> laser_ptr_
+ -std::shared_ptr<dev::Camera> cam_dev_ptr_
+ -std::shared_ptr<dev::Laser> laser_dev_ptr_
  -std::shared_ptr<
- dev::ImageShow> im_show_dev_ptr_
+ dev::ImageShow> image_imshow_ptr_
  -std::shared_ptr<
- dev::ImageShow> laser_show_dev_ptr_
+ dev::ImageShow> laser_imshow_ptr_
  -std::shared_ptr<Task> task_ptr_
  -...
 }

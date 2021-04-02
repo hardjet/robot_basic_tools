@@ -23,6 +23,10 @@ class Laser;
 class ImageShow;
 }  // namespace dev
 
+namespace glk {
+class SimpleLines;
+}
+
 namespace calibration {
 
 class Task;
@@ -40,6 +44,8 @@ class CamLaserCalib : public BaseCalib {
  private:
   /// 更新数据
   void update_data();
+  /// 更新3d显示相关的内容
+  void update_3d_show();
   /// 检测图片是否有足够的apriltags
   bool get_pose_and_points();
   /// 设置标定参数
@@ -65,12 +71,10 @@ class CamLaserCalib : public BaseCalib {
     Eigen::Vector3d t_wc;
     // 检测到的激光点数据
     std::vector<Eigen::Vector3d> line_pts;
+    // 直线上的点
+    std::vector<Eigen::Vector3d> pts_on_line;
     // 检测到的直线参数 Ax+By+C=0
     Eigen::Vector3d line_params;
-    // 显示图像使用的image
-    // boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
-    // 显示激光使用的image
-    // boost::shared_ptr<const cv_bridge::CvImage> laser_img_ptr_{nullptr};
   };
 
   // 是否显示图像
@@ -82,35 +86,39 @@ class CamLaserCalib : public BaseCalib {
   // 有效激光范围m
   double max_range_{1.0};
   // 激光角度范围 deg
-  double angle_range_{60.0};
+  double angle_range_{30.0};
   // dist_thd 点到直线的距离门限m
-  double dist_thd_{0.05};
+  double dist_thd_{0.03};
   // 直线最少包含的点数
   uint32_t min_num_of_pts_{50};
+  // 不同数据角度间隔 deg
+  double between_angle_{3.0};
   // 资源锁
   std::mutex mtx_;
   // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 当前选中的相机对象
-  std::shared_ptr<dev::Camera> cam_ptr_{nullptr};
+  std::shared_ptr<dev::Camera> cam_dev_ptr_{nullptr};
   // 当前选中的激光对象
-  std::shared_ptr<dev::Laser> laser_ptr_{nullptr};
+  std::shared_ptr<dev::Laser> laser_dev_ptr_{nullptr};
   // 图像显示对象
-  std::shared_ptr<dev::ImageShow> im_show_dev_ptr_{nullptr};
+  std::shared_ptr<dev::ImageShow> image_imshow_ptr_{nullptr};
   // 激光显示对象
-  std::shared_ptr<dev::ImageShow> laser_show_dev_ptr_{nullptr};
+  std::shared_ptr<dev::ImageShow> laser_imshow_ptr_{nullptr};
+  // 拟合出的直线，3d显示使用
+  std::shared_ptr<glk::SimpleLines> laser_line_3d_ptr{nullptr};
   // 任务对象
   std::shared_ptr<Task> task_ptr_{nullptr};
   // 当前图像对象
-  boost::shared_ptr<const cv_bridge::CvImage> image_ptr_{nullptr};
+  boost::shared_ptr<const cv_bridge::CvImage> cv_image_ptr_{nullptr};
   // 显示相机使用的image
-  boost::shared_ptr<const cv_bridge::CvImage> show_cam_img_ptr_{nullptr};
+  boost::shared_ptr<const cv_bridge::CvImage> show_cam_cv_img_ptr_{nullptr};
   // 显示激光使用的image
-  boost::shared_ptr<const cv_bridge::CvImage> show_laser_img_ptr_{nullptr};
-  // 激光数据
-  boost::shared_ptr<const sensor_msgs::LaserScan> laser_data_ptr_{nullptr};
+  boost::shared_ptr<const cv_bridge::CvImage> show_laser_cv_img_ptr_{nullptr};
+  // 激光原始数据
+  boost::shared_ptr<const sensor_msgs::LaserScan> laser_raw_data_ptr_{nullptr};
   // 当前计算出的标定数据
-  std::shared_ptr<CalibData> calib_data_{nullptr};
+  CalibData calib_data_;
   // 候选标定数据
   std::vector<CalibData> calib_data_vec_;
   // 有效的标定数据

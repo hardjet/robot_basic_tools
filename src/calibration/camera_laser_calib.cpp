@@ -6,17 +6,24 @@
 #include "portable-file-dialogs.h"
 #include "nlohmann/json.hpp"
 
+#include "glk/simple_lines.hpp"
+#include "glk/primitives/primitives.hpp"
+#include "glk/glsl_shader.hpp"
+
 #include "dev/april_board.hpp"
 #include "dev/camera.hpp"
 #include "dev/laser.hpp"
 #include "dev/sensor_manager.hpp"
 #include "dev/image_show.hpp"
 #include "dev/util.hpp"
+
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_laser_calib.hpp"
+
 #include "algorithm/line_detector.h"
 #include "algorithm/util.h"
 #include "algorithm/laser_cam_ceres.h"
+
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/camera_models/Camera.h"
 
@@ -40,43 +47,83 @@ CamLaserCalib::CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager
                              std::shared_ptr<dev::AprilBoard>& april_board_ptr_)
     : BaseCalib(sensor_manager_ptr), april_board_ptr_(april_board_ptr_) {
   // 图像显示
-  im_show_dev_ptr_ = std::make_shared<dev::ImageShow>();
+  image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 激光以图像显示
-  laser_show_dev_ptr_ = std::make_shared<dev::ImageShow>();
+  laser_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
-  // 当前标定数据
-  calib_data_ = std::make_shared<CalibData>();
 }
 
-void CamLaserCalib::draw_gl(glk::GLSLShader& shader) {}
+void CamLaserCalib::draw_gl(glk::GLSLShader& shader) {
+  if (!b_show_window_) {
+    return;
+  }
+
+  if (next_state_ != STATE_START || !laser_line_3d_ptr) {
+    return;
+  }
+
+  shader.set_uniform("color_mode", 2);
+  shader.set_uniform("model_matrix", laser_dev_ptr_->get_sensor_pose());
+  laser_line_3d_ptr->draw(shader);
+}
+
+void CamLaserCalib::update_3d_show() {
+  // 3d空间直线信息
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices(2);
+  std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors;
+  std::vector<Eigen::Vector4i, Eigen::aligned_allocator<Eigen::Vector4i>> infos;
+
+  // 更新显示图象
+  image_imshow_ptr_->update_image(show_cam_cv_img_ptr_);
+  laser_imshow_ptr_->update_image(show_laser_cv_img_ptr_);
+
+  // 计算3d空间直线顶点坐标
+  colors.clear();
+  infos.clear();
+
+  vertices[0] = Eigen::Vector3f{float(calib_data_.pts_on_line[0].x()), float(calib_data_.pts_on_line[0].y()), 0};
+  vertices[1] = Eigen::Vector3f{float(calib_data_.pts_on_line[1].x()), float(calib_data_.pts_on_line[1].y()), 0};
+
+  // 添加额外信息
+  infos.emplace_back(laser_dev_ptr_->sensor_id, 1, 0, 0);
+  infos.emplace_back(laser_dev_ptr_->sensor_id, 2, 0, 0);
+
+  // 添加颜色信息
+  colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
+  colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
+
+  // 重置3d直线
+  laser_line_3d_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
+  // std::cout << "laser_lines_drawable_ptr: " << laser_inst.laser_lines_drawable_ptr << std::endl;
+}
 
 void CamLaserCalib::update_data() {
   std::lock_guard<std::mutex> lock(mtx_);
   // 图像
-  if (!image_ptr_) {
-    image_ptr_ = cam_ptr_->data();
-    if (image_ptr_) {
+  if (!cv_image_ptr_) {
+    cv_image_ptr_ = cam_dev_ptr_->data();
+    if (cv_image_ptr_) {
       is_new_image_ = true;
     }
   } else {
-    auto image = cam_ptr_->data();
-    if (image_ptr_->header.stamp.nsec != image->header.stamp.nsec) {
-      image_ptr_ = image;
+    auto image = cam_dev_ptr_->data();
+    if (cv_image_ptr_->header.stamp.nsec != image->header.stamp.nsec) {
+      cv_image_ptr_ = image;
       is_new_image_ = true;
     }
   }
 
   // 激光
-  if (!laser_data_ptr_) {
-    laser_data_ptr_ = laser_ptr_->data();
-    if (laser_data_ptr_) {
+  if (!laser_raw_data_ptr_) {
+    laser_raw_data_ptr_ = laser_dev_ptr_->data();
+    if (laser_raw_data_ptr_) {
       is_new_laser_ = true;
     }
   } else {
-    auto laser = laser_ptr_->data();
-    if (laser_data_ptr_->header.stamp.nsec != laser->header.stamp.nsec) {
-      laser_data_ptr_ = laser;
+    auto laser = laser_dev_ptr_->data();
+    if (laser_raw_data_ptr_->header.stamp.nsec != laser->header.stamp.nsec) {
+      laser_raw_data_ptr_ = laser;
       is_new_laser_ = true;
     }
   }
@@ -98,8 +145,8 @@ bool CamLaserCalib::get_pose_and_points() {
   // 将图像和激光锁定
   {
     std::lock_guard<std::mutex> lock(mtx_);
-    cur_image.reset(new const cv_bridge::CvImage(image_ptr_->header, image_ptr_->encoding, image_ptr_->image));
-    cur_laser_data = laser_data_ptr_;
+    cur_image.reset(new const cv_bridge::CvImage(cv_image_ptr_->header, cv_image_ptr_->encoding, cv_image_ptr_->image));
+    cur_laser_data = laser_raw_data_ptr_;
   }
 
   cv::Mat img;
@@ -120,30 +167,54 @@ bool CamLaserCalib::get_pose_and_points() {
 
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
     // 计算外参T_wc cam->world
-    cam_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
-    calib_data_->timestamp = cur_image->header.stamp.toSec();
-    calib_data_->t_wc = Twc.block(0, 3, 3, 1);
+    cam_dev_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
+    calib_data_.timestamp = cur_image->header.stamp.toSec();
+    calib_data_.t_wc = Twc.block(0, 3, 3, 1);
     Eigen::Matrix3d R_wc = Twc.block(0, 0, 3, 3);
     Eigen::Quaterniond q_wc(R_wc);
-    calib_data_->q_wc = q_wc;
+    calib_data_.q_wc = q_wc;
 
-    show_cam_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
-    // calib_data_->cam_img_ptr_ = show_cam_img_ptr_;
+    show_cam_cv_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
+    // calib_data_.cam_img_ptr_ = show_cam_cv_img_ptr_;
 
     // 检测激光中的直线
-    cv::Mat laser_show;
+    cv::Mat laser_img_show;
     algorithm::LineDetector line_detector(*cur_laser_data, angle_range_, max_range_);
-    if (line_detector.find_line_ransac(calib_data_->line_pts, calib_data_->line_params, laser_show, dist_thd_,
+    if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
                                        min_num_of_pts_)) {
+      // 计算直线上的点
+      // 激光所在直线不能垂直于某个轴
+      double x_start(calib_data_.line_pts.begin()->x()), x_end(calib_data_.line_pts.end()->x());
+      double y_start(calib_data_.line_pts.begin()->y()), y_end(calib_data_.line_pts.end()->y());
+      if (fabs(x_end - x_start) > fabs(y_end - y_start)) {
+        y_start = -(x_start * calib_data_.line_params(0) + 1) / calib_data_.line_params(1);
+        y_end = -(x_end * calib_data_.line_params(0) + 1) / calib_data_.line_params(1);
+        // 可能垂直于 x 轴，采用y值来计算 x
+      } else {
+        x_start = -(y_start * calib_data_.line_params(1) + 1) / calib_data_.line_params(0);
+        x_end = -(y_end * calib_data_.line_params(1) + 1) / calib_data_.line_params(0);
+      }
+
+      calib_data_.pts_on_line.clear();
+      calib_data_.pts_on_line.emplace_back(x_start, y_start, 0);
+      calib_data_.pts_on_line.emplace_back(x_end, y_end, 0);
+
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
       // 显示用时
-      cv::putText(laser_show, "time used (ms):  " + std::to_string(time_used), cv::Point2f(10, 20),
+      cv::putText(laser_img_show, "time used (ms):  " + std::to_string(time_used), cv::Point2f(10, 20),
                   cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 0, 0));
 
-      show_laser_img_ptr_.reset(new const cv_bridge::CvImage(cur_laser_data->header, cur_image->encoding, laser_show));
-      // calib_data_->laser_img_ptr_ = show_laser_img_ptr_;
+      // 显示图例
+      cv::putText(laser_img_show, "ORIGIN -", cv::Point2f(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.3,
+                  cv::Scalar(150, 0, 0));
+      cv::putText(laser_img_show, "FITTING -", cv::Point2f(10, 45), cv::FONT_HERSHEY_SIMPLEX, 0.3,
+                  cv::Scalar(0, 0, 150));
+
+      show_laser_cv_img_ptr_.reset(
+          new const cv_bridge::CvImage(cur_laser_data->header, cur_image->encoding, laser_img_show));
+      // calib_data_.laser_img_ptr_ = show_laser_cv_img_ptr_;
       return true;
     } else {
       return false;
@@ -161,7 +232,7 @@ void CamLaserCalib::check_and_save() {
   for (auto& data : calib_valid_data_vec_) {
     double theta = 2 * std::acos((data.q_wc.inverse() * calib_data_vec_.at(2).q_wc).w());
     // 保证间隔5°以上
-    if (theta < DEG2RAD_RBT(5.0)) {
+    if (theta < DEG2RAD_RBT(between_angle_)) {
       is_need_to_save = false;
       break;
     }
@@ -170,6 +241,7 @@ void CamLaserCalib::check_and_save() {
   if (is_need_to_save) {
     // 取第3帧保存
     calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
+    printf("!!!!!!!!!!!!!tz: %f saved!\n", calib_valid_data_vec_.back().t_wc.z());
   }
 }
 
@@ -186,12 +258,12 @@ bool CamLaserCalib::load_calib_data(const std::string& file_path) {
   // 读取文件
   std::ifstream ifs(file_path, std::ios::in);
 
-  nlohmann::json js_data;
+  nlohmann::json js_whole;
   if (ifs.is_open()) {
     std::cout << "load calib data from " << file_path.c_str() << std::endl;
 
     // 设置显示格式
-    ifs >> js_data;
+    ifs >> js_whole;
     ifs.close();
 
   } else {
@@ -199,11 +271,16 @@ bool CamLaserCalib::load_calib_data(const std::string& file_path) {
     return false;
   }
 
+  if (!js_whole.contains("type") || js_whole["type"] != "two_lasers_calibration") {
+    std::cout << "wrong file type!" << std::endl;
+    return false;
+  }
+
   // 清空之前的数据
   calib_valid_data_vec_.clear();
 
   // 加载数据
-  for (const auto& data : js_data.items()) {
+  for (const auto& data : js_whole["data"].items()) {
     CalibData d;
     std::vector<double> v;
     d.timestamp = data.value().at("timestamp").get<double>();
@@ -215,8 +292,13 @@ bool CamLaserCalib::load_calib_data(const std::string& file_path) {
     v.clear();
     data.value().at("t_wc").get_to<std::vector<double>>(v);
     d.t_wc = Eigen::Map<Eigen::VectorXd>(v.data(), 3);
+    v.clear();
+    data.value().at("line_params").get_to<std::vector<double>>(v);
+    d.line_params = Eigen::Map<Eigen::VectorXd>(v.data(), 3);
     // 加载直线点
     convert_json_to_pts(d.line_pts, data.value().at("line_pts"));
+    // 加载直线上的点
+    convert_json_to_pts(d.pts_on_line, data.value().at("pts_on_line"));
     calib_valid_data_vec_.push_back(d);
   }
 
@@ -236,15 +318,22 @@ bool CamLaserCalib::save_calib_data(const std::string& file_path) {
     return false;
   }
 
+  nlohmann::json js_whole;
+  js_whole["type"] = "camera_laser_calibration";
+
   // 整理数据
   std::vector<nlohmann::json> js_data;
   for (const auto& data : calib_valid_data_vec_) {
     nlohmann::json js = {{"timestamp", data.timestamp},
                          {"q_wc", {data.q_wc.x(), data.q_wc.y(), data.q_wc.z(), data.q_wc.w()}},
                          {"t_wc", {data.t_wc.x(), data.t_wc.y(), data.t_wc.z()}},
-                         {"line_pts", convert_pts_to_json(data.line_pts)}};
+                         {"line_params", {data.line_params.x(), data.line_params.y(), data.line_params.z()}},
+                         {"line_pts", convert_pts_to_json(data.line_pts)},
+                         {"pts_on_line", convert_pts_to_json(data.pts_on_line)}};
     js_data.push_back(js);
   }
+
+  js_whole["data"] = js_data;
 
   // 保存文件 not std::ios::binary
   std::ofstream ofs(file_path, std::ios::out);
@@ -254,7 +343,7 @@ bool CamLaserCalib::save_calib_data(const std::string& file_path) {
     // const auto msgpack = nlohmann::json::to_msgpack(js_data);
     // ofs.write(reinterpret_cast<const char*>(msgpack.data()), msgpack.size() * sizeof(uint8_t));
     // 设置显示格式
-    ofs << std::setw(2) << js_data << std::endl;
+    ofs << std::setw(2) << js_whole << std::endl;
     ofs.close();
     return true;
   } else {
@@ -342,8 +431,7 @@ void CamLaserCalib::calibration() {
       if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
-          im_show_dev_ptr_->update_image(show_cam_img_ptr_);
-          laser_show_dev_ptr_->update_image(show_laser_img_ptr_);
+          update_3d_show();
           cur_state_ = STATE_CHECK_STEADY;
         } else {
           cur_state_ = STATE_IDLE;
@@ -352,16 +440,16 @@ void CamLaserCalib::calibration() {
       break;
     case STATE_CHECK_STEADY:
       if (calib_data_vec_.empty()) {
-        calib_data_vec_.push_back(*calib_data_);
+        calib_data_vec_.push_back(calib_data_);
       } else {
         // 检查相机位姿是否一致
-        double dist = (calib_data_vec_.at(0).t_wc - calib_data_->t_wc).norm();
+        double dist = (calib_data_vec_.at(0).t_wc - calib_data_.t_wc).norm();
         // 四元数的转角是原本的1/2
-        double theta = 2 * std::acos((calib_data_vec_.at(0).q_wc.inverse() * calib_data_->q_wc).w());
+        double theta = 2 * std::acos((calib_data_vec_.at(0).q_wc.inverse() * calib_data_.q_wc).w());
         std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
         // 抖动小于1cm与0.5°
         if (dist < 0.01 && theta < DEG2RAD_RBT(0.8)) {
-          calib_data_vec_.push_back(*calib_data_);
+          calib_data_vec_.push_back(calib_data_);
           // 足够稳定才保存
           if (calib_data_vec_.size() > 3) {
             check_and_save();
@@ -369,7 +457,7 @@ void CamLaserCalib::calibration() {
         } else {
           // 抖动大则重新开始检测
           calib_data_vec_.clear();
-          calib_data_vec_.push_back(*calib_data_);
+          calib_data_vec_.push_back(calib_data_);
           std::cout << "moved!!!" << std::endl;
         }
         cur_state_ = STATE_IDLE;
@@ -393,7 +481,7 @@ void CamLaserCalib::calibration() {
 void CamLaserCalib::draw_calib_params() {
   const double min_v = 0.;
   ImGui::Separator();
-  ImGui::Text("line detecting params:");
+  ImGui::Text("calibration params:");
 
   // 设定宽度
   ImGui::PushItemWidth(80);
@@ -415,10 +503,16 @@ void CamLaserCalib::draw_calib_params() {
     ImGui::SetTooltip("set min num of a line.");
   }
   ImGui::SameLine();
-  ImGui::DragScalar("dist thd", ImGuiDataType_Double, &dist_thd_, 0.01, &min_v, nullptr, "%.2f");
+  ImGui::DragScalar("dist thd(m)", ImGuiDataType_Double, &dist_thd_, 0.01, &min_v, nullptr, "%.2f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set the distance threshold for a point to line.");
+  }
+
+  ImGui::DragScalar("between angle(deg)", ImGuiDataType_Double, &between_angle_, 1.0, &min_v, nullptr, "%.1f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set angle between valid candidate.");
   }
 
   ImGui::PopItemWidth();
@@ -432,7 +526,7 @@ void CamLaserCalib::draw_ui() {
   ImGui::Begin("Camera and Laser Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
   // 相机选择
-  draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_ptr_);
+  draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
 
   // 从文件加载标定数据
   ImGui::SameLine();
@@ -489,19 +583,19 @@ void CamLaserCalib::draw_ui() {
   }
 
   // 激光选择
-  draw_sensor_selector<dev::Laser>("laser ", dev::LASER, laser_ptr_);
+  draw_sensor_selector<dev::Laser>("laser ", dev::LASER, laser_dev_ptr_);
 
   // 设备就绪后才能标定
-  if (cam_ptr_ && laser_ptr_) {
+  if (cam_dev_ptr_ && laser_dev_ptr_) {
     ImGui::SameLine();
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &is_show_image_)) {
       if (is_show_image_) {
-        im_show_dev_ptr_->enable("calib cam", false);
-        laser_show_dev_ptr_->enable("calib laser", false);
+        image_imshow_ptr_->enable("calib cam", false);
+        laser_imshow_ptr_->enable("calib laser", false);
       } else {
-        im_show_dev_ptr_->disable();
-        laser_show_dev_ptr_->disable();
+        image_imshow_ptr_->disable();
+        laser_imshow_ptr_->disable();
       }
     }
 
@@ -546,8 +640,8 @@ void CamLaserCalib::draw_ui() {
 
   // 显示图像
   if (is_show_image_) {
-    im_show_dev_ptr_->show_image(is_show_image_);
-    laser_show_dev_ptr_->show_image(is_show_image_);
+    image_imshow_ptr_->show_image(is_show_image_);
+    laser_imshow_ptr_->show_image(is_show_image_);
   }
 }
 

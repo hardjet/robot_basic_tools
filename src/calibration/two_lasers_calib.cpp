@@ -171,6 +171,10 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
 }
 
 void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
+  if (!b_show_window_) {
+    return;
+  }
+
   draw_calib_data(shader);
 
   if (next_state_ != STATE_START || !laser_insts_[0].laser_lines_drawable_ptr) {
@@ -185,7 +189,7 @@ void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
   }
 }
 
-void TwoLasersCalib::update_show() {
+void TwoLasersCalib::update_3d_show() {
   // 3d空间直线信息
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices(4);
   std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors;
@@ -540,7 +544,7 @@ void TwoLasersCalib::calibration() {
       if (task_ptr_->do_task("get_pose_and_points", std::bind(&TwoLasersCalib::get_valid_lines, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
-          update_show();
+          update_3d_show();
           cur_state_ = STATE_CHECK_STEADY;
         } else {
           cur_state_ = STATE_IDLE;
@@ -722,7 +726,7 @@ void TwoLasersCalib::draw_ui_transform() {
 void TwoLasersCalib::draw_calib_params() {
   const double min_v = 0.;
   ImGui::Separator();
-  ImGui::Text("lines detecting params:");
+  ImGui::Text("calibration params:");
 
   // 设定宽度
   ImGui::PushItemWidth(80);

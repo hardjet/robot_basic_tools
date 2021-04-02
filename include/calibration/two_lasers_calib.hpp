@@ -52,7 +52,7 @@ class TwoLasersCalib : public BaseCalib {
   bool get_valid_lines();
 
   /// 更新显示相关的内容
-  void update_show();
+  void update_3d_show();
 
   /// 在3d中显示标定数据
   void draw_calib_data(glk::GLSLShader& shader);

@@ -29,7 +29,7 @@ EulerAngles quat2euler(const Eigen::Quaterniond& q);
 Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3);
 
 /// 直线拟合
-void line_fitting_ceres(const std::vector<Eigen::Vector3d>& points, Eigen::Vector2d& line_params);
+bool line_fitting_ceres(const std::vector<Eigen::Vector3d>& points, Eigen::Vector2d& line_params);
 
 /// 计算斜对称矩阵 reference to gtsam
 /**

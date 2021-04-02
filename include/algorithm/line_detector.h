@@ -8,13 +8,22 @@ class Mat;
 }
 
 namespace algorithm {
-class LineDetect {
+class LineDetector {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  LineDetect(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
+  LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
 
-  /// 找直线点使用ransac
-  bool find_line_ransac(Eigen::Vector3d& line_params, Eigen::Vector2d& line_min_max, cv::Mat& img) const;
+  /**
+  * 使用ransac找直线点
+  * @param line_pts
+  * @param line_params
+  * @param img
+  * @param dist_thd 点到直线的距离门限
+  * @param min_num_of_pts 直线最少包含的点数
+  * @return
+  */
+  bool find_line_ransac(std::vector<Eigen::Vector3d>& line_pts, Eigen::Vector3d& line_params, cv::Mat& img,
+                        double dist_thd = 0.05, uint32_t min_num_of_pts = 50) const;
 
   /// 找直线点
   bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const;

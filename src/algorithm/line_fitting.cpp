@@ -25,8 +25,8 @@ struct LineFittingResidfual {
  * @param points
  * @param line_params 直线模型 Ax + By + 1 = 0
  */
-void line_fitting_ceres(const std::vector<Eigen::Vector3d> &points, Eigen::Vector2d &line_params) {
-  double line[3] = {line_params(0), line_params(1)};
+bool line_fitting_ceres(const std::vector<Eigen::Vector3d> &points, Eigen::Vector2d &line_params) {
+  double line[2] = {line_params(0), line_params(1)};
 
   ceres::Problem problem;
   for (auto obi : points) {
@@ -45,7 +45,7 @@ void line_fitting_ceres(const std::vector<Eigen::Vector3d> &points, Eigen::Vecto
 
   ceres::Solver::Options options;
   options.linear_solver_type = ceres::DENSE_QR;
-  options.max_num_iterations = 10;
+  options.max_num_iterations = 20;
 
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
@@ -54,6 +54,8 @@ void line_fitting_ceres(const std::vector<Eigen::Vector3d> &points, Eigen::Vecto
 
   line_params(0) = line[0];
   line_params(1) = line[1];
+
+  return summary.IsSolutionUsable();
 }
 
 }  // namespace algorithm

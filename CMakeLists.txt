@@ -245,7 +245,7 @@ add_library(algorithm SHARED
         src/algorithm/random/RandomGenerator.cpp
         src/algorithm/ransac/ransac_applications.cpp
         src/algorithm/util.cpp
-        src/algorithm/line_detect.cpp
+        src/algorithm/line_detector.cpp
         src/algorithm/line_fitting.cpp
         src/algorithm/laser_cam_ceres.cpp
         src/algorithm/two_lasers_ceres.cpp

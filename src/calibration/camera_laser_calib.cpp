@@ -14,7 +14,7 @@
 #include "dev/util.hpp"
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_laser_calib.hpp"
-#include "algorithm/line_detect.h"
+#include "algorithm/line_detector.h"
 #include "algorithm/util.h"
 #include "algorithm/laser_cam_ceres.h"
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
@@ -132,8 +132,9 @@ bool CamLaserCalib::get_pose_and_points() {
 
     // 检测激光中的直线
     cv::Mat laser_show;
-    algorithm::LineDetect line_detector(*cur_laser_data, 60.0, 2.0);
-    if (line_detector.find_line(calib_data_->line_pts, laser_show)) {
+    algorithm::LineDetector line_detector(*cur_laser_data, angle_range_, max_range_);
+    if (line_detector.find_line_ransac(calib_data_->line_pts, calib_data_->line_params, laser_show, dist_thd_,
+                                       min_num_of_pts_)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -406,6 +407,18 @@ void CamLaserCalib::draw_calib_params() {
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set angle range for detecting line.");
+  }
+
+  ImGui::DragScalar("min num     ", ImGuiDataType_U32, &min_num_of_pts_, 5, &min_v, nullptr, "%u");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set min num of a line.");
+  }
+  ImGui::SameLine();
+  ImGui::DragScalar("dist thd", ImGuiDataType_Double, &dist_thd_, 0.01, &min_v, nullptr, "%.2f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set the distance threshold for a point to line.");
   }
 
   ImGui::PopItemWidth();

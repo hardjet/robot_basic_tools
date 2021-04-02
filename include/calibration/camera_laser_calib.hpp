@@ -29,7 +29,6 @@ class Task;
 
 class CamLaserCalib : public BaseCalib {
  public:
-
   CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
                 std::shared_ptr<dev::AprilBoard>& april_board_ptr_);
 
@@ -66,6 +65,8 @@ class CamLaserCalib : public BaseCalib {
     Eigen::Vector3d t_wc;
     // 检测到的激光点数据
     std::vector<Eigen::Vector3d> line_pts;
+    // 检测到的直线参数 Ax+By+C=0
+    Eigen::Vector3d line_params;
     // 显示图像使用的image
     // boost::shared_ptr<const cv_bridge::CvImage> cam_img_ptr_{nullptr};
     // 显示激光使用的image
@@ -79,9 +80,13 @@ class CamLaserCalib : public BaseCalib {
   // 是否有新激光数据
   bool is_new_laser_{false};
   // 有效激光范围m
-  double max_range_{2.0};
+  double max_range_{1.0};
   // 激光角度范围 deg
-  double angle_range_{180.0};
+  double angle_range_{60.0};
+  // dist_thd 点到直线的距离门限m
+  double dist_thd_{0.05};
+  // 直线最少包含的点数
+  uint32_t min_num_of_pts_{50};
   // 资源锁
   std::mutex mtx_;
   // 标定板对象

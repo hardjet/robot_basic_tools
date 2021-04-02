@@ -19,7 +19,7 @@
 #include "calibration/task_back_ground.hpp"
 #include "calibration/two_lasers_calib.hpp"
 
-#include "algorithm/line_detect.h"
+#include "algorithm/line_detector.h"
 #include "algorithm/two_lasers_ceres.h"
 #include "algorithm/util.h"
 
@@ -328,7 +328,7 @@ bool TwoLasersCalib::get_valid_lines() {
   for (auto& laser_inst : laser_insts_) {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
-    algorithm::LineDetect line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_);
+    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_);
     if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;

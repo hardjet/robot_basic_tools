@@ -354,14 +354,16 @@ void Camera::draw_ui_topic_name() {
 }
 
 void Camera::draw_ui() {
-  // 名称控件变量
-  char name_char[128]{""};
-  // 相机类型控件变量
-  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
+  check_online_status();
 
   if (!b_show_window_) {
     return;
   }
+
+  // 名称控件变量
+  char name_char[128]{""};
+  // 相机类型控件变量
+  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
 
   // 初始化为设备名称
   memcpy(name_char, sensor_name.c_str(), sensor_name.length());

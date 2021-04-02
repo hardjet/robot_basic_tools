@@ -186,6 +186,9 @@ void Laser::draw_ui() {
   // 名称控件变量
   char name_char[128]{""};
 
+  // 检查设备在线状态
+  check_online_status();
+
   if (!b_show_window_) {
     return;
   }
@@ -241,9 +244,6 @@ void Laser::draw_ui() {
   draw_ui_topic_name();
 
   ImGui::End();
-
-  // 检查设备在线状态
-  check_online_status();
 }
 
 }  // namespace dev

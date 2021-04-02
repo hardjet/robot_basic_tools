@@ -38,6 +38,24 @@ PointCloudBuffer::PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstP
   glBufferData(GL_ARRAY_BUFFER, cloud->size() * sizeof(pcl::PointXYZI), cloud->points.data(), GL_STATIC_DRAW);
 }
 
+PointCloudBuffer::PointCloudBuffer(const std::vector<Eigen::Vector3d> &points) {
+  num_points_ = points.size();
+
+  stride_ = sizeof(Eigen::Vector3f);
+  // 将Vector3d转为Vector3f
+  std::vector<Eigen::Vector3f> pts(points.size());
+  for (size_t i = 0; i < points.size(); i++) {
+    pts.at(i) = points.at(i).cast<float>();
+  }
+
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, pts.size() * stride_, pts.data(), GL_STATIC_DRAW);
+}
+
 void PointCloudBuffer::free() {
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(1, &vbo);

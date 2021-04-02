@@ -8,6 +8,7 @@
 
 #include "glk/simple_lines.hpp"
 #include "glk/primitives/primitives.hpp"
+#include "glk/pointcloud_buffer.hpp"
 #include "glk/glsl_shader.hpp"
 
 #include "dev/april_board.hpp"
@@ -54,10 +55,81 @@ CamLaserCalib::CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager
   task_ptr_ = std::make_shared<calibration::Task>();
 }
 
+void CamLaserCalib::draw_calib_data(glk::GLSLShader& shader) {
+  if (!b_show_calib_data_) {
+    return;
+  }
+
+  // 更新显示直线
+  if (b_need_to_update_cd_) {
+    b_need_to_update_cd_ = false;
+    // std::cout << "update calib data" << std::endl;
+    // 3d空间直线信息
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices(2);
+    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> colors(2);
+    std::vector<Eigen::Vector4i, Eigen::aligned_allocator<Eigen::Vector4i>> infos(2);
+
+    const auto& cur_calib_data = calib_valid_data_vec_[selected_calib_data_id_ - 1];
+    vertices.at(0) = cur_calib_data.pts_on_line[0].cast<float>();
+    vertices.at(1) = cur_calib_data.pts_on_line[1].cast<float>();
+
+    colors.at(0) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+    colors.at(1) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+
+    infos.at(0) = Eigen::Vector4i(selected_calib_data_id_ - 1, 0, 0, 0);
+    infos.at(1) = Eigen::Vector4i(selected_calib_data_id_ - 1, 0, 0, 0);
+
+    laser_line_3d_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
+    // printf("pts size: %zu\n", cur_calib_data.line_pts.size());
+    // 点云显示
+    calib_pointcloud_ptr_.reset(new glk::PointCloudBuffer(cur_calib_data.line_pts));
+  }
+
+  // 绘图
+  // 画直线上的中点
+  auto draw_pt = [&shader](Eigen::Matrix4f model, const Eigen::Vector3d& pos, const Eigen::Vector4f& color) {
+    model.block<3, 1>(0, 3) = model.block<3, 3>(0, 0) * pos.cast<float>() + model.block<3, 1>(0, 3);
+
+    // 画直线中点
+    // 更改大小 设置球的半径大小
+    model.block<3, 3>(0, 0) *= 0.025;
+    // 改变位置
+    shader.set_uniform("color_mode", 1);
+    shader.set_uniform("model_matrix", model);
+    // 设置显示颜色
+    shader.set_uniform("material_color", color);
+
+    const auto& sphere = glk::Primitives::instance()->primitive(glk::Primitives::SPHERE);
+    sphere.draw(shader);
+  };
+
+  // 设置激光的位姿
+  // 显示直线
+  Eigen::Matrix4f model_matrix = Eigen::Matrix4f::Identity();
+  shader.set_uniform("model_matrix", model_matrix);
+  shader.set_uniform("color_mode", 2);
+  laser_line_3d_ptr->draw(shader);
+
+  // 显示点云
+  shader.set_uniform("color_mode", 1);
+  shader.set_uniform("model_matrix", model_matrix);
+  shader.set_uniform("material_color", Eigen::Vector4f(255.f, 0.f, 0.f, 1.0f));
+  calib_pointcloud_ptr_->draw(shader);
+
+  // model_matrix = Eigen::Matrix4f::Identity();
+  draw_pt(model_matrix, calib_valid_data_vec_[selected_calib_data_id_ - 1].pts_on_line[0],
+          Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
+  // model_matrix = Eigen::Matrix4f::Identity();
+  draw_pt(model_matrix, calib_valid_data_vec_[selected_calib_data_id_ - 1].pts_on_line[1],
+          Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
+}
+
 void CamLaserCalib::draw_gl(glk::GLSLShader& shader) {
   if (!b_show_window_) {
     return;
   }
+
+  draw_calib_data(shader);
 
   if (next_state_ != STATE_START || !laser_line_3d_ptr) {
     return;
@@ -271,7 +343,7 @@ bool CamLaserCalib::load_calib_data(const std::string& file_path) {
     return false;
   }
 
-  if (!js_whole.contains("type") || js_whole["type"] != "two_lasers_calibration") {
+  if (!js_whole.contains("type") || js_whole["type"] != "camera_laser_calibration") {
     std::cout << "wrong file type!" << std::endl;
     return false;
   }
@@ -589,8 +661,8 @@ void CamLaserCalib::draw_ui() {
   if (cam_dev_ptr_ && laser_dev_ptr_) {
     ImGui::SameLine();
     // 选择是否显示图像
-    if (ImGui::Checkbox("show image", &is_show_image_)) {
-      if (is_show_image_) {
+    if (ImGui::Checkbox("show image", &b_show_image_)) {
+      if (b_show_image_) {
         image_imshow_ptr_->enable("calib cam", false);
         laser_imshow_ptr_->enable("calib laser", false);
       } else {
@@ -608,6 +680,7 @@ void CamLaserCalib::draw_ui() {
       ImGui::Separator();
 
       if (ImGui::Button("start")) {
+        b_show_calib_data_ = false;
         // 清空上次的标定数据
         calib_valid_data_vec_.clear();
         next_state_ = STATE_START;
@@ -633,15 +706,73 @@ void CamLaserCalib::draw_ui() {
     }
   }
 
-  // 显示当前有效数据个数
-  ImGui::Separator();
-  ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
+  // 标定数据相关操作
+  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+    if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
+      if (b_show_calib_data_) {
+        b_need_to_update_cd_ = true;
+      }
+    }
+    if (ImGui::IsItemHovered()) {
+      if (b_show_calib_data_) {
+        ImGui::SetTooltip("click to not show calib data");
+      } else {
+        ImGui::SetTooltip("click to show calib data");
+      }
+    }
+
+    float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+    ImGui::PushButtonRepeat(true);
+    ImGui::SameLine(0.0f, spacing);
+    if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
+      if (selected_calib_data_id_ > 1) {
+        selected_calib_data_id_--;
+        if (b_show_calib_data_) {
+          b_need_to_update_cd_ = true;
+        }
+      }
+    }
+    ImGui::SameLine(0.0f, spacing);
+    if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
+      if (selected_calib_data_id_ < calib_valid_data_vec_.size()) {
+        selected_calib_data_id_++;
+        if (b_show_calib_data_) {
+          b_need_to_update_cd_ = true;
+        }
+      }
+    }
+    ImGui::PopButtonRepeat();
+    ImGui::SameLine();
+    // 删除按钮
+    if (!calib_valid_data_vec_.empty()) {
+      if (ImGui::Button("Del")) {
+        selected_calib_data_id_--;
+        // 删除数据
+        calib_valid_data_vec_.erase(calib_valid_data_vec_.begin() + selected_calib_data_id_);
+        b_need_to_update_cd_ = true;
+        if (selected_calib_data_id_ == 0) {
+          selected_calib_data_id_ = 1;
+        }
+      }
+      // tips
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("delete one item of calib data");
+      }
+    }
+
+    ImGui::SameLine();
+    ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
+  } else if (cam_dev_ptr_ && laser_dev_ptr_) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
+  }
+
   ImGui::End();
 
   // 显示图像
-  if (is_show_image_) {
-    image_imshow_ptr_->show_image(is_show_image_);
-    laser_imshow_ptr_->show_image(is_show_image_);
+  if (b_show_image_) {
+    image_imshow_ptr_->show_image(b_show_image_);
+    laser_imshow_ptr_->show_image(b_show_image_);
   }
 }
 

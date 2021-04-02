@@ -870,7 +870,7 @@ void TwoLasersCalib::draw_ui() {
       next_state_ = STATE_IDLE;
     }
 
-    // 大于6帧数据就可以开始进行标定操作了
+    // 大于3帧数据就可以开始进行标定操作了
     if (calib_valid_data_vec_.size() > 3) {
       ImGui::SameLine();
       // 开始执行标定
@@ -942,7 +942,7 @@ void TwoLasersCalib::draw_ui() {
 
     ImGui::SameLine();
     ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
-  } else {
+  } else if (laser_insts_[0].laser_dev_ptr) {
     ImGui::SameLine();
     ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
   }

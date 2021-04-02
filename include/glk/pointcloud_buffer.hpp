@@ -20,6 +20,7 @@ class PointCloudBuffer : public Drawable{
 
   explicit PointCloudBuffer(const std::string& cloud_filename);
   explicit PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& cloud);
+  explicit PointCloudBuffer(const std::vector<Eigen::Vector3d> &points);
 
   void free() override;
 

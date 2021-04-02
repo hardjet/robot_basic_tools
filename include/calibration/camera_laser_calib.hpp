@@ -25,7 +25,8 @@ class ImageShow;
 
 namespace glk {
 class SimpleLines;
-}
+class PointCloudBuffer;
+}  // namespace glk
 
 namespace calibration {
 
@@ -48,6 +49,8 @@ class CamLaserCalib : public BaseCalib {
   void update_3d_show();
   /// 检测图片是否有足够的apriltags
   bool get_pose_and_points();
+  /// 在3d中显示标定数据
+  void draw_calib_data(glk::GLSLShader& shader);
   /// 设置标定参数
   void draw_calib_params();
   /// 标定流程
@@ -78,7 +81,11 @@ class CamLaserCalib : public BaseCalib {
   };
 
   // 是否显示图像
-  bool is_show_image_{false};
+  bool b_show_image_{false};
+  // 是否显示就绪的标定数据
+  bool b_show_calib_data_{false};
+  // 是否需要更新显示的标定数据
+  bool b_need_to_update_cd_{false};
   // 是否有新图像数据
   bool is_new_image_{false};
   // 是否有新激光数据
@@ -93,6 +100,9 @@ class CamLaserCalib : public BaseCalib {
   uint32_t min_num_of_pts_{50};
   // 不同数据角度间隔 deg
   double between_angle_{3.0};
+  // 当前选中的数据
+  uint32_t selected_calib_data_id_{1};
+
   // 资源锁
   std::mutex mtx_;
   // 标定板对象
@@ -117,6 +127,8 @@ class CamLaserCalib : public BaseCalib {
   boost::shared_ptr<const cv_bridge::CvImage> show_laser_cv_img_ptr_{nullptr};
   // 激光原始数据
   boost::shared_ptr<const sensor_msgs::LaserScan> laser_raw_data_ptr_{nullptr};
+  // 标定数据中点云数据显示所用
+  std::shared_ptr<glk::PointCloudBuffer> calib_pointcloud_ptr_{nullptr};
   // 当前计算出的标定数据
   CalibData calib_data_;
   // 候选标定数据

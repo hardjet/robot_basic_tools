@@ -147,7 +147,7 @@ void CamLaserCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &T
   pose << Tcl(0, 3), Tcl(1, 3), Tcl(2, 3), q.x(), q.y(), q.z(), q.w();
 
   for (auto obi : obs) {
-    // transform planar in tag frame to cam frame
+    // transform planar in tag frame to camera_model frame
     // https://stackoverflow.com/questions/7685495/transforming-a-3d-plane-using-a-4x4-matrix
     Eigen::Vector4d planar_tag(0, 0, 1, 0);  // tag 坐标系下的平面方程
     Eigen::Matrix4d Tctag = Eigen::Matrix4d::Identity();
@@ -242,7 +242,7 @@ void CamLaserCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &T
   b.setZero();
   double chi = 0;
   for (const auto &obi : obs) {
-    // transform planar in tag frame to cam frame
+    // transform planar in tag frame to camera_model frame
     // https://stackoverflow.com/questions/7685495/transforming-a-3d-plane-using-a-4x4-matrix
     Eigen::Vector4d planar_tag(0, 0, 1, 0);  // tag 坐标系下的平面方程
     Eigen::Matrix4d Tctag = Eigen::Matrix4d::Identity();

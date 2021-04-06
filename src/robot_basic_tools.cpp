@@ -173,6 +173,7 @@ void RobotBasicTools::draw_gl() {
     sensor_manager_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     cl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
+    april_board_ptr_->draw_gl(*main_canvas_ptr_->shader);
 
     // flush to the screen
     main_canvas_ptr_->unbind();

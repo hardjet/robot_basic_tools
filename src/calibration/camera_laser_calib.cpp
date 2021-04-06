@@ -238,8 +238,8 @@ bool CamLaserCalib::get_pose_and_points() {
   }
 
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
-    // 计算外参T_wc cam->world
-    cam_dev_ptr_->cam()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
+    // 计算外参T_wc camera_model->world
+    cam_dev_ptr_->camera_model()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
     calib_data_.timestamp = cur_image->header.stamp.toSec();
     calib_data_.t_wc = Twc.block(0, 3, 3, 1);
     Eigen::Matrix3d R_wc = Twc.block(0, 0, 3, 3);
@@ -663,7 +663,7 @@ void CamLaserCalib::draw_ui() {
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &b_show_image_)) {
       if (b_show_image_) {
-        image_imshow_ptr_->enable("calib cam", false);
+        image_imshow_ptr_->enable("calib camera_model", false);
         laser_imshow_ptr_->enable("calib laser", false);
       } else {
         image_imshow_ptr_->disable();
@@ -680,10 +680,16 @@ void CamLaserCalib::draw_ui() {
       ImGui::Separator();
 
       if (ImGui::Button("start")) {
-        b_show_calib_data_ = false;
-        // 清空上次的标定数据
-        calib_valid_data_vec_.clear();
-        next_state_ = STATE_START;
+        // 检测相机模型是否已经选择
+        if(!cam_dev_ptr_->camera_model()) {
+          std::string msg = "please set camera model first!";
+          dev::show_pfd_info("info", msg);
+        } else {
+          b_show_calib_data_ = false;
+          // 清空上次的标定数据
+          calib_valid_data_vec_.clear();
+          next_state_ = STATE_START;
+        }
       }
     } else {
       if (ImGui::Button("stop")) {

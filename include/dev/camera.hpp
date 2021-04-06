@@ -41,7 +41,7 @@ class Camera : public Sensor {
   /// 获取当前图像数据
   boost::shared_ptr<cv_bridge::CvImage const> data();
   /// 获取当前相机对象
-  boost::shared_ptr<camera_model::Camera> cam() { return inst_ptr_; };
+  boost::shared_ptr<camera_model::Camera> camera_model() { return inst_ptr_; };
 
  private:
   // 当前类型

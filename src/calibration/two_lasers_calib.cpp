@@ -558,8 +558,8 @@ void TwoLasersCalib::calibration() {
         // 检查相机位姿是否一致
         double delta = abs(calib_data_vec_.at(0).angle - calib_data_.angle);
         std::cout << "delta: " << delta << " deg" << std::endl;
-        // 抖动小于0.1°
-        if (delta < 0.1) {
+        // 抖动小于0.2°
+        if (delta < 0.2) {
           calib_data_vec_.push_back(calib_data_);
           // 足够稳定才保存
           if (calib_data_vec_.size() > 6) {

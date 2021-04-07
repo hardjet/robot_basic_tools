@@ -26,7 +26,7 @@ class LineDetector {
                         double dist_thd = 0.05, uint32_t min_num_of_pts = 50) const;
 
   /// 找直线点
-  bool find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const;
+  bool find_line(std::vector<Eigen::Vector3d>& line_pts, Eigen::Vector3d& line_params, cv::Mat& img) const;
 
   /// 找两条直线(ransac + fitting)
   bool find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,

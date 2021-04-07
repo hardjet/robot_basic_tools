@@ -372,9 +372,9 @@ bool LineDetector::find_line_ransac(std::vector<Eigen::Vector3d>& line_pts, Eige
   return true;
 }
 
-bool LineDetector::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Mat& img) const {
+bool LineDetector::find_line(std::vector<Eigen::Vector3d>& line_pts, Eigen::Vector3d& line_params, cv::Mat& img) const {
   img = img_ptr_->clone();
-  best_line_pts.clear();
+  line_pts.clear();
 
   // 先显示所有点
   // 范围内的点
@@ -493,8 +493,29 @@ bool LineDetector::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Ma
 
     // 保存最佳的直线
     for (int i = bestLine.id_start; i < bestLine.id_end + 1; ++i) {
-      best_line_pts.push_back(points_.at(i));
+      line_pts.push_back(points_.at(i));
     }
+
+    // 计算直线初值
+    Eigen::Vector3d p1 = line_pts.front();
+    Eigen::Vector3d p2 = line_pts.back();
+    Eigen::Vector3d coefs;
+    coefs[0] = p2.y() - p1.y();
+    coefs[1] = p1.x() - p2.x();
+    coefs[2] = p2.x() * p1.y() - p2.y() * p1.x();
+    // std::cout << "coefs: " << coefs.transpose() << std::endl;
+
+    // ---------------- 最小二乘拟合
+    // 直线模型 Ax + By + 1 = 0
+    Eigen::Vector2d fitting_line_params{coefs[0] / coefs[2], coefs[1] / coefs[2]};
+    // std::cout << "init: " << fitting_line_params.transpose() << std::endl;
+    if (!line_fitting_ceres(line_pts, fitting_line_params)) {
+      std::cout << "fitting line failed!" << fitting_line_params.transpose() << std::endl;
+      return false;
+    }
+    // std::cout << "fitting: " << fitting_line_params.transpose() << std::endl;
+
+    line_params = Eigen::Vector3d{fitting_line_params[0], fitting_line_params[1], 1.};
 
     // 画所有直线
     // for (int j = 0; j < segs.size(); ++j) {
@@ -513,8 +534,8 @@ bool LineDetector::find_line(std::vector<Eigen::Vector3d>& best_line_pts, cv::Ma
     // }
 
     // 画最佳的直线
-    for (int j = 0; j < best_line_pts.size(); ++j) {
-      Eigen::Vector3d pt = best_line_pts.at(j);
+    for (int j = 0; j < line_pts.size(); ++j) {
+      Eigen::Vector3d pt = line_pts.at(j);
       int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
       int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);  // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
 

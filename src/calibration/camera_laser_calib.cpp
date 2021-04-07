@@ -53,6 +53,8 @@ CamLaserCalib::CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager
   laser_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
+  // 设置相对位姿初始值
+  T_lc_ = Eigen::Matrix4f::Identity();
 }
 
 void CamLaserCalib::draw_calib_data(glk::GLSLShader& shader) {
@@ -83,6 +85,17 @@ void CamLaserCalib::draw_calib_data(glk::GLSLShader& shader) {
     // printf("pts size: %zu\n", cur_calib_data.line_pts.size());
     // 点云显示
     calib_pointcloud_ptr_.reset(new glk::PointCloudBuffer(cur_calib_data.line_pts));
+
+    // 设置aprilboard在相机坐标下的位姿
+    Eigen::Matrix4f T_ca = Eigen::Matrix4f::Identity();
+    T_ca.block<3, 3>(0, 0) =
+        calib_valid_data_vec_[selected_calib_data_id_ - 1].q_ac.toRotationMatrix().transpose().cast<float>();
+    T_ca.block<3, 1>(0, 3) =
+        -T_ca.block<3, 3>(0, 0) * calib_valid_data_vec_[selected_calib_data_id_ - 1].t_ac.cast<float>();
+    // 计算aprilboard在世界坐标系下的位姿
+    T_ca = cam_dev_ptr_->get_sensor_pose() * T_ca;
+    // 设置参数
+    april_board_ptr_->set_pose(T_ca);
   }
 
   // 绘图
@@ -206,8 +219,8 @@ bool CamLaserCalib::get_pose_and_points() {
   std::vector<cv::Point2f> imagePoints;
   // 检测到的角点图像坐标
   std::vector<cv::Point3f> objectPoints;
-  // 相机坐标系到世界坐标系的变换
-  Eigen::Matrix4d Twc;
+  // 相机坐标系到aprilboard坐标系的变换
+  Eigen::Matrix4d T_ac;
 
   // 当前处理的图像以及激光数据
   boost::shared_ptr<const cv_bridge::CvImage> cur_image{nullptr};
@@ -239,21 +252,21 @@ bool CamLaserCalib::get_pose_and_points() {
 
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
     // 计算外参T_wc camera_model->world
-    cam_dev_ptr_->camera_model()->estimateExtrinsics(objectPoints, imagePoints, Twc, img_show);
+    cam_dev_ptr_->camera_model()->estimateExtrinsics(objectPoints, imagePoints, T_ac, img_show);
     calib_data_.timestamp = cur_image->header.stamp.toSec();
-    calib_data_.t_wc = Twc.block(0, 3, 3, 1);
-    Eigen::Matrix3d R_wc = Twc.block(0, 0, 3, 3);
-    Eigen::Quaterniond q_wc(R_wc);
-    calib_data_.q_wc = q_wc;
+    calib_data_.t_ac = T_ac.block(0, 3, 3, 1);
+    Eigen::Matrix3d R_ac = T_ac.block(0, 0, 3, 3);
+    Eigen::Quaterniond q_ac(R_ac);
+    calib_data_.q_ac = q_ac;
 
     show_cam_cv_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
-    // calib_data_.cam_img_ptr_ = show_cam_cv_img_ptr_;
 
     // 检测激光中的直线
     cv::Mat laser_img_show;
     algorithm::LineDetector line_detector(*cur_laser_data, angle_range_, max_range_);
-    if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
-                                       min_num_of_pts_)) {
+    // if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
+    //                                    min_num_of_pts_)) {
+    if (line_detector.find_line(calib_data_.line_pts, calib_data_.line_params, laser_img_show)) {
       // 计算直线上的点
       // 激光所在直线不能垂直于某个轴
       double x_start(calib_data_.line_pts.begin()->x()), x_end(calib_data_.line_pts.end()->x());
@@ -286,7 +299,6 @@ bool CamLaserCalib::get_pose_and_points() {
 
       show_laser_cv_img_ptr_.reset(
           new const cv_bridge::CvImage(cur_laser_data->header, cur_image->encoding, laser_img_show));
-      // calib_data_.laser_img_ptr_ = show_laser_cv_img_ptr_;
       return true;
     } else {
       return false;
@@ -299,21 +311,21 @@ bool CamLaserCalib::get_pose_and_points() {
 }
 
 void CamLaserCalib::check_and_save() {
-  bool is_need_to_save = true;
+  bool b_need_to_save = true;
   // 逐个检测角度值
   for (auto& data : calib_valid_data_vec_) {
-    double theta = 2 * std::acos((data.q_wc.inverse() * calib_data_vec_.at(2).q_wc).w());
+    double theta = 2 * std::acos((data.q_ac.inverse() * calib_data_vec_.at(2).q_ac).w());
     // 保证间隔5°以上
     if (theta < DEG2RAD_RBT(between_angle_)) {
-      is_need_to_save = false;
+      b_need_to_save = false;
       break;
     }
   }
 
-  if (is_need_to_save) {
+  if (b_need_to_save) {
     // 取第3帧保存
     calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
-    printf("!!!!!!!!!!!!!tz: %f saved!\n", calib_valid_data_vec_.back().t_wc.z());
+    printf("!!!!!!!!!!!!!tz: %f saved!\n", calib_valid_data_vec_.back().t_ac.z());
   }
 }
 
@@ -356,14 +368,14 @@ bool CamLaserCalib::load_calib_data(const std::string& file_path) {
     CalibData d;
     std::vector<double> v;
     d.timestamp = data.value().at("timestamp").get<double>();
-    data.value().at("q_wc").get_to<std::vector<double>>(v);
-    d.q_wc.x() = v[0];
-    d.q_wc.y() = v[1];
-    d.q_wc.z() = v[2];
-    d.q_wc.w() = v[3];
+    data.value().at("q_ac").get_to<std::vector<double>>(v);
+    d.q_ac.x() = v[0];
+    d.q_ac.y() = v[1];
+    d.q_ac.z() = v[2];
+    d.q_ac.w() = v[3];
     v.clear();
-    data.value().at("t_wc").get_to<std::vector<double>>(v);
-    d.t_wc = Eigen::Map<Eigen::VectorXd>(v.data(), 3);
+    data.value().at("t_ac").get_to<std::vector<double>>(v);
+    d.t_ac = Eigen::Map<Eigen::VectorXd>(v.data(), 3);
     v.clear();
     data.value().at("line_params").get_to<std::vector<double>>(v);
     d.line_params = Eigen::Map<Eigen::VectorXd>(v.data(), 3);
@@ -397,8 +409,8 @@ bool CamLaserCalib::save_calib_data(const std::string& file_path) {
   std::vector<nlohmann::json> js_data;
   for (const auto& data : calib_valid_data_vec_) {
     nlohmann::json js = {{"timestamp", data.timestamp},
-                         {"q_wc", {data.q_wc.x(), data.q_wc.y(), data.q_wc.z(), data.q_wc.w()}},
-                         {"t_wc", {data.t_wc.x(), data.t_wc.y(), data.t_wc.z()}},
+                         {"q_ac", {data.q_ac.x(), data.q_ac.y(), data.q_ac.z(), data.q_ac.w()}},
+                         {"t_ac", {data.t_ac.x(), data.t_ac.y(), data.t_ac.z()}},
                          {"line_params", {data.line_params.x(), data.line_params.y(), data.line_params.z()}},
                          {"line_pts", convert_pts_to_json(data.line_pts)},
                          {"pts_on_line", convert_pts_to_json(data.pts_on_line)}};
@@ -429,55 +441,37 @@ bool CamLaserCalib::calc() {
   std::vector<algorithm::Observation> obs;
 
   for (const auto& data : calib_valid_data_vec_) {
-    Eigen::Vector2d line;
-    algorithm::line_fitting_ceres(data.line_pts, line);
-    std::vector<Eigen::Vector3d> points_on_line;
-
-    // 激光所在直线不能垂直于某个轴
-    double x_start(data.line_pts.begin()->x()), x_end(data.line_pts.end()->x());
-    double y_start(data.line_pts.begin()->y()), y_end(data.line_pts.end()->y());
-    if (fabs(x_end - x_start) > fabs(y_end - y_start)) {
-      y_start = -(x_start * line(0) + 1) / line(1);
-      y_end = -(x_end * line(0) + 1) / line(1);
-      // 可能垂直于 x 轴，采用y值来计算 x
-    } else {
-      x_start = -(y_start * line(1) + 1) / line(0);
-      x_end = -(y_end * line(1) + 1) / line(0);
-    }
-
-    points_on_line.emplace_back(x_start, y_start, 0);
-    points_on_line.emplace_back(x_end, y_end, 0);
-
     algorithm::Observation ob;
-    ob.tag_pose_q_ca = data.q_wc.inverse();
-    ob.tag_pose_t_ca = -ob.tag_pose_q_ca.toRotationMatrix() * data.t_wc;
+    ob.tag_pose_q_ca = data.q_ac.inverse();
+    ob.tag_pose_t_ca = -ob.tag_pose_q_ca.toRotationMatrix() * data.t_ac;
     ob.points = data.line_pts;
-    ob.points_on_line = points_on_line;
+    ob.points_on_line = data.pts_on_line;
     obs.push_back(ob);
   }
 
-  Eigen::Matrix4d Tlc_initial = Eigen::Matrix4d::Identity();
-  algorithm::CamLaserCalClosedSolution(obs, Tlc_initial);
+  Eigen::Matrix4d T_lc_initial = Eigen::Matrix4d::Identity();
+  algorithm::CamLaserCalClosedSolution(obs, T_lc_initial);
 
-  Eigen::Matrix4d Tcl = Tlc_initial.inverse();
-  algorithm::CamLaserCalibration(obs, Tcl, true);
+  Eigen::Matrix4d T_cl = T_lc_initial.inverse();
+  algorithm::CamLaserCalibration(obs, T_cl, true);
 
-  std::cout << "\n----- Transform from Camera to Laser Tlc is: -----\n" << std::endl;
-  Eigen::Matrix4d Tlc = Tcl.inverse();
-  std::cout << Tlc << std::endl;
+  // std::cout << "\n----- Transform from Camera to Laser T_lc is: -----\n" << std::endl;
+  Eigen::Matrix4d T_lc = T_cl.inverse();
+  // std::cout << T_lc << std::endl;
 
-  std::cout << "\n----- Transform from Camera to Laser, euler angles and translations are: -----\n" << std::endl;
-  Eigen::Matrix3d Rlc(Tlc.block(0, 0, 3, 3));
-  Eigen::Vector3d tlc(Tlc.block(0, 3, 3, 1));
-  Eigen::Quaterniond q(Rlc);
+  // std::cout << "\n----- Transform from Camera to Laser, euler angles and translations are: -----\n" << std::endl;
+  Eigen::Matrix3d R_lc(T_lc.block(0, 0, 3, 3));
+  Eigen::Vector3d t_lc(T_lc.block(0, 3, 3, 1));
+  Eigen::Quaterniond q(R_lc);
   algorithm::EulerAngles rpy = algorithm::quat2euler(q);
-  std::cout << "q(x, y, z, w):" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
-  std::cout << "q(x, y, z, w):" << q.coeffs().transpose() << std::endl;
-  std::cout << "   roll(rad): " << rpy.roll << " pitch(rad): " << rpy.pitch << " yaw(rad): " << rpy.yaw << "\n"
-            << "or roll(deg): " << rpy.roll * 180. / M_PI << " pitch(deg): " << rpy.pitch * 180. / M_PI
-            << " yaw(deg): " << rpy.yaw * 180. / M_PI << "\n"
-            << "       tx(m): " << tlc.x() << "  ty(m): " << tlc.y() << "   tz(m): " << tlc.z() << std::endl;
+  // std::cout << "q(x, y, z, w):" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
+  // std::cout << "q(x, y, z, w):" << q.coeffs().transpose() << std::endl;
+  // std::cout << "   roll(rad): " << rpy.roll << " pitch(rad): " << rpy.pitch << " yaw(rad): " << rpy.yaw << "\n"
+  //           << "or roll(deg): " << rpy.roll * 180. / M_PI << " pitch(deg): " << rpy.pitch * 180. / M_PI
+  //           << " yaw(deg): " << rpy.yaw * 180. / M_PI << "\n"
+  //           << "       tx(m): " << t_lc.x() << "  ty(m): " << t_lc.y() << "   tz(m): " << t_lc.z() << std::endl;
 
+  T_lc_ = T_lc.cast<float>();
   return true;
 }
 
@@ -515,9 +509,9 @@ void CamLaserCalib::calibration() {
         calib_data_vec_.push_back(calib_data_);
       } else {
         // 检查相机位姿是否一致
-        double dist = (calib_data_vec_.at(0).t_wc - calib_data_.t_wc).norm();
+        double dist = (calib_data_vec_.at(0).t_ac - calib_data_.t_ac).norm();
         // 四元数的转角是原本的1/2
-        double theta = 2 * std::acos((calib_data_vec_.at(0).q_wc.inverse() * calib_data_.q_wc).w());
+        double theta = 2 * std::acos((calib_data_vec_.at(0).q_ac.inverse() * calib_data_.q_ac).w());
         std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
         // 抖动小于1cm与0.5°
         if (dist < 0.01 && theta < DEG2RAD_RBT(0.8)) {
@@ -543,11 +537,90 @@ void CamLaserCalib::calibration() {
       if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
+          update_relative_pose();
+          update_ui_transform();
           cur_state_ = STATE_IDLE;
         }
       }
       break;
   }
+}
+
+void CamLaserCalib::update_relative_pose() {
+  // 激光到世界坐标的变换
+  Eigen::Matrix4f T_wl, T_wc;
+  T_wl = laser_dev_ptr_->get_sensor_pose();
+
+  // 计算相机位姿并更新
+  T_wc = T_wl * T_lc_;
+  cam_dev_ptr_->set_sensor_pose(T_wc);
+
+  if (b_show_calib_data_) {
+    b_need_to_update_cd_ = true;
+  }
+}
+
+void CamLaserCalib::update_ui_transform() {
+  Eigen::Quaternionf q_12(T_lc_.block<3, 3>(0, 0));
+  auto euler = algorithm::quat2euler(q_12.cast<double>());
+  transform_lc_[0] = T_lc_(0, 3);
+  transform_lc_[1] = T_lc_(1, 3);
+  transform_lc_[2] = T_lc_(2, 3);
+  transform_lc_[3] = RAD2DEG_RBT(euler.roll);
+  transform_lc_[4] = RAD2DEG_RBT(euler.pitch);
+  transform_lc_[5] = RAD2DEG_RBT(euler.yaw);
+}
+
+void CamLaserCalib::draw_ui_transform() {
+  ImGui::Separator();
+  ImGui::Text("T_lc:");
+  ImGui::SameLine();
+  ImGui::TextDisabled("the unit: m & deg");
+  ImGui::Text("set the transform from camera to laser.");
+
+  // 变更后要更新矩阵
+  bool is_changed = false;
+  // 设定宽度
+  ImGui::PushItemWidth(80);
+  if (ImGui::DragScalar("tx  ", ImGuiDataType_Float, &transform_lc_[0], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("ty   ", ImGuiDataType_Float, &transform_lc_[1], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("tz", ImGuiDataType_Float, &transform_lc_[2], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+
+  if (ImGui::DragScalar("roll", ImGuiDataType_Float, &transform_lc_[3], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("pitch", ImGuiDataType_Float, &transform_lc_[4], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("yaw", ImGuiDataType_Float, &transform_lc_[5], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+
+  ImGui::PopItemWidth();
+  // 更新变换矩阵
+  if (is_changed) {
+    Eigen::Quaterniond q_lc = algorithm::ypr2quaternion(DEG2RAD_RBT(transform_lc_[5]), DEG2RAD_RBT(transform_lc_[4]),
+                                                        DEG2RAD_RBT(transform_lc_[3]));
+    Eigen::Vector3f t_lc{transform_lc_[0], transform_lc_[1], transform_lc_[2]};
+    // 更新变换矩阵
+    T_lc_.block<3, 3>(0, 0) = q_lc.toRotationMatrix().cast<float>();
+    T_lc_.block<3, 1>(0, 3) = t_lc;
+    // std::cout << "T_lc:\n" << T_lc_ << std::endl;
+
+    update_relative_pose();
+  }
+
+  ImGui::Separator();
 }
 
 void CamLaserCalib::draw_calib_params() {
@@ -600,31 +673,33 @@ void CamLaserCalib::draw_ui() {
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
 
-  // 从文件加载标定数据
-  ImGui::SameLine();
-  if (ImGui::Button("R")) {
-    // 选择加载文件路径
-    std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
-    std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
-    while (!dialog->ready()) {
-      usleep(1000);
-    }
+  if (cam_dev_ptr_ && laser_dev_ptr_) {
+    // 从文件加载标定数据
+    ImGui::SameLine();
+    if (ImGui::Button("R")) {
+      // 选择加载文件路径
+      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+      std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
+      while (!dialog->ready()) {
+        usleep(1000);
+      }
 
-    auto file_paths = dialog->result();
-    if (!file_paths.empty()) {
-      // 从文件读数据
-      if (load_calib_data(file_paths.front())) {
-        std::string msg = "load calib data from " + file_paths.front() + " ok!";
-        dev::show_pfd_info("load calib data", msg);
-      } else {
-        std::string msg = "load calib data from " + file_paths.front() + " failed!";
-        dev::show_pfd_info("load calib data", msg);
+      auto file_paths = dialog->result();
+      if (!file_paths.empty()) {
+        // 从文件读数据
+        if (load_calib_data(file_paths.front())) {
+          std::string msg = "load calib data from " + file_paths.front() + " ok!";
+          dev::show_pfd_info("load calib data", msg);
+        } else {
+          std::string msg = "load calib data from " + file_paths.front() + " failed!";
+          dev::show_pfd_info("load calib data", msg);
+        }
       }
     }
-  }
-  // tips
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("load from .json");
+    // tips
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("load from .json");
+    }
   }
 
   if (!calib_valid_data_vec_.empty()) {
@@ -671,17 +746,21 @@ void CamLaserCalib::draw_ui() {
       }
     }
 
+    // 闲置状态下才可以设置
+    if (next_state_ == STATE_IDLE) {
+      draw_calib_params();
+    }
+
+    // 设置变换矩阵参数
+    draw_ui_transform();
+
     // 标定逻辑
     calibration();
 
     if (next_state_ == STATE_IDLE) {
-      // 闲置状态下才可以设置
-      draw_calib_params();
-      ImGui::Separator();
-
       if (ImGui::Button("start")) {
         // 检测相机模型是否已经选择
-        if(!cam_dev_ptr_->camera_model()) {
+        if (!cam_dev_ptr_->camera_model()) {
           std::string msg = "please set camera model first!";
           dev::show_pfd_info("info", msg);
         } else {
@@ -717,6 +796,8 @@ void CamLaserCalib::draw_ui() {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         b_need_to_update_cd_ = true;
+        // 显示AprilBoard
+        april_board_ptr_->show_3d();
       }
     }
     if (ImGui::IsItemHovered()) {

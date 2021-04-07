@@ -31,9 +31,7 @@ bool line_fitting_ceres(const std::vector<Eigen::Vector3d> &points, Eigen::Vecto
   ceres::Problem problem;
   for (auto obi : points) {
     // debug
-    // if (i % 5 == 0) {
-    //   std::cout << obi.transpose() << std::endl;
-    // }
+    // std::cout << obi.transpose() << std::endl;
 
     ceres::CostFunction *costfunction =
         new ceres::AutoDiffCostFunction<LineFittingResidfual, 1, 2>(new LineFittingResidfual(obi.x(), obi.y()));

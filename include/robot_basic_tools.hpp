@@ -94,10 +94,10 @@ class RobotBasicTools : public guik::Application {
   std::unique_ptr<calibration::TwoLasersCalib> tl_calib_ptr_;
 
   // 热键标记(ALT)
-  bool is_hotkey_alt_pressed_ = false;
+  bool b_hotkey_alt_pressed_ = false;
   // 选中的物体集合
   // std::set<int> selected_id;
 
   // ui显示标记
-  bool is_show_imgui_demo_{false};
+  bool b_show_imgui_demo_{false};
 };

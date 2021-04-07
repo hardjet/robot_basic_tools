@@ -104,7 +104,7 @@ class Sensor {
    * @brief 获取当前对象删除标记
    * @return 当前状态是否需要被删除
    */
-  bool is_to_be_deleted() const { return b_to_be_deleted_; }
+  bool b_to_be_deleted() const { return b_to_be_deleted_; }
 
   /**
    * 获取sensor位姿

@@ -25,7 +25,7 @@ void SensorManager::check_and_clear_sensors() {
   for (auto sensors_it = sensors_map.begin(); sensors_it != sensors_map.end();) {
     for (auto sensor_it = sensors_it->second.begin(); sensor_it != sensors_it->second.end();) {
       // 检查是否需要删除
-      if ((*sensor_it)->is_to_be_deleted()) {
+      if ((*sensor_it)->b_to_be_deleted()) {
         sensor_it = sensors_it->second.erase(sensor_it);
       } else {
         ++sensor_it;

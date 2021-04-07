@@ -32,7 +32,12 @@ class AprilBoard {
   /**
    * @brief 打开显示ui开关
    */
-  void show();
+  void show() { b_show_window_ = true; };
+
+  /**
+   * @brief 打开显示3d开关
+   */
+  void show_3d() { b_show_3d_ = true; };
 
   /**
    * 获取sensor位姿
@@ -58,7 +63,9 @@ class AprilBoard {
   // 图像高度
   int img_height_{0};
   // 显示ui窗口
-  bool is_show_window_{false};
+  bool b_show_window_{false};
+  // 是否显示3d内容
+  bool b_show_3d_{false};
   // tagSize
   double tag_size_{0.03};
   // tagSpacing

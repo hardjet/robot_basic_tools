@@ -23,13 +23,13 @@ class ImageShow {
   void update_image(boost::shared_ptr<cv_bridge::CvImage const>& image);
 
   /// 使能图像显示
-  void enable(const std::string& window_name, bool is_use_opencv = false);
+  void enable(const std::string& window_name, bool b_use_opencv = false);
 
   /// 关闭图像显示
   void disable();
 
   /// 显示图像
-  void show_image(bool& is_show_image);
+  void show_image(bool& b_show_image);
 
  private:
   /// 显示图像操作，放在单独的线程中
@@ -40,16 +40,16 @@ class ImageShow {
 
  private:
   // 是否显示图片
-  bool is_show_image_{false};
+  bool b_show_image_{false};
 
   // 是否使用opencv显示
-  bool is_use_opencv_{false};
+  bool b_use_opencv_{false};
 
   // 数据就绪
   bool is_texture_ready_{false};
 
   // 是否需要更新texture
-  bool is_need_update_texture_{false};
+  bool b_need_update_texture_{false};
 
   // 资源锁
   std::mutex mtx_;

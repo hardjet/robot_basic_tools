@@ -43,7 +43,7 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
     return false;
   }
 
-  is_show_imgui_demo_ = false;
+  b_show_imgui_demo_ = false;
 
   // 获取资源路径
   std::string package_path = ros::package::getPath("robot_basic_tools");
@@ -80,8 +80,8 @@ void RobotBasicTools::draw_ui() {
   main_menu();
 
   // just for debug and development
-  if (is_show_imgui_demo_) {
-    ImGui::ShowDemoWindow(&is_show_imgui_demo_);
+  if (b_show_imgui_demo_) {
+    ImGui::ShowDemoWindow(&b_show_imgui_demo_);
   }
 
   // show basic graph statistics and FPS
@@ -113,9 +113,9 @@ void RobotBasicTools::draw_ui() {
   // alt: 342
   if (io.KeyAlt && io.KeysDownDuration[342] >= 0.5f) {
     ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "HotKey Activated!");
-    is_hotkey_alt_pressed_ = true;
+    b_hotkey_alt_pressed_ = true;
   } else {
-    is_hotkey_alt_pressed_ = false;
+    b_hotkey_alt_pressed_ = false;
   }
 
   ImGui::Text("FPS: %.3f fps", io.Framerate);
@@ -156,7 +156,7 @@ void RobotBasicTools::draw_gl() {
     // draw coordinate system
     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
     main_canvas_ptr_->shader->set_uniform(
-        "model_matrix", (Eigen::UniformScaling<float>(1.0f) * Eigen::Isometry3f::Identity()).matrix());
+        "model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
     coord.draw(*main_canvas_ptr_->shader);
 
@@ -165,7 +165,7 @@ void RobotBasicTools::draw_gl() {
     main_canvas_ptr_->shader->set_uniform(
         "model_matrix",
         (Eigen::Translation3f(Eigen::Vector3f::UnitZ() * -0.02) * Eigen::Isometry3f::Identity()).matrix());
-    main_canvas_ptr_->shader->set_uniform("material_color", Eigen::Vector4f(0.8f, 0.8f, 0.8f, 1.0f));
+    main_canvas_ptr_->shader->set_uniform("material_color", Eigen::Vector4f(0.8f, 0.8f, 0.8f, 0.5f));
     const auto &grid = glk::Primitives::instance()->primitive(glk::Primitives::GRID);
     grid.draw(*main_canvas_ptr_->shader);
 
@@ -239,7 +239,7 @@ void RobotBasicTools::main_menu() {
   /*** Help menu ***/
   if (ImGui::BeginMenu("Help")) {
     if (ImGui::MenuItem("ImGuiDemo")) {
-      is_show_imgui_demo_ = true;
+      b_show_imgui_demo_ = true;
     }
 
     if (ImGui::MenuItem("About")) {

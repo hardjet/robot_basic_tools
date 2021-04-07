@@ -20,7 +20,7 @@ ImageShow::ImageShow() {
 }
 
 ImageShow::~ImageShow() {
-  is_show_image_ = false;
+  b_show_image_ = false;
 
   if (thread_.joinable()) {
     thread_.join();
@@ -31,11 +31,11 @@ void ImageShow::update_image(boost::shared_ptr<const cv_bridge::CvImage>& image)
   // 重复更新检测逻辑放在外面
   std::lock_guard<std::mutex> lock(mtx_);
   image_cv_ptr_ = image;
-  is_need_update_texture_ = true;
+  b_need_update_texture_ = true;
 }
 
 void ImageShow::update_texture() {
-  if (!is_need_update_texture_) return;
+  if (!b_need_update_texture_) return;
 
   // 灰度
   if (image_cv_ptr_->image.channels() == 1) {
@@ -52,17 +52,17 @@ void ImageShow::update_texture() {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_cv_ptr_->image.cols, image_cv_ptr_->image.rows, 0, GL_RGB,
                  GL_UNSIGNED_BYTE, image_cv_ptr_->image.data);
   }
-  is_need_update_texture_ = false;
+  b_need_update_texture_ = false;
   is_texture_ready_ = true;
 }
 
-void ImageShow::show_image(bool& is_show_image) {
-  if (!is_show_image_ || is_use_opencv_) {
+void ImageShow::show_image(bool& b_show_image) {
+  if (!b_show_image_ || b_use_opencv_) {
     return;
   }
 
   // 避免直接关闭窗口时两个状态不一致
-  is_show_image_ = is_show_image;
+  b_show_image_ = b_show_image;
 
   std::lock_guard<std::mutex> lock(mtx_);
 
@@ -73,7 +73,7 @@ void ImageShow::show_image(bool& is_show_image) {
     return;
   }
 
-  ImGui::Begin(window_name_.c_str(), &is_show_image, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin(window_name_.c_str(), &b_show_image, ImGuiWindowFlags_AlwaysAutoResize);
   ImGui::Image((void*)(intptr_t)image_texture_,
                ImVec2(float(image_cv_ptr_->image.cols), float(image_cv_ptr_->image.rows)));
   ImGui::End();
@@ -85,19 +85,19 @@ void ImageShow::show_in_opencv() {
   // cv::resizeWindow(window_name_, 640, 360);
 
   cv::Mat img_show;
-  bool is_need_sleep = false;
-  while (is_show_image_) {
+  bool b_need_sleep = false;
+  while (b_show_image_) {
     // 失败后需要sleep, 避免长时间占用资源
-    if (is_need_sleep) {
+    if (b_need_sleep) {
       usleep(50000);
-      is_need_sleep = false;
+      b_need_sleep = false;
     }
 
     {
       std::lock_guard<std::mutex> lock(mtx_);
       // 等待图像就绪
       if (!image_cv_ptr_) {
-        is_need_sleep = true;
+        b_need_sleep = true;
         continue;
       }
 
@@ -117,17 +117,17 @@ void ImageShow::show_in_opencv() {
   cv::destroyWindow(window_name_);
 }
 
-void ImageShow::enable(const std::string& window_name, bool is_use_opencv) {
+void ImageShow::enable(const std::string& window_name, bool b_use_opencv) {
   window_name_ = window_name + " Image";
-  is_show_image_ = true;
-  is_use_opencv_ = is_use_opencv;
-  if (is_use_opencv_) {
+  b_show_image_ = true;
+  b_use_opencv_ = b_use_opencv;
+  if (b_use_opencv_) {
     thread_ = std::thread(&ImageShow::show_in_opencv, this);
   }
 }
 void ImageShow::disable() {
-  is_show_image_ = false;
-  if (is_use_opencv_) {
+  b_show_image_ = false;
+  if (b_use_opencv_) {
     thread_.join();
   }
 }

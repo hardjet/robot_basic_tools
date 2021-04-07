@@ -57,6 +57,12 @@ class CamLaserCalib : public BaseCalib {
   void calibration();
   /// 保证保存的帧角度不同
   void check_and_save();
+  /// 更新相关的位姿
+  void update_relative_pose();
+  /// 更新transform的值
+  void update_ui_transform();
+  /// 设定相机到激光的变换矩阵
+  void draw_ui_transform();
   /// 计算
   bool calc();
   /// 从文件加载标定数据
@@ -69,9 +75,9 @@ class CamLaserCalib : public BaseCalib {
   struct CalibData {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
-    // 相机坐标系到世界坐标系的变换
-    Eigen::Quaterniond q_wc;
-    Eigen::Vector3d t_wc;
+    // 相机坐标系到世界坐标系的变换(这里的世界坐标系实际上是标定板的坐标系)
+    Eigen::Quaterniond q_ac;
+    Eigen::Vector3d t_ac;
     // 检测到的激光点数据
     std::vector<Eigen::Vector3d> line_pts;
     // 直线上的点
@@ -102,6 +108,10 @@ class CamLaserCalib : public BaseCalib {
   double between_angle_{3.0};
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
+  // 控件使用，保存相机到激光变换矩阵相关的值 [tx, ty, tz, roll, pitch, yaw]
+  std::array<float, 6> transform_lc_{};
+  // 激光2到激光1的变换矩阵
+  Eigen::Matrix4f T_lc_;
 
   // 资源锁
   std::mutex mtx_;

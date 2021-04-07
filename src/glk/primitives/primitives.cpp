@@ -56,7 +56,7 @@ const glk::Drawable &Primitives::primitive(PrimitiveType type) {
       } break;
       case COORDINATE_SYSTEM: {
         glk::CoordinateSystem coord;
-        meshes[type].reset(new glk::Lines(0.01f, coord.vertices, coord.colors));
+        meshes[type].reset(new glk::Lines(0.04f, coord.vertices, coord.colors));
       } break;
     }
   }

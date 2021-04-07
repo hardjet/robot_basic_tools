@@ -81,7 +81,7 @@ class GridCalibrationTargetAprilgrid : public GridCalibrationTargetBase {
   GridCalibrationTargetAprilgrid(size_t tagRows, size_t tagCols, double tagSize, double tagSpacing,
                                  const AprilgridOptions& options = AprilgridOptions());
 
-  virtual ~GridCalibrationTargetAprilgrid() {}
+  ~GridCalibrationTargetAprilgrid() override {}
 
   /// \brief extract the calibration target points from an image and write to an observation
   bool computeObservation(const cv::Mat& image, std::vector<cv::Point2f>& points2ds,

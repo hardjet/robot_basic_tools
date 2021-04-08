@@ -16,7 +16,7 @@ Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ro
   // 设置深度点云数据接收
   laser_data_ptr_ = std::make_shared<SensorData<sensor_msgs::LaserScan>>(nh_, 5);
   // 频率/2
-  laser_data_ptr_->set_data_rate(2);
+  // laser_data_ptr_->set_data_rate(2);
 
   // 设置默认颜色
   data_color_[0] = 0.;

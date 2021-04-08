@@ -45,8 +45,8 @@
 namespace calibration {
 
 CamLaserCalib::CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-                             std::shared_ptr<dev::AprilBoard>& april_board_ptr_)
-    : BaseCalib(sensor_manager_ptr), april_board_ptr_(april_board_ptr_) {
+                             std::shared_ptr<dev::AprilBoard>& april_board_ptr)
+    : BaseCalib(sensor_manager_ptr), april_board_ptr_(april_board_ptr) {
   // 图像显示
   image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 激光以图像显示
@@ -78,8 +78,8 @@ void CamLaserCalib::draw_calib_data(glk::GLSLShader& shader) {
     colors.at(0) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
     colors.at(1) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
 
-    infos.at(0) = Eigen::Vector4i(selected_calib_data_id_ - 1, 0, 0, 0);
-    infos.at(1) = Eigen::Vector4i(selected_calib_data_id_ - 1, 0, 0, 0);
+    infos.at(0) = Eigen::Vector4i(int(selected_calib_data_id_ - 1), 0, 0, 0);
+    infos.at(1) = Eigen::Vector4i(int(selected_calib_data_id_ - 1), 0, 0, 0);
 
     laser_line_3d_ptr.reset(new glk::SimpleLines(vertices, colors, infos));
     // printf("pts size: %zu\n", cur_calib_data.line_pts.size());
@@ -463,7 +463,7 @@ bool CamLaserCalib::calc() {
   Eigen::Matrix3d R_lc(T_lc.block(0, 0, 3, 3));
   Eigen::Vector3d t_lc(T_lc.block(0, 3, 3, 1));
   Eigen::Quaterniond q(R_lc);
-  algorithm::EulerAngles rpy = algorithm::quat2euler(q);
+  // algorithm::EulerAngles rpy = algorithm::quat2euler(q);
   // std::cout << "q(x, y, z, w):" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
   // std::cout << "q(x, y, z, w):" << q.coeffs().transpose() << std::endl;
   // std::cout << "   roll(rad): " << rpy.roll << " pitch(rad): " << rpy.pitch << " yaw(rad): " << rpy.yaw << "\n"
@@ -738,8 +738,8 @@ void CamLaserCalib::draw_ui() {
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &b_show_image_)) {
       if (b_show_image_) {
-        image_imshow_ptr_->enable("calib camera_model", false);
-        laser_imshow_ptr_->enable("calib laser", false);
+        image_imshow_ptr_->enable("cl calib: camera", false);
+        laser_imshow_ptr_->enable("cl calib: laser", false);
       } else {
         image_imshow_ptr_->disable();
         laser_imshow_ptr_->disable();

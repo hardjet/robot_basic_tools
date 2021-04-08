@@ -110,7 +110,7 @@
                             "id": "ca726va0pm80",
                             "created": 1616739130695,
                             "text": "增加模型位姿",
-                            "progress": 1
+                            "progress": 7
                         },
                         "children": []
                     }
@@ -356,7 +356,17 @@
                             "text": "多相机之间标定",
                             "layout": null
                         },
-                        "children": []
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "caia04acu7s0",
+                                    "created": 1617878330160,
+                                    "text": "标定逻辑与菜单显示",
+                                    "progress": 1
+                                },
+                                "children": []
+                            }
+                        ]
                     },
                     {
                         "data": {

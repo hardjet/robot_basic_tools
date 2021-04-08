@@ -4,7 +4,6 @@
 #include <mutex>
 #include <array>
 #include <Eigen/Core>
-#include <Eigen/Geometry>
 
 #include <sensor_msgs/LaserScan.h>
 
@@ -12,10 +11,6 @@
 
 namespace cv_bridge {
 class CvImage;
-}
-
-namespace cv {
-class Mat;
 }
 
 namespace glk {
@@ -138,7 +133,7 @@ class TwoLasersCalib : public BaseCalib {
   // 控件使用，保存激光2到激光1变换相关的值 [tx, ty, tz, roll, pitch, yaw]
   std::array<float, 6> transform_12_{};
   // 激光2到激光1的变换矩阵
-  Eigen::Matrix4f T12_;
+  Eigen::Matrix4f T_12_;
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
   // 标定数据显示

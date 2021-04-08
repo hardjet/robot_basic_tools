@@ -1,4 +1,5 @@
 #include <fstream>
+#include <Eigen/Geometry>
 #include <opencv2/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 
@@ -54,17 +55,17 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
   task_ptr_ = std::make_shared<calibration::Task>();
 
   // 设置相对位姿初始值
-  T12_ = Eigen::Matrix4f::Identity();
+  T_12_ = Eigen::Matrix4f::Identity();
 
   // // 设置旋转矩阵初始值
   // // Eigen::Quaternionf q_init{0.805, 0.000, 0.593, 0.000};
   //
   // Eigen::Quaternionf q_init = algorithm::ypr2quaternion(0,DEG2RAD_RBT(60),0).cast<float>();
-  // T12_.block<3, 3>(0, 0) = q_init.toRotationMatrix();
+  // T_12_.block<3, 3>(0, 0) = q_init.toRotationMatrix();
   // // 设置平移向量
-  // T12_.block<3, 1>(0, 3) = Eigen::Vector3f{0.0, 0.0, 1.248};
+  // T_12_.block<3, 1>(0, 3) = Eigen::Vector3f{0.0, 0.0, 1.248};
   //
-  // std::cout << "T12_:\n" << T12_ << std::endl;
+  // std::cout << "T_12_:\n" << T_12_ << std::endl;
 
   // 测试
   // Eigen::Vector3d l1{1, 2, 3};
@@ -159,14 +160,14 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
   draw_pt(model_matrix, calib_show_data_[0].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 
   // 后面需要设置为激光1的位姿
-  model_matrix = T12_;
+  model_matrix = T_12_;
   shader.set_uniform("model_matrix", model_matrix);
   shader.set_uniform("color_mode", 2);
   calib_show_data_[1].laser_lines_drawable_ptr->draw(shader);
 
-  // model_matrix = T12_;
+  // model_matrix = T_12_;
   draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[0], Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f));
-  // model_matrix = T12_;
+  // model_matrix = T_12_;
   draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 }
 
@@ -632,7 +633,7 @@ bool TwoLasersCalib::calc() {
     obs.emplace_back(ob);
   }
 
-  Eigen::Matrix4d T12_initial = T12_.cast<double>();
+  Eigen::Matrix4d T12_initial = T_12_.cast<double>();
   std::cout << "T12_initial:\n" << T12_initial << std::endl;
 
   if (is_tx_fixed_) {
@@ -642,7 +643,7 @@ bool TwoLasersCalib::calc() {
   // algorithm::TwoLasersCalibrationAutoDiff(obs, T12_initial);
   // algorithm::TwoLasersCalibrationNaive(obs, T12_initial);
 
-  T12_ = T12_initial.cast<float>();
+  T_12_ = T12_initial.cast<float>();
 
   return true;
 }
@@ -655,17 +656,17 @@ void TwoLasersCalib::update_laser2_pose() {
     T_w1 = laser_insts_[0].laser_dev_ptr->get_sensor_pose();
 
     // 计算激光2的位姿并更新
-    T_w2 = T_w1 * T12_;
+    T_w2 = T_w1 * T_12_;
     laser_insts_[1].laser_dev_ptr->set_sensor_pose(T_w2);
   }
 }
 
 void TwoLasersCalib::update_ui_transform() {
-  Eigen::Quaternionf q_12(T12_.block<3, 3>(0, 0));
+  Eigen::Quaternionf q_12(T_12_.block<3, 3>(0, 0));
   auto euler = algorithm::quat2euler(q_12.cast<double>());
-  transform_12_[0] = T12_(0, 3);
-  transform_12_[1] = T12_(1, 3);
-  transform_12_[2] = T12_(2, 3);
+  transform_12_[0] = T_12_(0, 3);
+  transform_12_[1] = T_12_(1, 3);
+  transform_12_[2] = T_12_(2, 3);
   transform_12_[3] = RAD2DEG_RBT(euler.roll);
   transform_12_[4] = RAD2DEG_RBT(euler.pitch);
   transform_12_[5] = RAD2DEG_RBT(euler.yaw);
@@ -713,9 +714,9 @@ void TwoLasersCalib::draw_ui_transform() {
                                                         DEG2RAD_RBT(transform_12_[3]));
     Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
     // 更新变换矩阵
-    T12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
-    T12_.block<3, 1>(0, 3) = t_12;
-    // std::cout << "T12:\n" << T12_ << std::endl;
+    T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
+    T_12_.block<3, 1>(0, 3) = t_12;
+    // std::cout << "T12:\n" << T_12_ << std::endl;
 
     update_laser2_pose();
   }
@@ -785,7 +786,7 @@ void TwoLasersCalib::draw_ui() {
   }
   // tips
   if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("load from .json");
+    ImGui::SetTooltip("load calib data from .json file");
   }
 
   if (!calib_valid_data_vec_.empty()) {
@@ -827,8 +828,8 @@ void TwoLasersCalib::draw_ui() {
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &b_show_image_)) {
       if (b_show_image_) {
-        laser_insts_[0].img_show_dev_ptr->enable("ts calib laser 1", false);
-        laser_insts_[1].img_show_dev_ptr->enable("ts calib laser 2", false);
+        laser_insts_[0].img_show_dev_ptr->enable("tl calib: laser 1", false);
+        laser_insts_[1].img_show_dev_ptr->enable("tl calib: laser 2", false);
       } else {
         laser_insts_[0].img_show_dev_ptr->disable();
         laser_insts_[1].img_show_dev_ptr->disable();

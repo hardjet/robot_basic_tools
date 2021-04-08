@@ -20,12 +20,12 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
   // 设置图像数据接收
   image_data_ptr_ = std::make_shared<SensorData<sensor_msgs::Image>>(nh_, 10);
   // 频率/2
-  image_data_ptr_->set_data_rate(2);
+  // image_data_ptr_->set_data_rate(2);
 
   // 设置深度点云数据接收
   points_data_ptr_ = std::make_shared<SensorData<sensor_msgs::PointCloud2>>(nh_, 10);
   // 频率/2
-  points_data_ptr_->set_data_rate(2);
+  // points_data_ptr_->set_data_rate(2);
 
   // 图像显示
   im_show_ptr_ = std::make_shared<dev::ImageShow>();
@@ -136,7 +136,7 @@ void Camera::draw_ui_params() {
   ImGui::SameLine();
   ImGui::Text("height:%d", inst_ptr_->imageHeight());
   ImGui::SameLine();
-  help_marker("image size will be modified \nafter received image topic.");
+  help_marker("image size will be modified \nafter received image msgs.");
 
   ImGui::Separator();
   ImGui::Text("params:");

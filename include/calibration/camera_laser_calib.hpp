@@ -12,10 +12,6 @@ namespace cv_bridge {
 class CvImage;
 }
 
-namespace cv {
-class Mat;
-}
-
 namespace dev {
 class AprilBoard;
 class Camera;
@@ -35,7 +31,7 @@ class Task;
 class CamLaserCalib : public BaseCalib {
  public:
   CamLaserCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-                std::shared_ptr<dev::AprilBoard>& april_board_ptr_);
+                std::shared_ptr<dev::AprilBoard>& april_board_ptr);
 
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;

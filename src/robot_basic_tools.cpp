@@ -11,7 +11,6 @@
 #include "guik/gl_canvas.hpp"
 #include "guik/progress_modal.hpp"
 #include "guik/camera_control.hpp"
-
 #include "guik/projection_control.hpp"
 
 #include "util/singleton.hpp"

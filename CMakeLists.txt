@@ -261,9 +261,9 @@ target_include_directories(algorithm PUBLIC
 
 target_link_libraries(algorithm
         PUBLIC
-        #        ${PCL_LIBRARIES}
+        # ${PCL_LIBRARIES}
         ${OpenCV_LIBRARIES}
-        #        ${MRPT_LIBRARIES}
+        # ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
         )
 
@@ -291,8 +291,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-        #        ${PCL_LIBRARIES}
-        #        ${OpenCV_LIBRARIES}
+        # ${PCL_LIBRARIES}
+        # ${OpenCV_LIBRARIES}
         guik
         camera_model
         algorithm

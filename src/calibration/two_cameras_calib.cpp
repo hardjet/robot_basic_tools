@@ -1,3 +1,4 @@
+#include <cv_bridge/cv_bridge.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
@@ -9,16 +10,21 @@
 #include "dev/camera.hpp"
 #include "dev/util.hpp"
 
+#include "algorithm/util.h"
+
 #include "calibration/task_back_ground.hpp"
 #include "calibration/two_cameras_calib.hpp"
+
+#include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
+#include "camera_model/camera_models/Camera.h"
 
 // ---- 两个相机标定状态
 // 空闲
 #define STATE_IDLE 0
 // 启动
 #define STATE_START 1
-// 获取相机位姿和落在标定板上的激光点
-#define STATE_GET_POSE_AND_PTS 2
+// 获取相机位姿
+#define STATE_GET_POSE 2
 // 检查数据稳定性,连续5帧姿态没有大的变化，取中间帧作为候选
 #define STATE_CHECK_STEADY 3
 // 开始标定
@@ -43,6 +49,221 @@ TwoCamerasCalib::TwoCamerasCalib(std::shared_ptr<dev::SensorManager>& sensor_man
   task_ptr_ = std::make_shared<calibration::Task>();
   // 设置相对位姿初始值
   T_12_ = Eigen::Matrix4f::Identity();
+}
+
+void TwoCamerasCalib::update() {
+  std::lock_guard<std::mutex> lock(mtx_);
+
+  // 更新数据
+  for (auto& camera_inst : camera_insts_) {
+    if (!camera_inst.cv_image_data_ptr) {
+      camera_inst.cv_image_data_ptr = camera_inst.camera_dev_ptr->data();
+      if (camera_inst.cv_image_data_ptr) {
+        camera_inst.is_new_data = true;
+      }
+    } else {
+      auto camera_data = camera_inst.camera_dev_ptr->data();
+      if (camera_inst.cv_image_data_ptr->header.stamp.nsec != camera_data->header.stamp.nsec) {
+        camera_inst.cv_image_data_ptr = camera_data;
+        camera_inst.is_new_data = true;
+      }
+    }
+  }
+}
+
+bool TwoCamerasCalib::get_valid_pose() {
+  // 当前处理的图像数据
+  std::vector<boost::shared_ptr<const cv_bridge::CvImage>> cur_images(2);
+
+  auto start_time = ros::WallTime::now();
+  // 将图像锁定
+  {
+    std::lock_guard<std::mutex> lock(mtx_);
+    for (int i = 0; i < 2; i++) {
+      auto& cv_image_ptr = camera_insts_[i].cv_image_data_ptr;
+      cur_images[i].reset(
+          new const cv_bridge::CvImage(cv_image_ptr->header, cv_image_ptr->encoding, cv_image_ptr->image));
+    }
+  }
+
+  for (int i = 0; i < 2; i++) {
+    auto& camera_inst = camera_insts_[i];
+    cv::Mat img;
+    // 需要转为灰度
+    if (cur_images[i]->image.channels() == 3) {
+      cv::cvtColor(cur_images[i]->image, img, cv::COLOR_RGB2GRAY);
+    } else {
+      img = cur_images[i]->image.clone();
+    }
+
+    cv::Mat img_show;
+    // 需要转为彩色图像
+    if (cur_images[i]->image.channels() == 1) {
+      cv::cvtColor(camera_inst.cv_image_data_ptr->image, img_show, cv::COLOR_GRAY2RGB);
+    } else {
+      img_show = camera_inst.cv_image_data_ptr->image.clone();
+    }
+
+    if (april_board_ptr_->board->computeObservation(img, img_show, camera_inst.object_points,
+                                                    camera_inst.image_points)) {
+      // 计算外参T_ac camera_model->aprilboard
+      camera_inst.camera_dev_ptr->camera_model()->estimateExtrinsics(
+          camera_inst.object_points, camera_inst.image_points, camera_inst.T_ac, img_show);
+      // calib_data_.timestamp = cur_image->header.stamp.toSec();
+      // calib_data_.t_ac = T_ac.block(0, 3, 3, 1);
+      // Eigen::Matrix3d R_ac = T_ac.block(0, 0, 3, 3);
+      // Eigen::Quaterniond q_ac(R_ac);
+      // calib_data_.q_ac = q_ac;
+
+      // 保存
+      camera_inst.show_cv_image_ptr.reset(
+          new const cv_bridge::CvImage(cur_images[i]->header, cur_images[i]->encoding, img_show));
+      // 更新显示图象
+      camera_inst.update();
+
+    } else {
+      // std::cout << "no april board detected!" << std::endl;
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void TwoCamerasCalib::calibration() {
+  // 首先获取最新的数据
+  update();
+
+  switch (cur_state_) {
+    case STATE_IDLE:
+      cur_state_ = next_state_;
+      break;
+    case STATE_START:
+      // 都有新数据才计算
+      if (camera_insts_[0].is_new_data && camera_insts_[1].is_new_data) {
+        camera_insts_[0].is_new_data = false;
+        camera_insts_[1].is_new_data = false;
+        cur_state_ = STATE_GET_POSE;
+      } else {
+        cur_state_ = STATE_IDLE;
+      }
+      break;
+    case STATE_GET_POSE:
+      // 执行任务
+      if (task_ptr_->do_task("get_pose_and_points", std::bind(&TwoCamerasCalib::get_valid_pose, this))) {  // NOLINT
+        // 结束后需要读取结果
+        if (task_ptr_->result<bool>()) {
+          cur_state_ = STATE_CHECK_STEADY;
+        } else {
+          cur_state_ = STATE_IDLE;
+        }
+      }
+      break;
+    case STATE_CHECK_STEADY:
+      if (calib_data_vec_.empty()) {
+        calib_data_vec_.push_back(calib_data_);
+      } else {
+        // 检查相机位姿是否一致
+        double delta = abs(calib_data_vec_.at(0).angle - calib_data_.angle);
+        std::cout << "delta: " << delta << " deg" << std::endl;
+        // 抖动小于0.2°
+        if (delta < 0.2) {
+          calib_data_vec_.push_back(calib_data_);
+          // 足够稳定才保存
+          if (calib_data_vec_.size() > 6) {
+            check_and_save();
+          }
+        } else {
+          // 抖动大则重新开始检测
+          calib_data_vec_.clear();
+          calib_data_vec_.push_back(calib_data_);
+          std::cout << "moved!!!" << std::endl;
+        }
+      }
+      cur_state_ = STATE_IDLE;
+      break;
+    case STATE_START_CALIB:
+      cur_state_ = STATE_IN_CALIB;
+      break;
+    case STATE_IN_CALIB:
+      // 执行任务
+      if (task_ptr_->do_task("calc", std::bind(&TwoCamerasCalib::calc, this))) {  // NOLINT
+        // 结束后需要读取结果
+        if (task_ptr_->result<bool>()) {
+          // 将计算结果更新到laser2
+          update_camera2_pose();
+          update_ui_transform();
+          cur_state_ = STATE_IDLE;
+        }
+      }
+      break;
+  }
+}
+
+void TwoCamerasCalib::draw_calib_params() {
+  const double min_v = 0.;
+  ImGui::Separator();
+  ImGui::Text("calibration params:");
+
+  ImGui::DragScalar("between angle(deg)", ImGuiDataType_Double, &between_angle_, 1.0, &min_v, nullptr, "%.1f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set angle between valid candidate.");
+  }
+
+  ImGui::PopItemWidth();
+}
+
+void TwoCamerasCalib::draw_ui_transform() {
+  ImGui::Separator();
+  ImGui::Text("T_12:");
+  ImGui::SameLine();
+  ImGui::TextDisabled("the unit: m & deg");
+  ImGui::Text("set the transform from camera 2 to 1.");
+
+  // 变更后要更新矩阵
+  bool is_changed = false;
+  // 设定宽度
+  ImGui::PushItemWidth(80);
+  if (ImGui::DragScalar("tx  ", ImGuiDataType_Float, &transform_12_[0], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("ty   ", ImGuiDataType_Float, &transform_12_[1], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("tz", ImGuiDataType_Float, &transform_12_[2], 0.1, nullptr, nullptr, "%.3f")) {
+    is_changed = true;
+  }
+
+  if (ImGui::DragScalar("roll", ImGuiDataType_Float, &transform_12_[3], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("pitch", ImGuiDataType_Float, &transform_12_[4], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::DragScalar("yaw", ImGuiDataType_Float, &transform_12_[5], 1.0, nullptr, nullptr, "%.2f")) {
+    is_changed = true;
+  }
+
+  ImGui::PopItemWidth();
+  // 更新变换矩阵
+  if (is_changed) {
+    Eigen::Quaterniond q_12 = algorithm::ypr2quaternion(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
+                                                        DEG2RAD_RBT(transform_12_[3]));
+    Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
+    // 更新变换矩阵
+    T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
+    T_12_.block<3, 1>(0, 3) = t_12;
+    // std::cout << "T12:\n" << T_12_ << std::endl;
+
+    // update_laser2_pose();
+  }
+
+  ImGui::Separator();
 }
 
 void TwoCamerasCalib::draw_ui() {

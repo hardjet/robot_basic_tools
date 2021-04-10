@@ -674,7 +674,7 @@ void TwoLasersCalib::update_ui_transform() {
 
 void TwoLasersCalib::draw_ui_transform() {
   ImGui::Separator();
-  ImGui::Text("T12:");
+  ImGui::Text("T_12:");
   ImGui::SameLine();
   ImGui::TextDisabled("the unit: m & deg");
   ImGui::Text("set the transform from laser 2 to 1.");

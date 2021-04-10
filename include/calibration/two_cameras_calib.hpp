@@ -6,7 +6,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
-// #include <Eigen/Geometry>
+#include <Eigen/Geometry>
 
 #include "calib_base.hpp"
 
@@ -85,6 +85,12 @@ class TwoCamerasCalib : public BaseCalib {
     int id;
     // 是否有新图像数据
     bool is_new_data{false};
+    // 检测到的角点空间坐标
+    std::vector<cv::Point2f> image_points;
+    // 检测到的角点图像坐标
+    std::vector<cv::Point3f> object_points;
+    // 相机坐标系到aprilboard坐标系的变换
+    Eigen::Matrix4d T_ac;
     // 激光设备对象
     std::shared_ptr<dev::Camera> camera_dev_ptr{nullptr};
     // 激光显示设备对象
@@ -93,12 +99,21 @@ class TwoCamerasCalib : public BaseCalib {
     boost::shared_ptr<const cv_bridge::CvImage> cv_image_data_ptr{nullptr};
     // 显示图像使用
     boost::shared_ptr<const cv_bridge::CvImage> show_cv_image_ptr{nullptr};
+
+    /// 更新显示控件
+    void update() { img_show_dev_ptr->update_image(show_cv_image_ptr); }
   };
 
   // 标定数据
   struct CalibData {
     // 时间戳
     double timestamp{0.};
+    // 检测到的角点空间坐标
+    std::vector<cv::Point2f> imagePoints;
+    // 检测到的角点图像坐标
+    std::vector<cv::Point3f> objectPoints;
+    // 相机坐标系到aprilboard坐标系的变换
+    Eigen::Matrix4d T_ac;
   };
 
   // 是否显示图像

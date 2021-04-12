@@ -22,6 +22,7 @@
 // 标定工具
 #include "calibration/camera_laser_calib.hpp"
 #include "calibration/two_lasers_calib.hpp"
+#include "calibration/two_cameras_calib.hpp"
 
 // ros相关
 #include <ros/package.h>
@@ -63,6 +64,9 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
 
   // 两个单线激光标定
   tl_calib_ptr_ = std::make_unique<calibration::TwoLasersCalib>(sensor_manager_ptr_);
+
+  // 两个单线激光标定
+  tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
 
   // initialize the main OpenGL canvas
   main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
@@ -141,6 +145,7 @@ void RobotBasicTools::draw_ui() {
   april_board_ptr_->draw_ui();
   cl_calib_ptr_->draw_ui();
   tl_calib_ptr_->draw_ui();
+  tc_calib_ptr_->draw_ui();
 
   context_menu();
   mouse_control();
@@ -170,9 +175,10 @@ void RobotBasicTools::draw_gl() {
 
     // let the windows draw something on the main canvas
     sensor_manager_ptr_->draw_gl(*main_canvas_ptr_->shader);
-    tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
-    cl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     april_board_ptr_->draw_gl(*main_canvas_ptr_->shader);
+    cl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
+    tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
+    tc_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
 
     // flush to the screen
     main_canvas_ptr_->unbind();
@@ -231,6 +237,9 @@ void RobotBasicTools::main_menu() {
     }
     if (ImGui::MenuItem("two lasers")) {
       tl_calib_ptr_->show();
+    }
+    if (ImGui::MenuItem("two cameras")) {
+      tc_calib_ptr_->show();
     }
     ImGui::EndMenu();
   }

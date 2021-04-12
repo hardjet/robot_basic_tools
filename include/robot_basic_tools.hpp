@@ -10,6 +10,7 @@ class AprilBoard;
 namespace calibration {
 class CamLaserCalib;
 class TwoLasersCalib;
+class TwoCamerasCalib;
 }
 
 class RobotBasicTools : public guik::Application {
@@ -92,6 +93,9 @@ class RobotBasicTools : public guik::Application {
 
   // 两个单线激光标定
   std::unique_ptr<calibration::TwoLasersCalib> tl_calib_ptr_;
+
+  // 两个相机标定
+  std::unique_ptr<calibration::TwoCamerasCalib> tc_calib_ptr_;
 
   // 热键标记(ALT)
   bool b_hotkey_alt_pressed_ = false;

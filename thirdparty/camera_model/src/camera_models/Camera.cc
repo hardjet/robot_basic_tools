@@ -97,8 +97,8 @@ void Camera::estimateExtrinsics(const std::vector<cv::Point3f>& objectPoints,
     Eigen::Vector3d P;
     liftProjective(Eigen::Vector2d(imagePoints[i].x, imagePoints[i].y), P);
     P /= P(2);
-    Ms[i].x = P(0);
-    Ms[i].y = P(1);
+    Ms[i].x = float(P(0));
+    Ms[i].y = float(P(1));
   }
 
   // assume unit focal length, zero principal point, and zero distortion
@@ -115,8 +115,8 @@ void Camera::estimateExtrinsics(const vector<cv::Point3f>& objectPoints, const v
     Eigen::Vector3d P;
     liftProjective(Eigen::Vector2d(imagePoints[i].x, imagePoints[i].y), P);
     P /= P(2);
-    Ms[i].x = P(0);
-    Ms[i].y = P(1);
+    Ms[i].x = float(P(0));
+    Ms[i].y = float(P(1));
   }
 
   cv::Mat rvec;

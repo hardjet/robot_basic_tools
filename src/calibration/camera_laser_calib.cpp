@@ -513,7 +513,7 @@ void CamLaserCalib::calibration() {
         // 四元数的转角是原本的1/2
         double theta = 2 * std::acos((calib_data_vec_.at(0).q_ac.inverse() * calib_data_.q_ac).w());
         std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
-        // 抖动小于1cm与0.5°
+        // 抖动小于1cm与0.8°
         if (dist < 0.01 && theta < DEG2RAD_RBT(0.8)) {
           calib_data_vec_.push_back(calib_data_);
           // 足够稳定才保存
@@ -526,8 +526,8 @@ void CamLaserCalib::calibration() {
           calib_data_vec_.push_back(calib_data_);
           std::cout << "moved!!!" << std::endl;
         }
-        cur_state_ = STATE_IDLE;
       }
+      cur_state_ = STATE_IDLE;
       break;
     case STATE_START_CALIB:
       cur_state_ = STATE_IN_CALIB;

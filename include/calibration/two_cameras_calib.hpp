@@ -7,6 +7,7 @@
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "opencv2/core/types.hpp"
 
 #include "calib_base.hpp"
 
@@ -50,16 +51,16 @@ class TwoCamerasCalib : public BaseCalib {
   bool get_valid_pose();
 
   /// 更新显示相关的内容
-  void update_3d_show();
+  // void update_3d_show();
 
   /// 在3d中显示标定数据
-  void draw_calib_data(glk::GLSLShader& shader);
+  // void draw_calib_data(glk::GLSLShader& shader);
 
   /// 保证保存的帧角度不同
   void check_and_save();
 
   /// 计算
-  bool calc();
+  // bool calc();
 
   /// 设定相机2到相机1的变换矩阵
   void draw_ui_transform();
@@ -68,10 +69,10 @@ class TwoCamerasCalib : public BaseCalib {
   void draw_calib_params();
 
   /// 更新transform的值
-  void update_ui_transform();
+  // void update_ui_transform();
 
   /// 更新相机2位姿
-  void update_camera2_pose();
+  // void update_camera2_pose();
 
   /// 从文件加载标定数据
   bool load_calib_data(const std::string& file_path);
@@ -80,40 +81,35 @@ class TwoCamerasCalib : public BaseCalib {
   bool save_calib_data(const std::string& file_path);
 
  private:
-  // 激光数据结构
+  // 相机数据结构
   struct CameraInstType {
     int id;
     // 是否有新图像数据
     bool is_new_data{false};
-    // 检测到的角点空间坐标
-    std::vector<cv::Point2f> image_points;
-    // 检测到的角点图像坐标
-    std::vector<cv::Point3f> object_points;
-    // 相机坐标系到aprilboard坐标系的变换
-    Eigen::Matrix4d T_ac;
-    // 激光设备对象
+    // 相机设备对象
     std::shared_ptr<dev::Camera> camera_dev_ptr{nullptr};
-    // 激光显示设备对象
+    // 相机显示设备对象
     std::shared_ptr<dev::ImageShow> img_show_dev_ptr{nullptr};
-    // 接收到图像数据
+    // 接收到的图像数据
     boost::shared_ptr<const cv_bridge::CvImage> cv_image_data_ptr{nullptr};
     // 显示图像使用
     boost::shared_ptr<const cv_bridge::CvImage> show_cv_image_ptr{nullptr};
 
     /// 更新显示控件
-    void update() { img_show_dev_ptr->update_image(show_cv_image_ptr); }
+    void update();
   };
 
   // 标定数据
   struct CalibData {
     // 时间戳
-    double timestamp{0.};
+    std::array<double, 2> timestamp{};
     // 检测到的角点空间坐标
-    std::vector<cv::Point2f> imagePoints;
+    std::array<std::vector<cv::Point2f>, 2> image_points;
     // 检测到的角点图像坐标
-    std::vector<cv::Point3f> objectPoints;
-    // 相机坐标系到aprilboard坐标系的变换
-    Eigen::Matrix4d T_ac;
+    std::array<std::vector<cv::Point3f>, 2> object_points;
+    // 相机坐标系到aprilboard坐标系的变换矩阵
+    std::array<Eigen::Quaterniond, 2> q_ac;
+    std::array<Eigen::Vector3d, 2> t_ac;
   };
 
   // 是否显示图像

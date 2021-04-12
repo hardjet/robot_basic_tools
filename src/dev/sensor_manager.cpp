@@ -84,7 +84,7 @@ void SensorManager::draw_ui() {
 
   // 添加设备菜单
   if (ImGui::BeginPopup("add_devices_popup")) {
-    ImGui::MenuItem("devices", nullptr, false, false);
+    ImGui::MenuItem("[device type]", nullptr, false, false);
     ImGui::Separator();
     if (ImGui::MenuItem("camera")) {
       std::string sensor_name_tmp = "new camere " + std::to_string(sensor_num_);

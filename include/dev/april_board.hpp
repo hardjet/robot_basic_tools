@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
 
 namespace aslam {
@@ -7,6 +8,10 @@ namespace cameras {
 class GridCalibrationTargetAprilgrid;
 }
 }  // namespace aslam
+
+namespace glk {
+class GLSLShader;
+}
 
 namespace dev {
 

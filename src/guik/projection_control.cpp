@@ -10,7 +10,7 @@
 namespace guik {
 
 ProjectionControl::ProjectionControl(Eigen::Vector2i size)
-    : show_window(false),
+    : b_show_window(false),
       size(std::move(size)),
       projection_mode(0),
       fovy(30.0f),
@@ -21,7 +21,7 @@ ProjectionControl::ProjectionControl(Eigen::Vector2i size)
 ProjectionControl::~ProjectionControl() = default;
 
 Eigen::Matrix4f ProjectionControl::projection_matrix() const {
-  double aspect_ratio = size[0] / static_cast<float>(size[1]);
+  float aspect_ratio = size[0] / static_cast<float>(size[1]);
 
   glm::mat4 proj;
   if (projection_mode == 0) {
@@ -34,14 +34,14 @@ Eigen::Matrix4f ProjectionControl::projection_matrix() const {
   return Eigen::Map<Eigen::Matrix4f>(glm::value_ptr(proj));
 }
 
-void ProjectionControl::show() { show_window = true; }
+void ProjectionControl::show() { b_show_window = true; }
 
 void ProjectionControl::draw_ui() {
-  if (!show_window) {
+  if (!b_show_window) {
     return;
   }
 
-  ImGui::Begin("projection control", &show_window, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin("projection control", &b_show_window, ImGuiWindowFlags_AlwaysAutoResize);
   const char* modes[] = {"PERSPECTIVE", "ORTHOGONAL"};
   ImGui::Combo("Mode", &projection_mode, modes, IM_ARRAYSIZE(modes));
   if (projection_mode == 0) {

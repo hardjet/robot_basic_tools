@@ -16,7 +16,7 @@ PointCloudBuffer::PointCloudBuffer(const std::string &cloud_filename) {
   }
 
   stride_ = sizeof(pcl::PointXYZI);
-  num_points_ = cloud->size();
+  num_points_ = int(cloud->size());
 
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
@@ -39,7 +39,7 @@ PointCloudBuffer::PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstP
 }
 
 PointCloudBuffer::PointCloudBuffer(const std::vector<Eigen::Vector3d> &points) {
-  num_points_ = points.size();
+  num_points_ = int(points.size());
 
   stride_ = sizeof(Eigen::Vector3f);
   // 将Vector3d转为Vector3f

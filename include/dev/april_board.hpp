@@ -11,7 +11,8 @@ class GridCalibrationTargetAprilgrid;
 
 namespace glk {
 class GLSLShader;
-}
+class Drawable;
+}  // namespace glk
 
 namespace dev {
 
@@ -58,7 +59,11 @@ class AprilBoard {
 
  public:
   // 标定板对象
-  boost::shared_ptr<aslam::cameras::GridCalibrationTargetAprilgrid> board;
+  boost::shared_ptr<aslam::cameras::GridCalibrationTargetAprilgrid> board{nullptr};
+
+ private:
+  /// 更新aprilboard 3d边框显示相关
+  void update_aprilboard_edges();
 
  private:
   // 图片texture id
@@ -71,12 +76,24 @@ class AprilBoard {
   bool b_show_window_{false};
   // 是否显示3d内容
   bool b_show_3d_{false};
+  // tagRows
+  uint tag_rows_{6};
+  // tagCols
+  uint tag_cols_{6};
   // tagSize
   double tag_size_{0.03};
   // tagSpacing
   double tag_spacing_{0.3};
   // 板子长度
   double board_lenght_{};
+  // 板子高度
+  double board_height_{};
+  // 显示角点 ---- 弃用，点没有深度，无法正常显示
+  // std::shared_ptr<glk::PointCloudBuffer> points_3d_ptr_{nullptr};
+  // april board上的角点
+  std::vector<Eigen::Vector3d> april_points_;
+  // april board的边
+  std::shared_ptr<glk::Drawable> april_edges_ptr_{nullptr};
   // 设备在世界坐标系下的位姿
   Eigen::Matrix4f T_{};
 };

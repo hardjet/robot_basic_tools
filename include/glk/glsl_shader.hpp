@@ -16,7 +16,7 @@ namespace glk {
  */
 class GLSLShader {
  public:
-  GLSLShader() {}
+  GLSLShader() = default;
 
   /**
    * @brief load GLSL shader from files
@@ -68,10 +68,10 @@ class GLSLShader {
   }
 
  private:
-  GLuint read_shader_from_file(const std::string& filename, GLuint shader_type);
+  static GLuint read_shader_from_file(const std::string& filename, GLuint shader_type);
 
  private:
-  GLuint shader_program;
+  GLuint shader_program{};
   std::unordered_map<std::string, GLint> attrib_cache;
   std::unordered_map<std::string, GLint> uniform_cache;
 };

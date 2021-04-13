@@ -21,7 +21,7 @@ class ProjectionControl {
   void show();
 
  private:
-  bool show_window;
+  bool b_show_window;
   Eigen::Vector2i size;
 
   int projection_mode;

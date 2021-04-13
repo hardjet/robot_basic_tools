@@ -75,8 +75,8 @@ void CamLaserCalib::draw_calib_data(glk::GLSLShader& shader) {
     vertices.at(0) = cur_calib_data.pts_on_line[0].cast<float>();
     vertices.at(1) = cur_calib_data.pts_on_line[1].cast<float>();
 
-    colors.at(0) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
-    colors.at(1) = Eigen::Vector4f(0.f, 255.f, 255.f, 1.0f);
+    colors.at(0) = Eigen::Vector4f(0.f, 1.f, 1.f, 1.0f);
+    colors.at(1) = Eigen::Vector4f(0.f, 1.f, 1.f, 1.0f);
 
     infos.at(0) = Eigen::Vector4i(int(selected_calib_data_id_ - 1), 0, 0, 0);
     infos.at(1) = Eigen::Vector4i(int(selected_calib_data_id_ - 1), 0, 0, 0);
@@ -126,15 +126,15 @@ void CamLaserCalib::draw_calib_data(glk::GLSLShader& shader) {
   // 显示点云
   shader.set_uniform("color_mode", 1);
   shader.set_uniform("model_matrix", model_matrix);
-  shader.set_uniform("material_color", Eigen::Vector4f(255.f, 0.f, 0.f, 1.0f));
+  shader.set_uniform("material_color", Eigen::Vector4f(1.f, 0.f, 0.f, 1.0f));
   calib_pointcloud_ptr_->draw(shader);
 
   // model_matrix = Eigen::Matrix4f::Identity();
   draw_pt(model_matrix, calib_valid_data_vec_[selected_calib_data_id_ - 1].pts_on_line[0],
-          Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
+          Eigen::Vector4f(1.f, 0.f, 1.f, 1.0f));
   // model_matrix = Eigen::Matrix4f::Identity();
   draw_pt(model_matrix, calib_valid_data_vec_[selected_calib_data_id_ - 1].pts_on_line[1],
-          Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
+          Eigen::Vector4f(1.f, 0.f, 1.f, 1.0f));
 }
 
 void CamLaserCalib::draw_gl(glk::GLSLShader& shader) {
@@ -175,8 +175,8 @@ void CamLaserCalib::update_3d_show() {
   infos.emplace_back(laser_dev_ptr_->sensor_id, 2, 0, 0);
 
   // 添加颜色信息
-  colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
-  colors.emplace_back(0.f, 255.f, 255.f, 1.0f);
+  colors.emplace_back(0.f, 1.f, 1.f, 1.0f);
+  colors.emplace_back(0.f, 1.f, 1.f, 1.0f);
 
   // 重置3d直线
   laser_line_3d_ptr.reset(new glk::SimpleLines(vertices, colors, infos));

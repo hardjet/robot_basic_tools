@@ -52,6 +52,7 @@ class GridCalibrationTargetBase {
   /// \brief get all points from the target expressed in the target frame
   Eigen::MatrixXd points() const;
   std::vector<cv::Point3f> points3d() const;
+  void points(std::vector<Eigen::Vector3d>& pts) const;
 
   /// \brief get the grid coordinates for a point
   std::pair<size_t, size_t> pointToGridCoordinates(size_t i) const;

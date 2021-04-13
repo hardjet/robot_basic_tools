@@ -18,6 +18,14 @@ std::vector<cv::Point3f> GridCalibrationTargetBase::points3d() const {
   return pts;
 }
 
+void GridCalibrationTargetBase::points(std::vector<Eigen::Vector3d>& pts) const {
+  pts.clear();
+  for (int i = 0; i < _points.rows(); i++) {
+    Eigen::Vector3d pt = _points.row(i);
+    pts.emplace_back(pt);
+  }
+}
+
 /// \brief get a point from the target expressed in the target frame
 Eigen::Vector3d GridCalibrationTargetBase::point(size_t i) const { return _points.row(i); }
 

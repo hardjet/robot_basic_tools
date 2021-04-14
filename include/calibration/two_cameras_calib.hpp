@@ -44,6 +44,9 @@ class TwoCamerasCalib : public BaseCalib {
   /// 更新数据
   void update();
 
+  /// 更新相关位姿
+  void update_related_pose();
+
   /// 标定流程
   void calibration();
 
@@ -54,13 +57,13 @@ class TwoCamerasCalib : public BaseCalib {
   // void update_3d_show();
 
   /// 在3d中显示标定数据
-  // void draw_calib_data(glk::GLSLShader& shader);
+  void draw_calib_data(glk::GLSLShader& shader);
 
   /// 保证保存的帧角度不同
   void check_and_save();
 
   /// 计算
-  // bool calc();
+  bool calc();
 
   /// 设定相机2到相机1的变换矩阵
   void draw_ui_transform();
@@ -69,10 +72,7 @@ class TwoCamerasCalib : public BaseCalib {
   void draw_calib_params();
 
   /// 更新transform的值
-  // void update_ui_transform();
-
-  /// 更新相机2位姿
-  // void update_camera2_pose();
+  void update_ui_transform();
 
   /// 从文件加载标定数据
   bool load_calib_data(const std::string& file_path);
@@ -105,6 +105,10 @@ class TwoCamerasCalib : public BaseCalib {
     std::array<double, 2> timestamp{};
     // 检测到的角点空间坐标
     std::array<std::vector<cv::Point2f>, 2> image_points;
+    // 是否需要计算
+    bool b_need_calc{true};
+    // 图像点投射在标定板上的点
+    std::array<std::vector<Eigen::Vector3d>, 2> pts_on_board;
     // 检测到的角点图像坐标
     std::array<std::vector<cv::Point3f>, 2> object_points;
     // 相机坐标系到aprilboard坐标系的变换矩阵
@@ -122,6 +126,8 @@ class TwoCamerasCalib : public BaseCalib {
   std::array<float, 6> transform_12_{};
   // 相机2到相机1的变换矩阵
   Eigen::Matrix4f T_12_;
+  // 变换矩阵是否有效，只有正常标定计算出的结果才算有效
+  bool is_transform_valid_{false};
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
 
@@ -131,7 +137,7 @@ class TwoCamerasCalib : public BaseCalib {
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 任务对象
   std::shared_ptr<Task> task_ptr_{nullptr};
-  // 2个激光实例
+  // 2个相机实例
   std::array<CameraInstType, 2> camera_insts_;
   // 当前计算出的标定数据
   CalibData calib_data_;

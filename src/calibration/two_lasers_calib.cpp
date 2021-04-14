@@ -60,7 +60,7 @@ TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manag
   // // 设置旋转矩阵初始值
   // // Eigen::Quaternionf q_init{0.805, 0.000, 0.593, 0.000};
   //
-  // Eigen::Quaternionf q_init = algorithm::ypr2quaternion(0,DEG2RAD_RBT(60),0).cast<float>();
+  // Eigen::Quaternionf q_init = algorithm::ypr2quat(0,DEG2RAD_RBT(60),0).cast<float>();
   // T_12_.block<3, 3>(0, 0) = q_init.toRotationMatrix();
   // // 设置平移向量
   // T_12_.block<3, 1>(0, 3) = Eigen::Vector3f{0.0, 0.0, 1.248};
@@ -710,8 +710,8 @@ void TwoLasersCalib::draw_ui_transform() {
   ImGui::PopItemWidth();
   // 更新变换矩阵
   if (is_changed) {
-    Eigen::Quaterniond q_12 = algorithm::ypr2quaternion(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
-                                                        DEG2RAD_RBT(transform_12_[3]));
+    Eigen::Quaterniond q_12 = algorithm::ypr2quat(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
+                                                  DEG2RAD_RBT(transform_12_[3]));
     Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
     // 更新变换矩阵
     T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();

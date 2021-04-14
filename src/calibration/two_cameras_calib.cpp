@@ -5,6 +5,9 @@
 #include "portable-file-dialogs.h"
 #include "nlohmann/json.hpp"
 
+#include "glk/glsl_shader.hpp"
+#include "glk/primitives/primitives.hpp"
+
 #include "dev/april_board.hpp"
 #include "dev/sensor_manager.hpp"
 #include "dev/image_show.hpp"
@@ -54,13 +57,135 @@ TwoCamerasCalib::TwoCamerasCalib(std::shared_ptr<dev::SensorManager>& sensor_man
   T_12_ = Eigen::Matrix4f::Identity();
 }
 
+void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
+  if (!b_show_calib_data_) {
+    return;
+  }
+
+  auto& cur_calib_data = calib_valid_data_vec_[selected_calib_data_id_ - 1];
+
+  // 更新显示
+  if (b_need_to_update_cd_) {
+    b_need_to_update_cd_ = false;
+    // std::cout << "update calib data" << std::endl;
+
+    // 设置aprilboard在相机1坐标下的位姿
+    Eigen::Matrix4f T_c1a = Eigen::Matrix4f::Identity();
+
+    T_c1a.block<3, 3>(0, 0) = cur_calib_data.q_ac[0].toRotationMatrix().transpose().cast<float>();
+    T_c1a.block<3, 1>(0, 3) = -T_c1a.block<3, 3>(0, 0) * cur_calib_data.t_ac[0].cast<float>();
+
+    // 计算aprilboard在世界坐标系下的位姿
+    Eigen::Matrix4f T_wa = camera_insts_[0].camera_dev_ptr->get_sensor_pose() * T_c1a;
+    // 设置位姿
+    april_board_ptr_->set_pose(T_wa);
+
+    // 没有正常标定计算出的结果
+    if (!is_transform_valid_) {
+      Eigen::Matrix4f T_ac2 = Eigen::Matrix4f::Identity();
+      T_ac2.block<3, 3>(0, 0) = cur_calib_data.q_ac[1].toRotationMatrix().cast<float>();
+      T_ac2.block<3, 1>(0, 3) = cur_calib_data.t_ac[1].cast<float>();
+      Eigen::Matrix4f T_wc2 = T_wa * T_ac2;
+      camera_insts_[1].camera_dev_ptr->set_sensor_pose(T_wc2);
+    }
+
+    // 需要计算图像点投射在标定板上的点
+    if (cur_calib_data.b_need_calc) {
+      cur_calib_data.b_need_calc = false;
+      // 选取标定板上三个不在一条线的点(标定板坐标系下)
+      std::vector<Eigen::Vector3d> pts_on_april_board(3);
+      pts_on_april_board[0] = Eigen::Vector3d{0., 0., 0.};
+      pts_on_april_board[1] = Eigen::Vector3d{0.1, 0.2, 0.};
+      pts_on_april_board[2] = Eigen::Vector3d{0.2, 0.1, 0.};
+
+      // 计算相机坐标系下检测到的角点的空间坐标值
+      for (uint i = 0; i < 2; i++) {
+        std::cout << " --------- " << i << std::endl;
+        const auto& camera_inst = camera_insts_[i];
+        // 计算变换矩阵
+        Eigen::Matrix3d R_ca = cur_calib_data.q_ac[i].toRotationMatrix().transpose();
+        Eigen::Vector3d t_ca = -R_ca * cur_calib_data.t_ac[i];
+        std::cout << "R_ca: \n" << R_ca << std::endl;
+        std::cout << "t_ca: \n" << t_ca.transpose() << std::endl;
+
+        // 将标定板上三个不在一条线的点变换到相机坐标系下
+        std::vector<Eigen::Vector3d> pts_on_april_board_in_cam;
+        std::cout << "pts_on_april_board_in_cam:" << std::endl;
+        for (const auto& p : pts_on_april_board) {
+          pts_on_april_board_in_cam.emplace_back(R_ca * p + t_ca);
+          std::cout << pts_on_april_board_in_cam.back().transpose() << std::endl;
+        }
+
+        // 计算平面方程 ax + by + cz + d = 0
+        Eigen::Vector4d plane_params = algorithm::plane_from_3pts(
+            pts_on_april_board_in_cam[0], pts_on_april_board_in_cam[1], pts_on_april_board_in_cam[2]);
+
+        std::cout << "plane_params: " << plane_params.transpose() << std::endl;
+        // 检查是否在平面上
+        std::cout << "check on plane: " << std::endl;
+        std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[0] + plane_params[3] << std::endl;
+        std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[1] + plane_params[3] << std::endl;
+        std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[2] + plane_params[3] << std::endl;
+
+        // 计算图像上落在标定板上的点
+        for (const auto& p : cur_calib_data.image_points[i]) {
+          Eigen::Vector3d p_in_space;
+          std::cout << "img:" << p.x << ", " << p.y << std::endl;
+          camera_inst.camera_dev_ptr->camera_model()->liftProjective(Eigen::Vector2d{p.x, p.y}, p_in_space);
+          std::cout << "p_in_space: " << p_in_space.transpose() << std::endl;
+          Eigen::Vector3d p_on_board;
+          // 计算交点
+          bool res = algorithm::plane_line_intersect_point(plane_params.head(3), pts_on_april_board_in_cam[1],
+                                                           p_in_space, p_in_space, p_on_board);
+          if (res) {
+            cur_calib_data.pts_on_board[i].emplace_back(p_on_board);
+            std::cout << "p_on_board: " << p_on_board.transpose() << std::endl;
+            std::cout << "check on plane:" << plane_params.head(3).transpose() * p_on_board + plane_params[3]
+                      << std::endl;
+          }
+        }
+      }
+    }
+  }
+
+  // 画点
+  auto draw_points = [&shader](Eigen::Matrix4f model, const Eigen::Vector3d& pos) {
+    model.block<3, 1>(0, 3) = model.block<3, 3>(0, 0) * pos.cast<float>() + model.block<3, 1>(0, 3);
+
+    // 更改大小 设置球的半径大小
+    model.block<3, 3>(0, 0) *= 0.001;
+    // 改变位置
+    shader.set_uniform("model_matrix", model);
+
+    const auto& sphere = glk::Primitives::instance()->primitive(glk::Primitives::SPHERE);
+    sphere.draw(shader);
+  };
+
+  shader.set_uniform("color_mode", 1);
+  if (!cur_calib_data.b_need_calc) {
+    for (uint i = 0; i < 2; i++) {
+      // 设置显示颜色
+      if (i == 0) {
+        shader.set_uniform("material_color", Eigen::Vector4f(1.f, 0.f, 0.f, 1.0f));
+      } else {
+        shader.set_uniform("material_color", Eigen::Vector4f(0.f, 1.f, 0.f, 1.0f));
+      }
+
+      // 显示点
+      for (const auto& pt : cur_calib_data.pts_on_board[i]) {
+        draw_points(camera_insts_[i].camera_dev_ptr->get_sensor_pose(), pt);
+      }
+    }
+  }
+}
+
 void TwoCamerasCalib::draw_gl(glk::GLSLShader& shader) {
   if (!b_show_window_) {
     return;
   }
 
-  // draw_calib_data(shader);
-  //
+  draw_calib_data(shader);
+
   // if (next_state_ != STATE_START || !laser_line_3d_ptr) {
   //   return;
   // }
@@ -68,6 +193,31 @@ void TwoCamerasCalib::draw_gl(glk::GLSLShader& shader) {
   // shader.set_uniform("color_mode", 2);
   // shader.set_uniform("model_matrix", laser_dev_ptr_->get_sensor_pose());
   // laser_line_3d_ptr->draw(shader);
+}
+
+void TwoCamerasCalib::update_related_pose() {
+  // 相机1到世界坐标的变换
+  Eigen::Matrix4f T_w1;
+  T_w1 = camera_insts_[0].camera_dev_ptr->get_sensor_pose();
+
+  // 计算相机2的位姿并更新
+  Eigen::Matrix4f T_w2 = T_w1 * T_12_;
+  camera_insts_[1].camera_dev_ptr->set_sensor_pose(T_w2);
+
+  if (b_show_calib_data_) {
+    b_need_to_update_cd_ = true;
+  }
+}
+
+void TwoCamerasCalib::update_ui_transform() {
+  Eigen::Quaternionf q_12(T_12_.block<3, 3>(0, 0));
+  auto euler = algorithm::quat2euler(q_12.cast<double>());
+  transform_12_[0] = T_12_(0, 3);
+  transform_12_[1] = T_12_(1, 3);
+  transform_12_[2] = T_12_(2, 3);
+  transform_12_[3] = RAD2DEG_RBT(euler.roll);
+  transform_12_[4] = RAD2DEG_RBT(euler.pitch);
+  transform_12_[5] = RAD2DEG_RBT(euler.yaw);
 }
 
 void TwoCamerasCalib::update() {
@@ -156,7 +306,7 @@ void TwoCamerasCalib::check_and_save() {
   // 逐个检测角度值
   for (auto& data : calib_valid_data_vec_) {
     double theta = 2 * std::acos((data.q_ac[0].inverse() * calib_data_vec_.at(2).q_ac[0]).w());
-    // 保证间隔5°以上
+    // 保证间隔x以上
     if (theta < DEG2RAD_RBT(between_angle_)) {
       b_need_to_save = false;
       break;
@@ -166,8 +316,47 @@ void TwoCamerasCalib::check_and_save() {
   if (b_need_to_save) {
     // 取第3帧保存
     calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
+    is_transform_valid_ = false;
     printf("!!!!!!!!!!!!!tz: %f saved!\n", calib_valid_data_vec_.back().t_ac[0].z());
   }
+}
+
+bool TwoCamerasCalib::calc() {
+  Eigen::Matrix4d T_1c = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d T_2c = Eigen::Matrix4d::Identity();
+  Eigen::Vector3d t_12{0, 0, 0};
+  Eigen::Vector3d euler_12{0, 0, 0};
+
+  // 计算平均位姿
+  for (const auto& data : calib_valid_data_vec_) {
+    // 计算camera 2 到 1的位姿变换
+    T_1c.block<3, 3>(0, 0) = data.q_ac[0].toRotationMatrix();
+    T_1c.block<3, 1>(0, 3) = data.t_ac[0];
+    T_2c.block<3, 3>(0, 0) = data.q_ac[1].toRotationMatrix();
+    T_2c.block<3, 1>(0, 3) = data.t_ac[1];
+
+    Eigen::Matrix4d T_12 = T_1c * T_2c.inverse();
+
+    t_12 += T_12.block<3, 1>(0, 3);
+
+    auto euler = algorithm::quat2euler(Eigen::Quaterniond(T_12.block<3, 3>(0, 0)));
+    euler_12.x() += euler.roll;
+    euler_12.y() += euler.pitch;
+    euler_12.z() += euler.yaw;
+  }
+
+  t_12 /= double(calib_valid_data_vec_.size());
+  euler_12 /= double(calib_valid_data_vec_.size());
+  std::cout << "t_12: " << t_12.transpose() << std::endl;
+  std::cout << "euler_12(rpy): " << euler_12.transpose() << std::endl;
+
+  // 更新变换矩阵
+  T_12_.block<3, 1>(0, 3) = t_12.cast<float>();
+  T_12_.block<3, 3>(0, 0) =
+      algorithm::ypr2quat(euler_12.x(), euler_12.y(), euler_12.z()).toRotationMatrix().cast<float>();
+  is_transform_valid_ = true;
+
+  return true;
 }
 
 void TwoCamerasCalib::calibration() {
@@ -202,6 +391,7 @@ void TwoCamerasCalib::calibration() {
     case STATE_CHECK_STEADY:
       if (calib_data_vec_.empty()) {
         calib_data_vec_.push_back(calib_data_);
+        is_transform_valid_ = false;
       } else {
         // 检查相机位姿是否一致
         double dist = (calib_data_vec_.at(0).t_ac[0] - calib_data_.t_ac[0]).norm();
@@ -224,21 +414,21 @@ void TwoCamerasCalib::calibration() {
       }
       cur_state_ = STATE_IDLE;
       break;
-      // case STATE_START_CALIB:
-      //   cur_state_ = STATE_IN_CALIB;
-      //   break;
-      // case STATE_IN_CALIB:
-      //   // 执行任务
-      //   if (task_ptr_->do_task("calc", std::bind(&TwoCamerasCalib::calc, this))) {  // NOLINT
-      //     // 结束后需要读取结果
-      //     if (task_ptr_->result<bool>()) {
-      //       // 将计算结果更新到laser2
-      //       update_camera2_pose();
-      //       update_ui_transform();
-      //       cur_state_ = STATE_IDLE;
-      //     }
-      //   }
-      //   break;
+    case STATE_START_CALIB:
+      cur_state_ = STATE_IN_CALIB;
+      break;
+    case STATE_IN_CALIB:
+      // 执行任务
+      if (task_ptr_->do_task("calc", std::bind(&TwoCamerasCalib::calc, this))) {  // NOLINT
+        // 结束后需要读取结果
+        if (task_ptr_->result<bool>()) {
+          // 将计算结果更新到相机2
+          update_related_pose();
+          update_ui_transform();
+          cur_state_ = STATE_IDLE;
+        }
+      }
+      break;
   }
 }
 
@@ -249,8 +439,8 @@ static void convert_json_to_pts(std::array<std::vector<cv::Point2f>, 2>& imgs_pt
 
   for (int i = 0; i < 2; i++) {
     imgs_pts[i].resize(v[i].size());
-    for (uint j = 0; j < imgs_pts.size(); j++) {
-      imgs_pts[i].at(i) = cv::Point2f{v[i][j][0], v[i][j][1]};
+    for (uint j = 0; j < imgs_pts[i].size(); j++) {
+      imgs_pts[i].at(j) = cv::Point2f{v[i][j][0], v[i][j][1]};
     }
   }
 }
@@ -262,11 +452,34 @@ static void convert_json_to_pts(std::array<std::vector<cv::Point3f>, 2>& objs_pt
 
   for (int i = 0; i < 2; i++) {
     objs_pts[i].resize(v[i].size());
-    for (uint j = 0; j < objs_pts.size(); j++) {
-      objs_pts[i].at(i) = cv::Point3f{v[i][j][0], v[i][j][1], v[i][j][2]};
+    for (uint j = 0; j < objs_pts[i].size(); j++) {
+      objs_pts[i].at(j) = cv::Point3f{v[i][j][0], v[i][j][1], v[i][j][2]};
     }
   }
 }
+
+// static void convert_json_to_pts(std::array<std::vector<cv::Point2f>, 2>& imgs_pts, nlohmann::json& js) {
+//   std::cout << "image_points" << std::endl;
+//   for (int i = 0; i < 2; i++) {
+//     imgs_pts[i].resize(js.at(i).size());
+//     for (uint j = 0; j < imgs_pts[i].size(); j++) {
+//       imgs_pts[i].at(j) = cv::Point2f{js.at(i).at(j).at(0).get<float>(), js.at(i).at(j).at(1).get<float>()};
+//       std::cout << imgs_pts[i].at(j).x << ", " << imgs_pts[i].at(j).y << std::endl;
+//     }
+//   }
+// }
+//
+// static void convert_json_to_pts(std::array<std::vector<cv::Point3f>, 2>& objs_pts, nlohmann::json& js) {
+//   std::cout << "object_points" << std::endl;
+//   for (int i = 0; i < 2; i++) {
+//     objs_pts[i].resize(js.at(i).size());
+//     for (uint j = 0; j < objs_pts[i].size(); j++) {
+//       objs_pts[i].at(j) = cv::Point3f{js.at(i).at(j).at(0).get<float>(), js.at(i).at(j).at(1).get<float>(),
+//                                       js.at(i).at(j).at(2).get<float>()};
+//       std::cout << objs_pts[i].at(j).x << ", " << objs_pts[i].at(j).y << ", " << objs_pts[i].at(j).z << std::endl;
+//     }
+//   }
+// }
 
 bool TwoCamerasCalib::load_calib_data(const std::string& file_path) {
   // 读取文件
@@ -450,15 +663,16 @@ void TwoCamerasCalib::draw_ui_transform() {
   ImGui::PopItemWidth();
   // 更新变换矩阵
   if (is_changed) {
-    Eigen::Quaterniond q_12 = algorithm::ypr2quaternion(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
-                                                        DEG2RAD_RBT(transform_12_[3]));
+    Eigen::Quaterniond q_12 = algorithm::ypr2quat(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
+                                                  DEG2RAD_RBT(transform_12_[3]));
     Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
     // 更新变换矩阵
     T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
     T_12_.block<3, 1>(0, 3) = t_12;
     // std::cout << "T12:\n" << T_12_ << std::endl;
 
-    // update_laser2_pose();
+    update_related_pose();
+    is_transform_valid_ = false;
   }
 
   ImGui::Separator();
@@ -474,60 +688,62 @@ void TwoCamerasCalib::draw_ui() {
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera 1", dev::CAMERA, camera_insts_[0].camera_dev_ptr);
 
-  // 从文件加载标定数据
-  ImGui::SameLine();
-  if (ImGui::Button("R")) {
-    // 选择加载文件路径
-    std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
-    std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
-    while (!dialog->ready()) {
-      usleep(1000);
-    }
-
-    auto file_paths = dialog->result();
-    if (!file_paths.empty()) {
-      // 从文件读数据
-      if (load_calib_data(file_paths.front())) {
-        std::string msg = "load calib data from " + file_paths.front() + " ok!";
-        dev::show_pfd_info("load calib data", msg);
-      } else {
-        std::string msg = "load calib data from " + file_paths.front() + " failed!";
-        dev::show_pfd_info("load calib data", msg);
-      }
-    }
-  }
-  // tips
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("load calib data from .json file");
-  }
-
-  if (!calib_valid_data_vec_.empty()) {
+  if (camera_insts_[0].camera_dev_ptr) {
+    // 从文件加载标定数据
     ImGui::SameLine();
-    // 保存标定数据
-    if (ImGui::Button("W")) {
-      // 选择保存文件路径
+    if (ImGui::Button("R")) {
+      // 选择加载文件路径
       std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
-      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+      std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
       while (!dialog->ready()) {
         usleep(1000);
       }
 
-      auto file_path = dialog->result();
-      if (!file_path.empty()) {
-        // 导出标定数据
-        if (!save_calib_data(file_path)) {
-          std::string msg = "save calib data to " + file_path + " failed!";
-          dev::show_pfd_info("save calib data", msg);
+      auto file_paths = dialog->result();
+      if (!file_paths.empty()) {
+        // 从文件读数据
+        if (load_calib_data(file_paths.front())) {
+          std::string msg = "load calib data from " + file_paths.front() + " ok!";
+          dev::show_pfd_info("load calib data", msg);
         } else {
-          std::string msg = "save calib data to " + file_path + " ok!";
-          dev::show_pfd_info("save calib data", msg);
+          std::string msg = "load calib data from " + file_paths.front() + " failed!";
+          dev::show_pfd_info("load calib data", msg);
         }
       }
     }
-
     // tips
     if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("save calib data to .json file");
+      ImGui::SetTooltip("load calib data from .json file");
+    }
+
+    if (!calib_valid_data_vec_.empty()) {
+      ImGui::SameLine();
+      // 保存标定数据
+      if (ImGui::Button("W")) {
+        // 选择保存文件路径
+        std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+        std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+        while (!dialog->ready()) {
+          usleep(1000);
+        }
+
+        auto file_path = dialog->result();
+        if (!file_path.empty()) {
+          // 导出标定数据
+          if (!save_calib_data(file_path)) {
+            std::string msg = "save calib data to " + file_path + " failed!";
+            dev::show_pfd_info("save calib data", msg);
+          } else {
+            std::string msg = "save calib data to " + file_path + " ok!";
+            dev::show_pfd_info("save calib data", msg);
+          }
+        }
+      }
+
+      // tips
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("save calib data to .json file");
+      }
     }
   }
 
@@ -594,7 +810,18 @@ void TwoCamerasCalib::draw_ui() {
       ImGui::SameLine();
       // 开始执行标定
       if (ImGui::Button("calib")) {
-        next_state_ = STATE_START_CALIB;
+        // 两个设备名称不能一样
+        if (camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) {
+          std::string msg = "two cameras are the same!";
+          dev::show_pfd_info("two cameras calibration", msg);
+        } else if (!camera_insts_[0].camera_dev_ptr->camera_model() ||
+                   !camera_insts_[1].camera_dev_ptr->camera_model()) {
+          // 检测相机模型是否已经选择
+          std::string msg = "please set camera model first!";
+          dev::show_pfd_info("info", msg);
+        } else {
+          next_state_ = STATE_START_CALIB;
+        }
       }
     }
   }
@@ -603,9 +830,22 @@ void TwoCamerasCalib::draw_ui() {
   if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
-        b_need_to_update_cd_ = true;
-        // 显示AprilBoard
-        april_board_ptr_->show_3d();
+        // 两个设备名称不能一样
+        if (camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) {
+          std::string msg = "two cameras are the same!";
+          dev::show_pfd_info("two cameras calibration", msg);
+          b_show_calib_data_ = false;
+        } else if (!camera_insts_[0].camera_dev_ptr->camera_model() ||
+                   !camera_insts_[1].camera_dev_ptr->camera_model()) {
+          // 检测相机模型是否已经选择
+          std::string msg = "please set camera model first!";
+          dev::show_pfd_info("info", msg);
+          b_show_calib_data_ = false;
+        } else {
+          b_need_to_update_cd_ = true;
+          // 显示AprilBoard
+          april_board_ptr_->show_3d();
+        }
       }
     }
     if (ImGui::IsItemHovered()) {

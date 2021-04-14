@@ -20,13 +20,20 @@ struct EulerAngles {
 Eigen::Matrix4d lie_to_se3(const Eigen::Matrix<double, 6, 1>& lie);
 
 /// ZYX顺序转为四元数
-Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll);
+Eigen::Quaterniond ypr2quat(double yaw, double pitch, double roll);
 
 /// 四元数转欧拉角
 EulerAngles quat2euler(const Eigen::Quaterniond& q);
 
 /// 3个点确定一个平面
 Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3);
+
+/// 直线与平面的交点
+// bool plane_line_intersect_point(const Eigen::Vector4d& plane, const Eigen::Vector3d& line_p1,
+//                                 const Eigen::Vector3d& line_p2, Eigen::Vector3d& p);
+bool plane_line_intersect_point(const Eigen::Vector3d& plane_normal, const Eigen::Vector3d& p_on_plane,
+                                const Eigen::Vector3d& line_vector, const Eigen::Vector3d& p_on_line,
+                                Eigen::Vector3d& p);
 
 /// 直线拟合
 bool line_fitting_ceres(const std::vector<Eigen::Vector3d>& points, Eigen::Vector2d& line_params);

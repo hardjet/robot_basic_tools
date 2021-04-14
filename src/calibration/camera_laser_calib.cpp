@@ -315,7 +315,7 @@ void CamLaserCalib::check_and_save() {
   // 逐个检测角度值
   for (auto& data : calib_valid_data_vec_) {
     double theta = 2 * std::acos((data.q_ac.inverse() * calib_data_vec_.at(2).q_ac).w());
-    // 保证间隔5°以上
+    // 保证间隔x以上
     if (theta < DEG2RAD_RBT(between_angle_)) {
       b_need_to_save = false;
       break;
@@ -460,9 +460,9 @@ bool CamLaserCalib::calc() {
   // std::cout << T_lc << std::endl;
 
   // std::cout << "\n----- Transform from Camera to Laser, euler angles and translations are: -----\n" << std::endl;
-  Eigen::Matrix3d R_lc(T_lc.block(0, 0, 3, 3));
-  Eigen::Vector3d t_lc(T_lc.block(0, 3, 3, 1));
-  Eigen::Quaterniond q(R_lc);
+  // Eigen::Matrix3d R_lc(T_lc.block(0, 0, 3, 3));
+  // Eigen::Vector3d t_lc(T_lc.block(0, 3, 3, 1));
+  // Eigen::Quaterniond q(R_lc);
   // algorithm::EulerAngles rpy = algorithm::quat2euler(q);
   // std::cout << "q(x, y, z, w):" << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
   // std::cout << "q(x, y, z, w):" << q.coeffs().transpose() << std::endl;
@@ -537,7 +537,7 @@ void CamLaserCalib::calibration() {
       if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {  // NOLINT
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
-          update_relative_pose();
+          update_related_pose();
           update_ui_transform();
           cur_state_ = STATE_IDLE;
         }
@@ -546,7 +546,7 @@ void CamLaserCalib::calibration() {
   }
 }
 
-void CamLaserCalib::update_relative_pose() {
+void CamLaserCalib::update_related_pose() {
   // 激光到世界坐标的变换
   Eigen::Matrix4f T_wl, T_wc;
   T_wl = laser_dev_ptr_->get_sensor_pose();
@@ -561,8 +561,8 @@ void CamLaserCalib::update_relative_pose() {
 }
 
 void CamLaserCalib::update_ui_transform() {
-  Eigen::Quaternionf q_12(T_lc_.block<3, 3>(0, 0));
-  auto euler = algorithm::quat2euler(q_12.cast<double>());
+  Eigen::Quaternionf q_lc(T_lc_.block<3, 3>(0, 0));
+  auto euler = algorithm::quat2euler(q_lc.cast<double>());
   transform_lc_[0] = T_lc_(0, 3);
   transform_lc_[1] = T_lc_(1, 3);
   transform_lc_[2] = T_lc_(2, 3);
@@ -609,15 +609,15 @@ void CamLaserCalib::draw_ui_transform() {
   ImGui::PopItemWidth();
   // 更新变换矩阵
   if (is_changed) {
-    Eigen::Quaterniond q_lc = algorithm::ypr2quaternion(DEG2RAD_RBT(transform_lc_[5]), DEG2RAD_RBT(transform_lc_[4]),
-                                                        DEG2RAD_RBT(transform_lc_[3]));
+    Eigen::Quaterniond q_lc = algorithm::ypr2quat(DEG2RAD_RBT(transform_lc_[5]), DEG2RAD_RBT(transform_lc_[4]),
+                                                  DEG2RAD_RBT(transform_lc_[3]));
     Eigen::Vector3f t_lc{transform_lc_[0], transform_lc_[1], transform_lc_[2]};
     // 更新变换矩阵
     T_lc_.block<3, 3>(0, 0) = q_lc.toRotationMatrix().cast<float>();
     T_lc_.block<3, 1>(0, 3) = t_lc;
     // std::cout << "T_lc:\n" << T_lc_ << std::endl;
 
-    update_relative_pose();
+    update_related_pose();
   }
 
   ImGui::Separator();

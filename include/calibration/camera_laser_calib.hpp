@@ -54,7 +54,7 @@ class CamLaserCalib : public BaseCalib {
   /// 保证保存的帧角度不同
   void check_and_save();
   /// 更新相关的位姿
-  void update_relative_pose();
+  void update_related_pose();
   /// 更新transform的值
   void update_ui_transform();
   /// 设定相机到激光的变换矩阵

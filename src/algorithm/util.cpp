@@ -55,8 +55,8 @@ Eigen::Matrix4d lie_to_se3(const Eigen::Matrix<double, 6, 1>& lie) {
   return se3;
 }
 
-Eigen::Quaterniond ypr2quaternion(double yaw, double pitch, double roll)  // yaw (Z), pitch (Y), roll (X)
-{
+// yaw (Z), pitch (Y), roll (X)
+Eigen::Quaterniond ypr2quat(double yaw, double pitch, double roll) {
   // Abbreviations for the various angular functions
   double cy = cos(yaw * 0.5);
   double sy = sin(yaw * 0.5);
@@ -104,11 +104,59 @@ EulerAngles quat2euler(const Eigen::Quaterniond& q) {
  d = O.dot(cross(AO,BO))
  */
 Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2, const Eigen::Vector3d& x3) {
-  Eigen::Vector4d pi;
-  pi << (x1 - x3).cross(x2 - x3),
+  Eigen::Vector4d plane;
+  plane << (x1 - x3).cross(x2 - x3),
       -x3.dot(x1.cross(x2));  // d = - x3.dot( (x1-x3).cross( x2-x3 ) ) = - x3.dot( x1.cross( x2 ) )
 
-  return pi;
+  return plane;
+}
+
+/**
+ * 已知平面方程ax + by + cz + d = 0，和直线上的两个点p1\p2，求直线与平面的交点p
+ * @param plane 平面方程 [a, b, c, d]
+ * @param line_p1 直线上的点1
+ * @param line_p2 直线上的点2
+ * @param p 直线与平面的交点p
+ * @return 是否有交点
+ */
+// bool plane_line_intersect_point(const Eigen::Vector4d& plane, const Eigen::Vector3d& line_p1,
+//                                 const Eigen::Vector3d& line_p2, Eigen::Vector3d& p) {
+//   // 直线向量
+//   Eigen::Vector3d l = line_p2 - line_p1;
+//   // 分子
+//   double numerator = plane.head(3).transpose() * line_p1 + plane[3];
+//   // 分母
+//   double denominator = plane.head(3).transpose() * l;
+//   if (fabs(denominator) < 1e-6) {
+//     return false;
+//   }
+//   double r = numerator / denominator;
+//   p = line_p1 + r * line_p2;
+//   return true;
+// }
+
+/**
+ * 求直线与平面的交点p
+ * @param plane_normal 平面法向量
+ * @param p_on_plane 平面上的一个点
+ * @param line_vector 直线方向向量
+ * @param p_on_line 直线上的一个点
+ * @param p 直线与平面的交点
+ * @return 是否有一个交点
+ */
+bool plane_line_intersect_point(const Eigen::Vector3d& plane_normal, const Eigen::Vector3d& p_on_plane,
+                                const Eigen::Vector3d& line_vector, const Eigen::Vector3d& p_on_line,
+                                Eigen::Vector3d& p) {
+  // 判断直线与平面是否平行
+  double r = plane_normal.transpose() * line_vector;
+  if (fabs(r) < 1e-6) {
+    return false;
+  }
+
+  double t = (p_on_plane - p_on_line).transpose() * plane_normal;
+  t /= r;
+  p = p_on_line + t * line_vector;
+  return true;
 }
 
 void remove_cols(Eigen::MatrixXd& data, const std::vector<size_t>& idx_to_remove) {
@@ -117,14 +165,13 @@ void remove_cols(Eigen::MatrixXd& data, const std::vector<size_t>& idx_to_remove
   auto itEnd = std::unique(idxs.begin(), idxs.end());
   idxs.resize(itEnd - idxs.begin());
 
-  const auto nR = data.rows();
   Eigen::MatrixXd data_after_remove(2, data.cols());
 
   // idx_to_remove cnt
   size_t idx = 0;
   // data_after_remove cnt
-  size_t cnt = 0;
-  for (size_t i = 0; i < data.cols(); i++) {
+  long cnt = 0;
+  for (long i = 0; i < data.cols(); i++) {
     if (i != idxs[idx]) {
       data_after_remove.block<2, 1>(0, cnt) = data.block<2, 1>(0, i);
       cnt++;

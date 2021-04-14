@@ -158,11 +158,11 @@ void RobotBasicTools::draw_gl() {
     main_canvas_ptr_->bind();
 
     // draw coordinate system
-    main_canvas_ptr_->shader->set_uniform("color_mode", 2);
-    main_canvas_ptr_->shader->set_uniform(
-        "model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
-    const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-    coord.draw(*main_canvas_ptr_->shader);
+    // main_canvas_ptr_->shader->set_uniform("color_mode", 2);
+    // main_canvas_ptr_->shader->set_uniform(
+    //     "model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
+    // const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
+    // coord.draw(*main_canvas_ptr_->shader);
 
     // draw grid
     main_canvas_ptr_->shader->set_uniform("color_mode", 1);

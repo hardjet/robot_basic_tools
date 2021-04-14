@@ -3,7 +3,6 @@
 
 #include "glk/glsl_shader.hpp"
 #include "glk/primitives/primitives.hpp"
-#include "glk/pointcloud_buffer.hpp"
 #include "glk/lines.hpp"
 
 #include "util/image_loader.hpp"
@@ -124,7 +123,7 @@ void AprilBoard::draw_gl(glk::GLSLShader& shader) {
 void AprilBoard::draw_ui() {
   static bool b_need_renew = false;
   const double zero{0.};
-  const uint u_1{1};
+  const uint u_2{2};
   const uint u_20{20};
   if (!b_show_window_) {
     return;
@@ -134,11 +133,11 @@ void AprilBoard::draw_ui() {
     ImGui::Begin("AprilBoard Setting", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGui::PushItemWidth(80);
-    if (ImGui::DragScalar("tagRows   ", ImGuiDataType_U32, &tag_rows_, 1, &u_1, &u_20, "%d")) {
+    if (ImGui::DragScalar("tagRows   ", ImGuiDataType_U32, &tag_rows_, 1, &u_2, &u_20, "%d")) {
       b_need_renew = true;
     }
     ImGui::SameLine();
-    if (ImGui::DragScalar("tagCols", ImGuiDataType_U32, &tag_cols_, 1, &u_1, &u_20, "%d")) {
+    if (ImGui::DragScalar("tagCols", ImGuiDataType_U32, &tag_cols_, 1, &u_2, &u_20, "%d")) {
       b_need_renew = true;
     }
 

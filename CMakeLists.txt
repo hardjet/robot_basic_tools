@@ -119,7 +119,7 @@ message("${Magenta}-------------- build thirdparty lib end ------------${ColourR
 # GLM
 find_package(GLM REQUIRED)
 
-cmake_policy(SET CMP0022 OLD)
+cmake_policy(SET CMP0022 NEW)
 
 if (POLICY CMP0072)
     set(OpenGL_GL_PREFERENCE GLVND)

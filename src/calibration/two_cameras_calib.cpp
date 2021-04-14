@@ -100,48 +100,48 @@ void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
 
       // 计算相机坐标系下检测到的角点的空间坐标值
       for (uint i = 0; i < 2; i++) {
-        std::cout << " --------- " << i << std::endl;
+        // std::cout << " --------- " << i << std::endl;
         const auto& camera_inst = camera_insts_[i];
         // 计算变换矩阵
         Eigen::Matrix3d R_ca = cur_calib_data.q_ac[i].toRotationMatrix().transpose();
         Eigen::Vector3d t_ca = -R_ca * cur_calib_data.t_ac[i];
-        std::cout << "R_ca: \n" << R_ca << std::endl;
-        std::cout << "t_ca: \n" << t_ca.transpose() << std::endl;
+        // std::cout << "R_ca: \n" << R_ca << std::endl;
+        // std::cout << "t_ca: \n" << t_ca.transpose() << std::endl;
 
         // 将标定板上三个不在一条线的点变换到相机坐标系下
         std::vector<Eigen::Vector3d> pts_on_april_board_in_cam;
-        std::cout << "pts_on_april_board_in_cam:" << std::endl;
+        // std::cout << "pts_on_april_board_in_cam:" << std::endl;
         for (const auto& p : pts_on_april_board) {
           pts_on_april_board_in_cam.emplace_back(R_ca * p + t_ca);
-          std::cout << pts_on_april_board_in_cam.back().transpose() << std::endl;
+          // std::cout << pts_on_april_board_in_cam.back().transpose() << std::endl;
         }
 
         // 计算平面方程 ax + by + cz + d = 0
         Eigen::Vector4d plane_params = algorithm::plane_from_3pts(
             pts_on_april_board_in_cam[0], pts_on_april_board_in_cam[1], pts_on_april_board_in_cam[2]);
 
-        std::cout << "plane_params: " << plane_params.transpose() << std::endl;
+        // std::cout << "plane_params: " << plane_params.transpose() << std::endl;
         // 检查是否在平面上
-        std::cout << "check on plane: " << std::endl;
-        std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[0] + plane_params[3] << std::endl;
-        std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[1] + plane_params[3] << std::endl;
-        std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[2] + plane_params[3] << std::endl;
+        // std::cout << "check on plane: " << std::endl;
+        // std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[0] + plane_params[3] << std::endl;
+        // std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[1] + plane_params[3] << std::endl;
+        // std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[2] + plane_params[3] << std::endl;
 
         // 计算图像上落在标定板上的点
         for (const auto& p : cur_calib_data.image_points[i]) {
           Eigen::Vector3d p_in_space;
-          std::cout << "img:" << p.x << ", " << p.y << std::endl;
+          // std::cout << "img:" << p.x << ", " << p.y << std::endl;
           camera_inst.camera_dev_ptr->camera_model()->liftProjective(Eigen::Vector2d{p.x, p.y}, p_in_space);
-          std::cout << "p_in_space: " << p_in_space.transpose() << std::endl;
+          // std::cout << "p_in_space: " << p_in_space.transpose() << std::endl;
           Eigen::Vector3d p_on_board;
           // 计算交点
           bool res = algorithm::plane_line_intersect_point(plane_params.head(3), pts_on_april_board_in_cam[1],
                                                            p_in_space, p_in_space, p_on_board);
           if (res) {
             cur_calib_data.pts_on_board[i].emplace_back(p_on_board);
-            std::cout << "p_on_board: " << p_on_board.transpose() << std::endl;
-            std::cout << "check on plane:" << plane_params.head(3).transpose() * p_on_board + plane_params[3]
-                      << std::endl;
+            // std::cout << "p_on_board: " << p_on_board.transpose() << std::endl;
+            // std::cout << "check on plane:" << plane_params.head(3).transpose() * p_on_board + plane_params[3]
+            //           << std::endl;
           }
         }
       }
@@ -185,14 +185,6 @@ void TwoCamerasCalib::draw_gl(glk::GLSLShader& shader) {
   }
 
   draw_calib_data(shader);
-
-  // if (next_state_ != STATE_START || !laser_line_3d_ptr) {
-  //   return;
-  // }
-  //
-  // shader.set_uniform("color_mode", 2);
-  // shader.set_uniform("model_matrix", laser_dev_ptr_->get_sensor_pose());
-  // laser_line_3d_ptr->draw(shader);
 }
 
 void TwoCamerasCalib::update_related_pose() {
@@ -322,24 +314,26 @@ void TwoCamerasCalib::check_and_save() {
 }
 
 bool TwoCamerasCalib::calc() {
-  Eigen::Matrix4d T_1c = Eigen::Matrix4d::Identity();
-  Eigen::Matrix4d T_2c = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d T_ac1 = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d T_ac2 = Eigen::Matrix4d::Identity();
   Eigen::Vector3d t_12{0, 0, 0};
   Eigen::Vector3d euler_12{0, 0, 0};
 
   // 计算平均位姿
   for (const auto& data : calib_valid_data_vec_) {
     // 计算camera 2 到 1的位姿变换
-    T_1c.block<3, 3>(0, 0) = data.q_ac[0].toRotationMatrix();
-    T_1c.block<3, 1>(0, 3) = data.t_ac[0];
-    T_2c.block<3, 3>(0, 0) = data.q_ac[1].toRotationMatrix();
-    T_2c.block<3, 1>(0, 3) = data.t_ac[1];
+    T_ac1.block<3, 3>(0, 0) = data.q_ac[0].toRotationMatrix();
+    T_ac1.block<3, 1>(0, 3) = data.t_ac[0];
+    T_ac2.block<3, 3>(0, 0) = data.q_ac[1].toRotationMatrix();
+    T_ac2.block<3, 1>(0, 3) = data.t_ac[1];
 
-    Eigen::Matrix4d T_12 = T_1c * T_2c.inverse();
+    Eigen::Matrix4d T_12 = T_ac1.inverse() * T_ac2;
+    // std::cout << "t_12:" << T_12.block<3, 1>(0, 3).transpose() << std::endl;
 
     t_12 += T_12.block<3, 1>(0, 3);
 
     auto euler = algorithm::quat2euler(Eigen::Quaterniond(T_12.block<3, 3>(0, 0)));
+    // std::cout << "euler_12: " << euler << std::endl;
     euler_12.x() += euler.roll;
     euler_12.y() += euler.pitch;
     euler_12.z() += euler.yaw;
@@ -347,13 +341,13 @@ bool TwoCamerasCalib::calc() {
 
   t_12 /= double(calib_valid_data_vec_.size());
   euler_12 /= double(calib_valid_data_vec_.size());
-  std::cout << "t_12: " << t_12.transpose() << std::endl;
-  std::cout << "euler_12(rpy): " << euler_12.transpose() << std::endl;
+  // std::cout << "final t_12: " << t_12.transpose() << std::endl;
+  // std::cout << "final euler_12(rpy): " << euler_12.transpose() * (180 / M_PI) << std::endl;
 
   // 更新变换矩阵
   T_12_.block<3, 1>(0, 3) = t_12.cast<float>();
   T_12_.block<3, 3>(0, 0) =
-      algorithm::ypr2quat(euler_12.x(), euler_12.y(), euler_12.z()).toRotationMatrix().cast<float>();
+      algorithm::ypr2quat(euler_12.z(), euler_12.y(), euler_12.x()).toRotationMatrix().cast<float>();
   is_transform_valid_ = true;
 
   return true;
@@ -505,6 +499,7 @@ bool TwoCamerasCalib::load_calib_data(const std::string& file_path) {
 
   // 清空之前的数据
   calib_valid_data_vec_.clear();
+  is_transform_valid_ = false;
 
   // 加载数据
   for (const auto& data : js_whole["data"].items()) {
@@ -623,10 +618,10 @@ void TwoCamerasCalib::draw_calib_params() {
     ImGui::SetTooltip("set angle between valid candidate.");
   }
   ImGui::PopItemWidth();
+  ImGui::Separator();
 }
 
 void TwoCamerasCalib::draw_ui_transform() {
-  ImGui::Separator();
   ImGui::Text("T_12:");
   ImGui::SameLine();
   ImGui::TextDisabled("the unit: m & deg");
@@ -770,8 +765,10 @@ void TwoCamerasCalib::draw_ui() {
       draw_calib_params();
     }
 
-    // 设置变换矩阵参数
-    draw_ui_transform();
+    if (is_transform_valid_) {
+      // 设置变换矩阵参数
+      draw_ui_transform();
+    }
 
     // 标定逻辑
     calibration();
@@ -885,6 +882,7 @@ void TwoCamerasCalib::draw_ui() {
         // 删除数据
         calib_valid_data_vec_.erase(calib_valid_data_vec_.begin() + selected_calib_data_id_);
         b_need_to_update_cd_ = true;
+        is_transform_valid_ = false;
         if (selected_calib_data_id_ == 0) {
           selected_calib_data_id_ = 1;
         }

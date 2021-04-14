@@ -112,30 +112,6 @@ Eigen::Vector4d plane_from_3pts(const Eigen::Vector3d& x1, const Eigen::Vector3d
 }
 
 /**
- * 已知平面方程ax + by + cz + d = 0，和直线上的两个点p1\p2，求直线与平面的交点p
- * @param plane 平面方程 [a, b, c, d]
- * @param line_p1 直线上的点1
- * @param line_p2 直线上的点2
- * @param p 直线与平面的交点p
- * @return 是否有交点
- */
-// bool plane_line_intersect_point(const Eigen::Vector4d& plane, const Eigen::Vector3d& line_p1,
-//                                 const Eigen::Vector3d& line_p2, Eigen::Vector3d& p) {
-//   // 直线向量
-//   Eigen::Vector3d l = line_p2 - line_p1;
-//   // 分子
-//   double numerator = plane.head(3).transpose() * line_p1 + plane[3];
-//   // 分母
-//   double denominator = plane.head(3).transpose() * l;
-//   if (fabs(denominator) < 1e-6) {
-//     return false;
-//   }
-//   double r = numerator / denominator;
-//   p = line_p1 + r * line_p2;
-//   return true;
-// }
-
-/**
  * 求直线与平面的交点p
  * @param plane_normal 平面法向量
  * @param p_on_plane 平面上的一个点

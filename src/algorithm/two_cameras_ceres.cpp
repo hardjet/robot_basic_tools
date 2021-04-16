@@ -15,12 +15,12 @@ namespace TwoCamerasCalib {
 bool calibrate(const boost::shared_ptr<camera_model::Camera> &camera_ptr, const Observation &obs,
                Eigen::Matrix4d &T_21) {
   // 1到2的旋转变换
-  Eigen::Quaterniond q_21(T_21.block<3, 3>(0, 0));
+  // Eigen::Quaterniond q_21(T_21.block<3, 3>(0, 0));
 
   // 打印初始信息
-  EulerAngles euler = quat2euler(q_21);
-  std::cout << "euler_init: " << euler << std::endl;
-  std::cout << "T_21_init: \n" << T_21 << std::endl;
+  // EulerAngles euler = quat2euler(q_21);
+  // std::cout << "euler_init: " << euler << std::endl;
+  // std::cout << "T_21_init: \n" << T_21 << std::endl;
 
   camera_model::Transform transform_21(T_21);
 
@@ -50,12 +50,14 @@ bool calibrate(const boost::shared_ptr<camera_model::Camera> &camera_ptr, const 
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
 
-  std::cout << summary.FullReport() << std::endl;
+  // std::cout << summary.FullReport() << std::endl;
 
   T_21 = transform_21.toMatrix();
-  euler = algorithm::quat2euler(transform_21.rotation());
-  std::cout << "afrer opt: " << euler << std::endl;
-  std::cout << "T_21:\n" << T_21 << std::endl;
+  // euler = algorithm::quat2euler(transform_21.rotation());
+  // std::cout << "afrer opt: " << euler << std::endl;
+  // std::cout << "T_21:\n" << T_21 << std::endl;
+
+  return summary.IsSolutionUsable();
 }
 }  // namespace TwoCamerasCalib
 }  // namespace algorithm

@@ -65,6 +65,9 @@ class TwoCamerasCalib : public BaseCalib {
   /// 计算
   bool calc();
 
+  /// 清除标定数据不需要计算标志
+  void clear_calib_data_flag();
+
   /// 设定相机2到相机1的变换矩阵
   void draw_ui_transform();
 
@@ -145,6 +148,10 @@ class TwoCamerasCalib : public BaseCalib {
   std::vector<CalibData> calib_data_vec_;
   // 有效的标定数据
   std::vector<CalibData> calib_valid_data_vec_;
+  // 采集数据时抖动控制 距离
+  double jitter_dist_{0.005};
+  // 采集数据时抖动控制 角度
+  double jitter_angle_{0.2};
   // 不同数据角度间隔 deg
   double between_angle_{1.0};
 };

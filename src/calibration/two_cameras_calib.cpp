@@ -77,7 +77,8 @@ void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
     T_c1a.block<3, 1>(0, 3) = -T_c1a.block<3, 3>(0, 0) * cur_calib_data.t_ac[0].cast<float>();
 
     // 计算aprilboard在世界坐标系下的位姿
-    Eigen::Matrix4f T_wa = camera_insts_[0].camera_dev_ptr->get_sensor_pose() * T_c1a;
+    Eigen::Matrix4f T_wc1 = camera_insts_[0].camera_dev_ptr->get_sensor_pose();
+    Eigen::Matrix4f T_wa = T_wc1 * T_c1a;
     // 设置位姿
     april_board_ptr_->set_pose(T_wa);
 
@@ -88,7 +89,72 @@ void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
       T_ac2.block<3, 1>(0, 3) = cur_calib_data.t_ac[1].cast<float>();
       Eigen::Matrix4f T_wc2 = T_wa * T_ac2;
       camera_insts_[1].camera_dev_ptr->set_sensor_pose(T_wc2);
+
+      T_12_ = T_wc1.inverse() * T_wc2;
+      // 将计算结果更新到ui
+      update_ui_transform();
     }
+
+    // // 需要计算图像点投射在标定板上的点
+    // if (cur_calib_data.b_need_calc) {
+    //   cur_calib_data.b_need_calc = false;
+    //   // 选取标定板上三个不在一条线的点(标定板坐标系下)
+    //   std::vector<Eigen::Vector3d> pts_on_april_board(3);
+    //   pts_on_april_board[0] = Eigen::Vector3d{0., 0., 0.};
+    //   pts_on_april_board[1] = Eigen::Vector3d{0.1, 0.2, 0.};
+    //   pts_on_april_board[2] = Eigen::Vector3d{0.2, 0.1, 0.};
+    //
+    //   // 计算相机坐标系下检测到的角点的空间坐标值
+    //   for (uint i = 0; i < 2; i++) {
+    //     // std::cout << " --------- " << i << std::endl;
+    //     const auto& camera_inst = camera_insts_[i];
+    //     // 计算变换矩阵
+    //     Eigen::Matrix3d R_ca = cur_calib_data.q_ac[i].toRotationMatrix().transpose();
+    //     Eigen::Vector3d t_ca = -R_ca * cur_calib_data.t_ac[i];
+    //     // std::cout << "R_ca: \n" << R_ca << std::endl;
+    //     // std::cout << "t_ca: \n" << t_ca.transpose() << std::endl;
+    //
+    //     // 将标定板上三个不在一条线的点变换到相机坐标系下
+    //     std::vector<Eigen::Vector3d> pts_on_april_board_in_cam;
+    //     // std::cout << "pts_on_april_board_in_cam:" << std::endl;
+    //     for (const auto& p : pts_on_april_board) {
+    //       pts_on_april_board_in_cam.emplace_back(R_ca * p + t_ca);
+    //       // std::cout << pts_on_april_board_in_cam.back().transpose() << std::endl;
+    //     }
+    //
+    //     // 计算平面方程 ax + by + cz + d = 0
+    //     Eigen::Vector4d plane_params = algorithm::plane_from_3pts(
+    //         pts_on_april_board_in_cam[0], pts_on_april_board_in_cam[1], pts_on_april_board_in_cam[2]);
+    //
+    //     // std::cout << "plane_params: " << plane_params.transpose() << std::endl;
+    //     // 检查是否在平面上
+    //     // std::cout << "check on plane: " << std::endl;
+    //     // std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[0] + plane_params[3] <<
+    //     std::endl;
+    //     // std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[1] + plane_params[3] <<
+    //     std::endl;
+    //     // std::cout << plane_params.head(3).transpose() * pts_on_april_board_in_cam[2] + plane_params[3] <<
+    //     std::endl;
+    //
+    //     // 计算图像上落在标定板上的点
+    //     for (const auto& p : cur_calib_data.image_points[i]) {
+    //       Eigen::Vector3d p_in_space;
+    //       // std::cout << "img:" << p.x << ", " << p.y << std::endl;
+    //       camera_inst.camera_dev_ptr->camera_model()->liftProjective(Eigen::Vector2d{p.x, p.y}, p_in_space);
+    //       // std::cout << "p_in_space: " << p_in_space.transpose() << std::endl;
+    //       Eigen::Vector3d p_on_board;
+    //       // 计算交点
+    //       bool res = algorithm::plane_line_intersect_point(plane_params.head(3), pts_on_april_board_in_cam[1],
+    //                                                        p_in_space, p_in_space, p_on_board);
+    //       if (res) {
+    //         cur_calib_data.pts_on_board[i].emplace_back(p_on_board);
+    //         // std::cout << "p_on_board: " << p_on_board.transpose() << std::endl;
+    //         // std::cout << "check on plane:" << plane_params.head(3).transpose() * p_on_board + plane_params[3]
+    //         //           << std::endl;
+    //       }
+    //     }
+    //   }
+    // }
 
     // 需要计算图像点投射在标定板上的点
     if (cur_calib_data.b_need_calc) {
@@ -103,9 +169,21 @@ void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
       for (uint i = 0; i < 2; i++) {
         // std::cout << " --------- " << i << std::endl;
         const auto& camera_inst = camera_insts_[i];
+        Eigen::Matrix3d R_ca;
+        Eigen::Vector3d t_ca;
         // 计算变换矩阵
-        Eigen::Matrix3d R_ca = cur_calib_data.q_ac[i].toRotationMatrix().transpose();
-        Eigen::Vector3d t_ca = -R_ca * cur_calib_data.t_ac[i];
+        if (i == 0) {
+          R_ca = cur_calib_data.q_ac[i].toRotationMatrix().transpose();
+          t_ca = -R_ca * cur_calib_data.t_ac[i];
+        } else {
+          // 相机2使用T_12计算
+          Eigen::Matrix3d R_c1a = cur_calib_data.q_ac[0].toRotationMatrix().transpose();
+          Eigen::Vector3d t_c1a = -R_ca * cur_calib_data.t_ac[0];
+          Eigen::Matrix4f T_21 = T_12_.inverse();
+          Eigen::Matrix4f T_c2a = T_21 * T_c1a;
+          R_ca = T_c2a.block<3,3>(0,0).cast<double>();
+          t_ca = T_c2a.block<3,1>(0,3).cast<double>();
+        }
         // std::cout << "R_ca: \n" << R_ca << std::endl;
         // std::cout << "t_ca: \n" << t_ca.transpose() << std::endl;
 
@@ -310,6 +388,7 @@ void TwoCamerasCalib::check_and_save() {
     // 取第3帧保存
     calib_valid_data_vec_.push_back(calib_data_vec_.at(2));
     is_transform_valid_ = false;
+    clear_calib_data_flag();
     printf("!!!!!!!!!!!!!tz: %f saved!\n", calib_valid_data_vec_.back().t_ac[0].z());
   }
 }
@@ -382,21 +461,34 @@ bool TwoCamerasCalib::calc() {
 
     // 将相机2观测到的aprilboard坐标系下的点 变换到 相机1坐标系下
     for (uint i = 0; i < data.object_points[1].size(); i++) {
-      const auto& pt = data.object_points[1].at(1);
+      const auto& pt = data.object_points[1].at(i);
       Eigen::Vector3d pt_in_cam1 = R_c1a * Eigen::Vector3d(pt.x, pt.y, pt.z) + t_c1a;
+      // std::cout << "obj in april: " << Eigen::Vector3d(pt.x, pt.y, pt.z).transpose() << std::endl;
       obs.object_points.emplace_back(pt_in_cam1);
+      // std::cout << "obj in cam1: " << obs.object_points.back().transpose() << std::endl;
       obs.image_points.emplace_back(Eigen::Vector2d(data.image_points[1].at(i).x, data.image_points[1].at(i).y));
+      // std::cout << "pt in cam2: " << obs.image_points.back().transpose() << std::endl;
     }
   }
 
   Eigen::Matrix4d T_21 = T_12_init.inverse();
-  algorithm::TwoCamerasCalib::calibrate(camera_insts_[1].camera_dev_ptr->camera_model(), obs, T_21);
+  bool res = algorithm::TwoCamerasCalib::calibrate(camera_insts_[1].camera_dev_ptr->camera_model(), obs, T_21);
 
-  // 更新变换矩阵
-  T_12_ = T_21.inverse().cast<float>();
-  is_transform_valid_ = true;
+  if (res) {
+    // 更新变换矩阵
+    T_12_ = T_21.inverse().cast<float>();
+    return true;
+  }
 
-  return true;
+  return false;
+}
+
+void TwoCamerasCalib::clear_calib_data_flag() {
+  for (auto& data : calib_valid_data_vec_) {
+    data.b_need_calc = true;
+    data.pts_on_board[0].clear();
+    data.pts_on_board[1].clear();
+  }
 }
 
 void TwoCamerasCalib::calibration() {
@@ -431,7 +523,6 @@ void TwoCamerasCalib::calibration() {
     case STATE_CHECK_STEADY:
       if (calib_data_vec_.empty()) {
         calib_data_vec_.push_back(calib_data_);
-        is_transform_valid_ = false;
       } else {
         // 检查相机位姿是否一致
         double dist = (calib_data_vec_.at(0).t_ac[0] - calib_data_.t_ac[0]).norm();
@@ -439,7 +530,7 @@ void TwoCamerasCalib::calibration() {
         double theta = 2 * std::acos((calib_data_vec_.at(0).q_ac[0].inverse() * calib_data_.q_ac[0]).w());
         std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
         // 抖动小于1cm与0.5°
-        if (dist < 0.01 && theta < DEG2RAD_RBT(0.5)) {
+        if (dist < jitter_dist_ && theta < DEG2RAD_RBT(jitter_angle_)) {
           calib_data_vec_.push_back(calib_data_);
           // 足够稳定才保存
           if (calib_data_vec_.size() > 3) {
@@ -465,7 +556,11 @@ void TwoCamerasCalib::calibration() {
           // 将计算结果更新到相机2
           update_related_pose();
           update_ui_transform();
+          is_transform_valid_ = true;
+          clear_calib_data_flag();
           cur_state_ = STATE_IDLE;
+        } else {
+          std::cout << "calibration failed!!!" << std::endl;
         }
       }
       break;
@@ -658,11 +753,24 @@ void TwoCamerasCalib::draw_calib_params() {
   ImGui::Text("calibration params:");
 
   ImGui::PushItemWidth(80);
+  ImGui::DragScalar("jitter dist thd(m)", ImGuiDataType_Double, &jitter_dist_, 1.0, &min_v, nullptr, "%.3f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("within dist thd for steady data.");
+  }
+
+  ImGui::DragScalar("jitter angle thd(deg)", ImGuiDataType_Double, &jitter_angle_, 1.0, &min_v, nullptr, "%.2f");
+  // tips
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("within angle thd for steady data.");
+  }
+
   ImGui::DragScalar("between angle(deg)", ImGuiDataType_Double, &between_angle_, 1.0, &min_v, nullptr, "%.1f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set angle between valid candidate.");
   }
+
   ImGui::PopItemWidth();
   ImGui::Separator();
 }
@@ -809,10 +917,8 @@ void TwoCamerasCalib::draw_ui() {
       draw_calib_params();
     }
 
-    if (is_transform_valid_) {
-      // 设置变换矩阵参数
-      draw_ui_transform();
-    }
+    // 设置变换矩阵参数
+    draw_ui_transform();
 
     // 标定逻辑
     calibration();
@@ -863,6 +969,20 @@ void TwoCamerasCalib::draw_ui() {
         } else {
           next_state_ = STATE_START_CALIB;
         }
+      }
+    }
+
+    // 清除标定结果
+    if (is_transform_valid_) {
+      ImGui::SameLine();
+      if (ImGui::Button("reset")) {
+        is_transform_valid_ = false;
+        b_need_to_update_cd_ = true;
+        clear_calib_data_flag();
+      }
+      // tips
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("clear calib result.");
       }
     }
   }
@@ -927,6 +1047,7 @@ void TwoCamerasCalib::draw_ui() {
         calib_valid_data_vec_.erase(calib_valid_data_vec_.begin() + selected_calib_data_id_);
         b_need_to_update_cd_ = true;
         is_transform_valid_ = false;
+        clear_calib_data_flag();
         if (selected_calib_data_id_ == 0) {
           selected_calib_data_id_ = 1;
         }

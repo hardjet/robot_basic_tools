@@ -498,7 +498,7 @@ void TwoLasersCalibration(const std::vector<Observation> &obs, Eigen::Matrix4d &
   Eigen::JacobiSVD<Eigen::MatrixXd> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
   std::cout << svd.singularValues() << std::endl;
   int n = 0;
-  for (size_t i = 0; i < svd.singularValues().size(); i++) {
+  for (long i = 0; i < svd.singularValues().size(); i++) {
     if (svd.singularValues()[i] < 1e-8) n++;
   }
   if (n > 0) {
@@ -583,7 +583,7 @@ void TwoLasersCalibrationNaive(const std::vector<Observation> &obs, Eigen::Matri
   auto calc_once = [&]() {
     matJ.setZero();
     f.setZero();
-    size_t i = 0;
+    long i = 0;
     for (const auto &ob : obs) {
       // a面共勉约束
       CoPlaneFactor co_a(ob.l_1_a, ob.l_2_a, ob.c_1_a, ob.c_2_a, ob.scale);

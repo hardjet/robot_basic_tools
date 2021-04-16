@@ -14,7 +14,7 @@ namespace guik {
  */
 class CameraControl {
  public:
-  virtual ~CameraControl() {}
+  virtual ~CameraControl() = default;
 
   /** @brief mouse button callback */
   virtual void mouse(const Eigen::Vector2i& p, int button, bool down) = 0;
@@ -39,7 +39,7 @@ class ArcCameraControl : public CameraControl {
 
   ArcCameraControl();
 
-  virtual ~ArcCameraControl() override;
+  ~ArcCameraControl() override;
 
   void mouse(const Eigen::Vector2i& p, int button, bool down) override;
   void drag(const Eigen::Vector2i& p, int button) override;

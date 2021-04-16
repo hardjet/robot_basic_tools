@@ -406,7 +406,7 @@ boost::shared_ptr<CostFunctionFactory> CostFunctionFactory::instance() {
 ceres::CostFunction* CostFunctionFactory::generateCostFunction(const CameraConstPtr& camera,
                                                                const Eigen::Vector3d& observed_P,
                                                                const Eigen::Vector2d& observed_p, int flags) const {
-  ceres::CostFunction* costFunction = 0;
+  ceres::CostFunction* costFunction = nullptr;
 
   std::vector<double> intrinsic_params;
   camera->writeParameters(intrinsic_params);

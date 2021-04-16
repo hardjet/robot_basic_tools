@@ -52,7 +52,7 @@ class PoseLocalParameterization : public ceres::LocalParameterization {
       p(2) = x_t(2);
     }
 
-    EulerAngles euler = quat2euler(q);
+    // EulerAngles euler = quat2euler(q);
     // std::cout << "[updated]euler: " << euler << ", t: " << p.transpose() << std::endl;
 
     return true;
@@ -109,16 +109,16 @@ class PoseLocalParameterization : public ceres::LocalParameterization {
     return true;
   };
 
-  static Eigen::Quaterniond deltaQ(const Eigen::Vector3d &theta) {
-    Eigen::Quaterniond dq;
-    Eigen::Vector3d half_theta = theta;
-    half_theta /= 2.0;
-    dq.w() = 1.0;
-    dq.x() = half_theta.x();
-    dq.y() = half_theta.y();
-    dq.z() = half_theta.z();
-    return dq;
-  }
+  // static Eigen::Quaterniond deltaQ(const Eigen::Vector3d &theta) {
+  //   Eigen::Quaterniond dq;
+  //   Eigen::Vector3d half_theta = theta;
+  //   half_theta /= 2.0;
+  //   dq.w() = 1.0;
+  //   dq.x() = half_theta.x();
+  //   dq.y() = half_theta.y();
+  //   dq.z() = half_theta.z();
+  //   return dq;
+  // }
 
   int GlobalSize() const override { return 7; };
   int LocalSize() const override { return 6; };

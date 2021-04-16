@@ -14,6 +14,7 @@
 #include "dev/camera.hpp"
 #include "dev/util.hpp"
 
+#include "algorithm/two_cameras_ceres.h"
 #include "algorithm/util.h"
 
 #include "calibration/task_back_ground.hpp"
@@ -313,41 +314,86 @@ void TwoCamerasCalib::check_and_save() {
   }
 }
 
+// 使用平均值的方法的计算(效果不好)
+// bool TwoCamerasCalib::calc() {
+//   Eigen::Matrix4d T_ac1 = Eigen::Matrix4d::Identity();
+//   Eigen::Matrix4d T_ac2 = Eigen::Matrix4d::Identity();
+//   Eigen::Vector3d t_12{0, 0, 0};
+//   Eigen::Vector3d euler_12{0, 0, 0};
+//
+//   // 计算平均位姿
+//   for (const auto& data : calib_valid_data_vec_) {
+//     // 计算camera 2 到 1的位姿变换
+//     T_ac1.block<3, 3>(0, 0) = data.q_ac[0].toRotationMatrix();
+//     T_ac1.block<3, 1>(0, 3) = data.t_ac[0];
+//     T_ac2.block<3, 3>(0, 0) = data.q_ac[1].toRotationMatrix();
+//     T_ac2.block<3, 1>(0, 3) = data.t_ac[1];
+//
+//     Eigen::Matrix4d T_12 = T_ac1.inverse() * T_ac2;
+//     // std::cout << "t_12:" << T_12.block<3, 1>(0, 3).transpose() << std::endl;
+//
+//     t_12 += T_12.block<3, 1>(0, 3);
+//
+//     auto euler = algorithm::quat2euler(Eigen::Quaterniond(T_12.block<3, 3>(0, 0)));
+//     // std::cout << "euler_12: " << euler << std::endl;
+//     euler_12.x() += euler.roll;
+//     euler_12.y() += euler.pitch;
+//     euler_12.z() += euler.yaw;
+//   }
+//
+//   t_12 /= double(calib_valid_data_vec_.size());
+//   euler_12 /= double(calib_valid_data_vec_.size());
+//   // std::cout << "final t_12: " << t_12.transpose() << std::endl;
+//   // std::cout << "final euler_12(rpy): " << euler_12.transpose() * (180 / M_PI) << std::endl;
+//
+//   // 更新变换矩阵
+//   T_12_.block<3, 1>(0, 3) = t_12.cast<float>();
+//   T_12_.block<3, 3>(0, 0) =
+//       algorithm::ypr2quat(euler_12.z(), euler_12.y(), euler_12.x()).toRotationMatrix().cast<float>();
+//   is_transform_valid_ = true;
+//
+//   return true;
+// }
+
 bool TwoCamerasCalib::calc() {
   Eigen::Matrix4d T_ac1 = Eigen::Matrix4d::Identity();
   Eigen::Matrix4d T_ac2 = Eigen::Matrix4d::Identity();
   Eigen::Vector3d t_12{0, 0, 0};
   Eigen::Vector3d euler_12{0, 0, 0};
 
-  // 计算平均位姿
+  // 选取标定数据中的一个值作为初值
+  // 计算camera 2 到 1的位姿变换
+  T_ac1.block<3, 3>(0, 0) = calib_valid_data_vec_[0].q_ac[0].toRotationMatrix();
+  T_ac1.block<3, 1>(0, 3) = calib_valid_data_vec_[0].t_ac[0];
+  T_ac2.block<3, 3>(0, 0) = calib_valid_data_vec_[0].q_ac[1].toRotationMatrix();
+  T_ac2.block<3, 1>(0, 3) = calib_valid_data_vec_[0].t_ac[1];
+  Eigen::Matrix4d T_12_init = T_ac1.inverse() * T_ac2;
+
+  // 观测数据
+  algorithm::TwoCamerasCalib::Observation obs;
   for (const auto& data : calib_valid_data_vec_) {
-    // 计算camera 2 到 1的位姿变换
-    T_ac1.block<3, 3>(0, 0) = data.q_ac[0].toRotationMatrix();
-    T_ac1.block<3, 1>(0, 3) = data.t_ac[0];
-    T_ac2.block<3, 3>(0, 0) = data.q_ac[1].toRotationMatrix();
-    T_ac2.block<3, 1>(0, 3) = data.t_ac[1];
+    // c1->aprilboard
+    Eigen::Matrix3d R_ac1 = data.q_ac[0].toRotationMatrix();
+    Eigen::Vector3d t_ac1 = data.t_ac[0];
 
-    Eigen::Matrix4d T_12 = T_ac1.inverse() * T_ac2;
-    // std::cout << "t_12:" << T_12.block<3, 1>(0, 3).transpose() << std::endl;
+    // aprilboard -> c1
+    Eigen::Matrix3d R_c1a = R_ac1.transpose();
+    Eigen::Vector3d t_c1a = -R_c1a * data.t_ac[0];
 
-    t_12 += T_12.block<3, 1>(0, 3);
-
-    auto euler = algorithm::quat2euler(Eigen::Quaterniond(T_12.block<3, 3>(0, 0)));
-    // std::cout << "euler_12: " << euler << std::endl;
-    euler_12.x() += euler.roll;
-    euler_12.y() += euler.pitch;
-    euler_12.z() += euler.yaw;
+    // 将相机2观测到的aprilboard坐标系下的点 变换到 相机1坐标系下
+    for (uint i = 0; i < data.object_points[1].size(); i++) {
+      const auto& pt = data.object_points[1].at(1);
+      Eigen::Vector3d pt_in_cam1 = R_c1a * Eigen::Vector3d(pt.x, pt.y, pt.z) + t_c1a;
+      obs.object_points.emplace_back(pt_in_cam1);
+      obs.image_points.emplace_back(Eigen::Vector2d(data.image_points[1].at(i).x, data.image_points[1].at(i).y));
+    }
   }
 
-  t_12 /= double(calib_valid_data_vec_.size());
-  euler_12 /= double(calib_valid_data_vec_.size());
-  // std::cout << "final t_12: " << t_12.transpose() << std::endl;
-  // std::cout << "final euler_12(rpy): " << euler_12.transpose() * (180 / M_PI) << std::endl;
+  Eigen::Matrix4d T_21 = T_12_init.inverse();
+  algorithm::TwoCamerasCalib::calibrate(camera_insts_[1].camera_dev_ptr->camera_model(), obs, T_21);
 
   // 更新变换矩阵
-  T_12_.block<3, 1>(0, 3) = t_12.cast<float>();
-  T_12_.block<3, 3>(0, 0) =
-      algorithm::ypr2quat(euler_12.z(), euler_12.y(), euler_12.x()).toRotationMatrix().cast<float>();
+  T_12_ = T_21.inverse().cast<float>();
   is_transform_valid_ = true;
 
   return true;
@@ -665,9 +711,7 @@ void TwoCamerasCalib::draw_ui_transform() {
     T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
     T_12_.block<3, 1>(0, 3) = t_12;
     // std::cout << "T12:\n" << T_12_ << std::endl;
-
     update_related_pose();
-    is_transform_valid_ = false;
   }
 
   ImGui::Separator();

@@ -251,6 +251,7 @@ add_library(algorithm SHARED
         src/algorithm/line_fitting.cpp
         src/algorithm/laser_cam_ceres.cpp
         src/algorithm/two_lasers_ceres.cpp
+        src/algorithm/two_cameras_ceres.cpp
         )
 
 set_target_properties(algorithm PROPERTIES
@@ -267,6 +268,7 @@ target_link_libraries(algorithm
         ${OpenCV_LIBRARIES}
         # ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
+        camera_model
         )
 
 # build target
@@ -296,7 +298,7 @@ target_link_libraries(${PROJECT_NAME}
         # ${PCL_LIBRARIES}
         # ${OpenCV_LIBRARIES}
         guik
-        camera_model
+#        camera_model
         algorithm
         glog
         )

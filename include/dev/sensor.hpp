@@ -43,10 +43,10 @@ class Sensor {
    */
   Sensor(std::string name, ros::NodeHandle& ros_nh, SENSOR_TYPE type = SENSOR_TYPE::UNDEF)
       : sensor_name(std::move(name)),
-        nh_(ros_nh),
         sensor_id(sensors_unique_id++),
         sensor_type(type),
-        sensor_type_str(dev_type_str[type]) {
+        sensor_type_str(dev_type_str[type]),
+        nh_(ros_nh) {
     T_ = Eigen::Matrix4f::Identity();
   }
 

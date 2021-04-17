@@ -56,7 +56,7 @@ class GLCanvas {
   std::unique_ptr<guik::ProjectionControl> projection_control;
 
  private:
-  bool show_window;
+  bool show_window{false};
   float point_size;
   float min_z;
   float max_z;

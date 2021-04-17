@@ -24,7 +24,7 @@ namespace guik {
  * @param size
  */
 GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size)
-    : show_window(false), size(size), point_size(20.0f), min_z(-5.0f), max_z(20.0f), z_clipping(true) {
+    : size(size), point_size(20.0f), min_z(-5.0f), max_z(20.0f), z_clipping(true) {
   frame_buffer = std::make_unique<glk::FrameBuffer>(size);
   frame_buffer->add_color_buffer(GL_RGBA32I, GL_RGBA_INTEGER, GL_INT);
 

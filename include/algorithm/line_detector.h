@@ -44,9 +44,9 @@ class LineDetector {
   // 拍照高度
   const double img_z_ = 4.0;
   // 直线搜索范围 单位m
-  double max_range_{0.};
+  double max_range_;
   // 角度范围[-angle_range_, +angle_range_] 单位deg
-  double angle_range_{0.};
+  double angle_range_;
   // laserscan转换为点云，在有效区域
   std::vector<Eigen::Vector3d> points_;
   // laserscan转换为点云，有效区域外

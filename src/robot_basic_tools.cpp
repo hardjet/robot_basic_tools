@@ -279,13 +279,13 @@ void RobotBasicTools::mouse_control() {
 void RobotBasicTools::context_menu() {
   if (ImGui::BeginPopupContextVoid("context menu")) {
     // pickup information of the right clicked object
-    Eigen::Vector4i picked_info = main_canvas_ptr_->pick_info(right_clicked_pos_);
-    int picked_type = picked_info[0];  // object type (point, vertex, edge, etc...)
-    int picked_id = picked_info[1];    // object ID
+    // Eigen::Vector4i picked_info = main_canvas_ptr_->pick_info(right_clicked_pos_);
+    // int picked_type = picked_info[0];  // object type (point, vertex, edge, etc...)
+    // int picked_id = picked_info[1];    // object ID
 
     // calculate the 3D position of the right clicked pixel
-    float depth = main_canvas_ptr_->pick_depth(right_clicked_pos_);
-    Eigen::Vector3f pos_3d = main_canvas_ptr_->unproject(right_clicked_pos_, depth);
+    // float depth = main_canvas_ptr_->pick_depth(right_clicked_pos_);
+    // Eigen::Vector3f pos_3d = main_canvas_ptr_->unproject(right_clicked_pos_, depth);
 
     ImGui::EndPopup();
   }

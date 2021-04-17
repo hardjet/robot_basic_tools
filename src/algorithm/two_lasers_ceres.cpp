@@ -10,7 +10,7 @@ namespace algorithm {
 class CoPlaneFactor : public ceres::SizedCostFunction<1, 7> {
  public:
   CoPlaneFactor(Eigen::Vector3d l1, Eigen::Vector3d l2, Eigen::Vector3d c1, Eigen::Vector3d c2, double scale = 1.)
-      : l1_(std::move(l1)), l2_(std::move(l2)), c1_(std::move(c1)), c2_(std::move(c2)), scale_(scale) {
+      : l1_(std::move(l1)), c1_(std::move(c1)), l2_(std::move(l2)), c2_(std::move(c2)), scale_(scale) {
     // std::cout << "Co: " << l1_.transpose() << ", " << c1_.transpose() << ", " << l2_.transpose() << ", "
     //           << c2_.transpose() << std::endl;
     // 数据检查
@@ -136,7 +136,7 @@ bool CoPlaneFactor::Evaluate(double const *const *parameters, double *residuals,
 class CoPlaneErrorTerm {
  public:
   CoPlaneErrorTerm(Eigen::Vector3d l1, Eigen::Vector3d l2, Eigen::Vector3d c1, Eigen::Vector3d c2, double scale = 1.)
-      : l1_(std::move(l1)), l2_(std::move(l2)), c1_(std::move(c1)), c2_(std::move(c2)), scale_(scale) {
+      : l1_(std::move(l1)), c1_(std::move(c1)), l2_(std::move(l2)), c2_(std::move(c2)), scale_(scale) {
     // std::cout << "Co: " << l1_.transpose() << ", " << c1_.transpose() << ", " << l2_.transpose() << ", "
     //           << c2_.transpose() << std::endl;
     // 数据检查

@@ -14,7 +14,7 @@ struct LineSeg {
 };
 
 LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range)
-    : angle_range_(DEG2RAD_RBT(angle_range)), max_range_(max_range) {
+    : max_range_(max_range), angle_range_(DEG2RAD_RBT(angle_range)) {
   points_.resize(0);
   outlier_points_.resize(0);
   img_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));

@@ -177,8 +177,8 @@ void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
           t_ca = -R_ca * cur_calib_data.t_ac[i];
         } else {
           // 相机2使用T_12计算
-          Eigen::Matrix3d R_c1a = cur_calib_data.q_ac[0].toRotationMatrix().transpose();
-          Eigen::Vector3d t_c1a = -R_ca * cur_calib_data.t_ac[0];
+          // Eigen::Matrix3d R_c1a = cur_calib_data.q_ac[0].toRotationMatrix().transpose();
+          // Eigen::Vector3d t_c1a = -R_ca * cur_calib_data.t_ac[0];
           Eigen::Matrix4f T_21 = T_12_.inverse();
           Eigen::Matrix4f T_c2a = T_21 * T_c1a;
           R_ca = T_c2a.block<3,3>(0,0).cast<double>();
@@ -315,7 +315,6 @@ bool TwoCamerasCalib::get_valid_pose() {
   // 当前处理的图像数据
   std::vector<boost::shared_ptr<const cv_bridge::CvImage>> cur_images(2);
 
-  auto start_time = ros::WallTime::now();
   // 将图像锁定
   {
     std::lock_guard<std::mutex> lock(mtx_);
@@ -457,7 +456,7 @@ bool TwoCamerasCalib::calc() {
 
     // aprilboard -> c1
     Eigen::Matrix3d R_c1a = R_ac1.transpose();
-    Eigen::Vector3d t_c1a = -R_c1a * data.t_ac[0];
+    Eigen::Vector3d t_c1a = -R_c1a * t_ac1;
 
     // 将相机2观测到的aprilboard坐标系下的点 变换到 相机1坐标系下
     for (uint i = 0; i < data.object_points[1].size(); i++) {

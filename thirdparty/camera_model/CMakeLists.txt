@@ -10,7 +10,8 @@ find_package(Boost REQUIRED COMPONENTS
         program_options
         system)
 
-find_package(OpenCV 4.3 PATHS "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" NO_DEFAULT_PATH REQUIRED
+# OpenCV
+find_package(OpenCV 4.3 QUIET
         COMPONENTS
         core
         imgproc
@@ -18,13 +19,23 @@ find_package(OpenCV 4.3 PATHS "/home/anson/work/lib/opencv43/lib/cmake/opencv4/"
         highgui
         )
 if (NOT OpenCV_FOUND)
-    message(FATAL_ERROR "OpenCV == 4.3 or higher not found")
+    find_package(OpenCV 4.3 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
+            COMPONENTS
+            core
+            imgproc
+            calib3d
+            highgui
+            )
 endif ()
 message(STATUS "Use OpenCV ${OpenCV_VERSION}")
 message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBRARIES: ${OpenCV_LIBRARIES}")
 
-find_package(Ceres PATHS "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" NO_DEFAULT_PATH REQUIRED)
+# Ceres
+find_package(Ceres 2.0 QUIET)
+if (NOT Ceres_FOUND)
+    find_package(Ceres PATHS ${Ceres_LIB_DIR} NO_DEFAULT_PATH REQUIRED)
+endif ()
 
 aux_source_directory(./src/apriltag AprilTagSrc)
 aux_source_directory(./src/apriltag_frontend AprilTagSrc2)

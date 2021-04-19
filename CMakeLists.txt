@@ -102,6 +102,15 @@ find_package(catkin REQUIRED COMPONENTS
 set(RDPARTY_SO_PATH ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME}/lib)
 message(STATUS "RDPARTY_SO_PATH: ${RDPARTY_SO_PATH}")
 
+# 设置依赖库地址
+#set(OpenCV_LIB_DIR "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" CACHE STRING "The directory containing a CMake configuration file for OpenCV." FORCE)
+set(OpenCV_LIB_DIR "/home/anson/work/lib/" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
+message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
+
+#set(Ceres_LIB_DIR "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" CACHE STRING "The Path for CMake to find Ceres library")
+set(Ceres_LIB_DIR "/home/anson/work/lib/" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
+message(STATUS "Ceres_LIB_DIR: ${Ceres_LIB_DIR}")
+
 # ----- Build thirdparty -----
 message("${Magenta}-------------- build thirdparty lib begin ----------${ColourReset}")
 message(STATUS "enter thirdparty/camera_model")
@@ -118,7 +127,6 @@ if (POLICY CMP0022)
     cmake_policy(SET CMP0022 NEW)
 endif ()
 
-
 if (POLICY CMP0072)
     set(OpenGL_GL_PREFERENCE GLVND)
     # set(OpenGL_GL_PREFERENCE LEGACY)
@@ -134,8 +142,8 @@ find_package(PCL 1.8 REQUIRED
         common
         io
         )
-#message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
 
+#message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
 add_definitions(${PCL_DEFINITIONS})
 message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #message(STATUS "PCL_LIBRARIES: ${PCL_LIBRARIES}")
@@ -145,27 +153,32 @@ message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #        system
 #        thread)
 
-message(STATUS "-----Use OpenCV ${OpenCV_VERSION}")
-message(STATUS "-----OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
-message(STATUS "-----OpenCV_LIBRARIES: ${OpenCV_LIBRARIES}")
-
 # OpenCV
-find_package(OpenCV 4.3 PATHS "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" NO_DEFAULT_PATH REQUIRED
+find_package(OpenCV 4.3 QUIET
         COMPONENTS
         core
         imgproc
-#        calib3d
         highgui
         )
 if (NOT OpenCV_FOUND)
-    message(FATAL_ERROR "OpenCV == 4.3 or higher not found")
+    find_package(OpenCV 4.3 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
+            COMPONENTS
+            core
+            imgproc
+            highgui
+            )
 endif ()
 message(STATUS "Use OpenCV ${OpenCV_VERSION}")
 message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBRARIES: ${OpenCV_LIBRARIES}")
 
+
 # Ceres
-find_package(Ceres PATHS "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" NO_DEFAULT_PATH REQUIRED)
+find_package(Ceres 2.0 QUIET)
+if (NOT Ceres_FOUND)
+    find_package(Ceres PATHS ${Ceres_LIB_DIR} NO_DEFAULT_PATH REQUIRED)
+endif ()
+
 message(STATUS "CERES_VERSION: ${CERES_VERSION}")
 message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
 

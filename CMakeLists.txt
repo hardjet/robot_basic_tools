@@ -93,7 +93,7 @@ find_package(catkin REQUIRED COMPONENTS
         roslib
         message_filters
         sensor_msgs
-        cv_bridge_opencv4
+#        cv_bridge_opencv4
         )
 #message(STATUS "catkin_INCLUDE_DIRS: ${catkin_INCLUDE_DIRS}")
 #message(STATUS "catkin_LIBRARIES: ${catkin_LIBRARIES}")
@@ -116,6 +116,9 @@ message("${Magenta}-------------- build thirdparty lib begin ----------${ColourR
 message(STATUS "enter thirdparty/camera_model")
 add_subdirectory(thirdparty/camera_model)
 message(STATUS "exit thirdparty/camera_model")
+message(STATUS "enter thirdparty/cv_bridge")
+add_subdirectory(thirdparty/cv_bridge_rbt)
+message(STATUS "exit thirdparty/cv_bridge")
 message("${Magenta}-------------- build thirdparty lib end ------------${ColourReset}")
 
 
@@ -305,6 +308,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
+        cv_bridge_rbt
         guik
         algorithm
         glog

@@ -9,6 +9,7 @@ find_package(Boost REQUIRED COMPONENTS
         filesystem
         program_options
         system)
+message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 # OpenCV
 find_package(OpenCV 4.3 QUIET
@@ -76,8 +77,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         )
 
 target_link_libraries(${PROJECT_NAME}
+        PUBLIC
         ${Boost_LIBRARIES}
         ${OpenCV_LIBS}
-        ${CERES_LIBRARIES})
+        ${CERES_LIBRARIES}
+        )
 
 

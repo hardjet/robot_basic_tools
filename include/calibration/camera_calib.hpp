@@ -54,6 +54,8 @@ class CameraCalib : public BaseCalib {
   bool calc();
   /// 设置标定参数
   void draw_calib_params();
+  // 通过ui更新相关的信息
+  void draw_ui_transform();
  private:
   // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
@@ -73,7 +75,7 @@ class CameraCalib : public BaseCalib {
   // 不同数据角度间隔 deg
   double between_angle_{3.0};
   // 棋盘格大小
-  double chess_size_{1.0};
+  double grid_size_{1.0};
 
 
   // 标定数据

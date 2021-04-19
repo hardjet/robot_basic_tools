@@ -54,68 +54,55 @@ void CameraCalib::draw_ui() {
   ImGui::Begin("one camera Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
-  //ImGui::SameLine();
-//  if (ImGui::Button("camera calibration"))
-//  {
-//    // 选择加载文件路径
-//    std::string msg = "please set camera model first!";
-//    dev::show_pfd_info("info", msg);
-//  }
-
+  //控制是否显示图像
   if (cam_dev_ptr_) {
+    ImGui::SameLine();
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &b_show_image_)) {
       if (b_show_image_) {
-        image_imshow_ptr_->enable("calib: camera", false);
+        image_imshow_ptr_->enable("camera", false);
       } else {
         image_imshow_ptr_->disable();
       }
     }
-  }
-  // 闲置状态下才可以设置
-  if (next_state_ == STATE_IDLE) {
-    draw_calib_params();
-  }
 
-// 设置变换矩阵参数
-//  draw_ui_transform();
-
-  // 标定逻辑
-  calibration();
-
-  if (next_state_ == STATE_IDLE) {
-    if (ImGui::Button("start"))
-    {
-      // 检测相机模型是否已经选择
-      if (!cam_dev_ptr_->camera_model()) {
-        std::string msg = "please set camera model first!";
-        dev::show_pfd_info("info", msg);
-      } else {
-        b_show_calib_data_ = false;
-        // 清空上次的标定数据
-        calib_valid_data_vec_.clear();
-        next_state_ = STATE_START;
+    // 闲置状态下才可以设置
+    if (next_state_ == STATE_IDLE) {
+      draw_calib_params();
+    }
+    calibration();
+    if (next_state_ == STATE_IDLE) {
+      if (ImGui::Button("start")) {
+        // 检测相机模型是否已经选择
+        if (!cam_dev_ptr_->camera_model()) {
+          std::string msg = "please set camera model first!";
+          dev::show_pfd_info("info", msg);
+        } else {
+          b_show_calib_data_ = false;
+          // 清空上次的标定数据
+          calib_valid_data_vec_.clear();
+          next_state_ = STATE_START;
+        }
+      }
+    } else {
+      if (ImGui::Button("stop")) {
+        next_state_ = STATE_IDLE;
       }
     }
-  } else {
-    if (ImGui::Button("stop")) {
+    // 标定状态只需要设定一次
+    if (cur_state_ == STATE_IN_CALIB) {
       next_state_ = STATE_IDLE;
     }
-  }
 
-  // 标定状态只需要设定一次
-  if (cur_state_ == STATE_IN_CALIB) {
-    next_state_ = STATE_IDLE;
+    // 大于6帧数据就可以开始进行标定操作了
+    if (calib_valid_data_vec_.size() > 6) {
+      ImGui::SameLine();
+      // 开始执行标定
+      if (ImGui::Button("calib")) {
+        next_state_ = STATE_START_CALIB;
+      }
+    }
   }
-
-  // 大于6帧数据就可以开始进行标定操作了
-  if (calib_valid_data_vec_.size() > 6) {
-    ImGui::SameLine();
-    // 开始执行标定
-    if (ImGui::Button("calib")) {
-      next_state_ = STATE_START_CALIB;
-    }
-    }
   // 标定数据相关操作
   if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
@@ -174,7 +161,7 @@ void CameraCalib::draw_ui() {
 
     ImGui::SameLine();
     ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
-  } else if (cam_dev_ptr_) {
+  } else if (cam_dev_ptr_ ) {
     ImGui::SameLine();
     ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
   }
@@ -182,8 +169,14 @@ void CameraCalib::draw_ui() {
   if (b_show_image_) {
     image_imshow_ptr_->show_image(b_show_image_);
   }
-}
 
+
+}
+// 通过ui中更新相关的矩阵
+void CameraCalib::draw_ui_transform()
+{
+
+}
 void CameraCalib::draw_gl(glk::GLSLShader& shader) {
   if (!b_show_window_) {
     return;
@@ -197,10 +190,10 @@ void CameraCalib::draw_calib_params() {
 
   // 设定宽度
   ImGui::PushItemWidth(80);
-  ImGui::DragScalar("chess_size(mm)", ImGuiDataType_Double, &chess_size_, 0.1, nullptr, nullptr, "%.2f");
+  ImGui::DragScalar("grid_size(mm)", ImGuiDataType_Double, &grid_size_, 0.1, nullptr, nullptr, "%.2f");
   // tips
   if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("set chess board grid size.");
+    ImGui::SetTooltip("set board grid size.");
   }
 }
 bool CameraCalib::load_calib_data(const std::string& file_path) {}
@@ -226,6 +219,8 @@ void CameraCalib::update_data() {
   }
 }
 bool CameraCalib::get_pose_and_points() {
+
+  std::cout<<"break()"<<std::endl;
   // 检测到的角点空间坐标
   std::vector<cv::Point2f> imagePoints;
   // 检测到的角点图像坐标
@@ -253,8 +248,7 @@ bool CameraCalib::get_pose_and_points() {
   } else {
     img_show = cur_image->image.clone();
   }
-  cv::imshow("test",img_show);
-  cv::waitKey(10);
+
   //通过图像得到april board中角点的位置和图像点
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
     //每一张图像进入后都要进行外参计算
@@ -298,9 +292,11 @@ void CameraCalib::calibration() {
   update_data();
   switch (cur_state_) {
     case STATE_IDLE:
+      std::cout<<"STATE_IDLE"<<std::endl;
       cur_state_ = next_state_;
       break;
     case STATE_START:
+      std::cout<<"STATE_START"<<std::endl;
       if (is_new_image_) {
         is_new_image_ = false;
         cur_state_ = STATE_GET_POSE_AND_PTS;
@@ -309,6 +305,7 @@ void CameraCalib::calibration() {
       }
       break;
     case STATE_GET_POSE_AND_PTS:
+      std::cout<<"STATE_GET_POSE_AND_PTS"<<std::endl;
       // 执行任务
       if (task_ptr_->do_task("get_pose_and_points", std::bind(&CameraCalib::get_pose_and_points, this))) {  // NOLINT
         // 结束后需要读取结果
@@ -321,6 +318,7 @@ void CameraCalib::calibration() {
       }
       break;
     case STATE_CHECK_STEADY:
+      std::cout<<"STATE_CHECK_STEADY"<<std::endl;
       if (calib_data_vec_.empty()) {
         calib_data_vec_.push_back(calib_data_);
       } else {

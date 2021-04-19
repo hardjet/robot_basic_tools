@@ -183,7 +183,7 @@ void RobotBasicTools::draw_gl() {
     cl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tc_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
-
+    cam_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     // flush to the screen
     main_canvas_ptr_->unbind();
     main_canvas_ptr_->render_to_screen();
@@ -244,6 +244,9 @@ void RobotBasicTools::main_menu() {
     }
     if (ImGui::MenuItem("two cameras")) {
       tc_calib_ptr_->show();
+    }
+    if (ImGui::MenuItem("one camera")) {
+      cam_calib_ptr_->show();
     }
     ImGui::EndMenu();
   }

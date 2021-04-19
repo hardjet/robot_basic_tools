@@ -1,7 +1,5 @@
-# Visual  tool for multi sensor robot
-# 多传感器机器人可视化工具
-
-# Robot Basic Tools(RBT)
 # 机器人基础工具箱
 
-which one
+## 简介
+  机器人基础工具箱(Robot Basic Tools, 简称RBT)旨在对机器人上常用的传感器，比如相机、单多线激光雷达、IMU、里程计等，进行内外参标定
+

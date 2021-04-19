@@ -71,7 +71,6 @@ configure_file(
 )
 
 # ----- Set debug -----
-
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 set(USE_STACK_TRACE_LOGGER ON CACHE BOOL "Enable automatic stack trace logger of google-glog" FORCE)
@@ -93,7 +92,6 @@ find_package(catkin REQUIRED COMPONENTS
         roslib
         message_filters
         sensor_msgs
-#        cv_bridge_opencv4
         )
 #message(STATUS "catkin_INCLUDE_DIRS: ${catkin_INCLUDE_DIRS}")
 #message(STATUS "catkin_LIBRARIES: ${catkin_LIBRARIES}")

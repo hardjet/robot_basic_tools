@@ -429,6 +429,8 @@ void Camera::draw_ui() {
         sensor_name = inst_ptr_->cameraName();
         // 加载参数
         inst_ptr_->writeParameters(inst_params_);
+        // 更新相机类型
+        current_camera_type_ = inst_ptr_->modelType();
         std::cout << "load ok!" << sensor_name << ": type [" << inst_ptr_->modelType()
                   << "], params size: " << inst_params_.size() << std::endl;
       } else {

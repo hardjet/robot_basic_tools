@@ -292,6 +292,7 @@ add_executable(${PROJECT_NAME}
         src/calibration/camera_laser_calib.cpp
         src/calibration/two_lasers_calib.cpp
         src/calibration/two_cameras_calib.cpp
+        src/calibration/camera_calib.cpp
         src/util/image_loader.cpp
         src/robot_basic_tools.cpp
         )

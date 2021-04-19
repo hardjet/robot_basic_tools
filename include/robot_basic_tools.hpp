@@ -11,6 +11,7 @@ namespace calibration {
 class CamLaserCalib;
 class TwoLasersCalib;
 class TwoCamerasCalib;
+class CameraCalib;
 }
 
 class RobotBasicTools : public guik::Application {
@@ -96,6 +97,9 @@ class RobotBasicTools : public guik::Application {
 
   // 两个相机标定
   std::unique_ptr<calibration::TwoCamerasCalib> tc_calib_ptr_;
+
+  // 单目相机标定
+  std::unique_ptr<calibration::CameraCalib> cam_calib_ptr_;
 
   // 热键标记(ALT)
   bool b_hotkey_alt_pressed_ = false;

@@ -74,10 +74,8 @@ class CameraCalib : public BaseCalib {
   bool b_show_calib_data_{false};
   // 不同数据角度间隔 deg
   double between_angle_{3.0};
-  // 棋盘格大小
-  double grid_size_{1.0};
 
-
+  std::string save_yaml_path;
   // 标定数据
   struct CalibData {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

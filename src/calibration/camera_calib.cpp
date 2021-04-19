@@ -54,6 +54,29 @@ void CameraCalib::draw_ui() {
   ImGui::Begin("one camera Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
+
+  //将信息保存到文件中
+  if (!calib_valid_data_vec_.empty()) {
+    ImGui::SameLine();
+    // 保存标定数据
+    if (ImGui::Button("SAVE")) {
+      // 选择保存文件路径
+      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+      while (!dialog->ready()) {
+        usleep(1000);
+      }
+      save_yaml_path = dialog->result();
+    }
+
+    // tips
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("save calib data to .json file");
+    }
+  }
+//  cam_dev_ptr_->draw_ui_params();
+
+
   //控制是否显示图像
   if (cam_dev_ptr_) {
     ImGui::SameLine();
@@ -190,7 +213,7 @@ void CameraCalib::draw_calib_params() {
 
   // 设定宽度
   ImGui::PushItemWidth(80);
-  ImGui::DragScalar("grid_size(mm)", ImGuiDataType_Double, &grid_size_, 0.1, nullptr, nullptr, "%.2f");
+//  ImGui::DragScalar("grid_size(mm)", ImGuiDataType_Double, &grid_size_, 0.1, nullptr, nullptr, "%.2f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set board grid size.");
@@ -220,7 +243,6 @@ void CameraCalib::update_data() {
 }
 bool CameraCalib::get_pose_and_points() {
 
-  std::cout<<"break()"<<std::endl;
   // 检测到的角点空间坐标
   std::vector<cv::Point2f> imagePoints;
   // 检测到的角点图像坐标
@@ -258,7 +280,7 @@ bool CameraCalib::get_pose_and_points() {
     Eigen::Matrix3d R_ac = T_ac.block(0, 0, 3, 3);
     Eigen::Quaterniond q_ac(R_ac);
     calib_data_.q_ac = q_ac;
-    //这种写法对不对？
+
     calib_data_.imagePoints = imagePoints;
     calib_data_.objectPoints = objectPoints;
     //用来显示图像
@@ -288,15 +310,12 @@ void CameraCalib::check_and_save() {
 }
 //核心相机矫正启动函数
 void CameraCalib::calibration() {
-  std::cout<<"calibration()"<<std::endl;
   update_data();
   switch (cur_state_) {
     case STATE_IDLE:
-      std::cout<<"STATE_IDLE"<<std::endl;
       cur_state_ = next_state_;
       break;
     case STATE_START:
-      std::cout<<"STATE_START"<<std::endl;
       if (is_new_image_) {
         is_new_image_ = false;
         cur_state_ = STATE_GET_POSE_AND_PTS;
@@ -305,7 +324,6 @@ void CameraCalib::calibration() {
       }
       break;
     case STATE_GET_POSE_AND_PTS:
-      std::cout<<"STATE_GET_POSE_AND_PTS"<<std::endl;
       // 执行任务
       if (task_ptr_->do_task("get_pose_and_points", std::bind(&CameraCalib::get_pose_and_points, this))) {  // NOLINT
         // 结束后需要读取结果
@@ -318,7 +336,6 @@ void CameraCalib::calibration() {
       }
       break;
     case STATE_CHECK_STEADY:
-      std::cout<<"STATE_CHECK_STEADY"<<std::endl;
       if (calib_data_vec_.empty()) {
         calib_data_vec_.push_back(calib_data_);
       } else {
@@ -362,19 +379,28 @@ void CameraCalib::calibration() {
 //核心矫正算法函数
 bool CameraCalib::calc()
 {
-  std::cout<<"变成一道光"<<std::endl;
-//  cv::Size m_boardSize;
-//  camera_model::CameraCalibration cam_cal
-//      (cam_dev_ptr_->sensor_type);
-//  cam_cal_.clear();
-//  //准备标定数据
-//  std::vector<std::vector<cv::Point2f> > m_imageGoodPoints;
-//  std::vector<std::vector<cv::Point3f> > m_sceneGoodPoints;
-//  for (const auto& data : calib_data_vec_)
-//  {
-//    cam_cal_.addChessboardData(data.imagePoints,data.objectPoints);
-//  }
-//  cam_cal_.calibrate();
+  cv::Size boardSize{0,0};
+
+  boardSize.width =  (int)april_board_ptr_->board->cols();
+  boardSize.height =  (int)april_board_ptr_->board->rows();
+  double square_size =april_board_ptr_->board->get_tagsize();
+  camera_model::CameraCalibration cam_cal_(cam_dev_ptr_->camera_model()->modelType(),
+                                           cam_dev_ptr_->camera_model()->cameraName(),
+                                           cam_dev_ptr_->camera_model()->imageSize(),
+                                            boardSize,
+                                           (float)april_board_ptr_->board->get_tagsize());
+  //对相机的缓存点进行初始化
+  cam_cal_.clear();
+  //准备标定数据
+  std::vector<std::vector<cv::Point2f> > m_imageGoodPoints;
+  std::vector<std::vector<cv::Point3f> > m_sceneGoodPoints;
+  //从所有数据中加载特征信息
+  for (const auto& data : calib_data_vec_)
+  {
+    cam_cal_.addChessboardData(data.imagePoints,data.objectPoints);
+  }
+  cam_cal_.calibrate();
+  cam_cal_.camera()->    65555555555555555555555555555555555(save_yaml_path);
   return true;
 }
 }  // namespace calibration

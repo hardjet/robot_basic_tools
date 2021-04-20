@@ -48,51 +48,56 @@ CameraCalib::CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr
   //cam_dev_ptr_->camera_model()->writeParameters(inst_params_);
 }
 void CameraCalib::draw_ui() {
-  if (!b_show_window_) {
+  if (!b_show_window_)
+  {
     return;
   }
   // 新建窗口
   ImGui::Begin("Monocular camera Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
-
-  //将信息保存到文件中
-  if (!calib_valid_data_vec_.empty()) {
-    ImGui::SameLine();
-    // 保存标定数据
-    if (ImGui::Button("SAVE")) {
-      // 选择保存文件路径
-      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
-      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
-      while (!dialog->ready()) {
-        usleep(1000);
+  if (cam_dev_ptr_)
+  {
+    //将信息保存到文件中
+    if (!calib_valid_data_vec_.empty())
+    {
+      ImGui::SameLine();
+      // 保存标定数据
+      if (ImGui::Button("SAVE PATH"))
+      {
+        // 选择保存文件路径
+        std::vector<std::string> filters = {"calib data file (.yaml)", "*.yaml"};
+        std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+        while (!dialog->ready())
+        {
+          usleep(1000);
+        }
+        save_yaml_path = dialog->result();
       }
-      save_yaml_path = dialog->result();
-    }
-    // tips
-    if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("save calib data to .json file");
+      // tips
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::SetTooltip("save calib data to .yaml file");
+      }
     }
   }
-  //控制是否显示图像
+
   if (cam_dev_ptr_) {
-    ImGui::SameLine();
-    // 选择是否显示图像
-    if (ImGui::Checkbox("show image", &b_show_image_)) {
+    //  选择是否显示图像
+    if (ImGui::Checkbox("Display calibration image", &b_show_image_)) {
       if (b_show_image_) {
-        image_imshow_ptr_->enable("camera", false);
+        image_imshow_ptr_->enable("Display calibration image", false);
       } else {
         image_imshow_ptr_->disable();
       }
     }
-
     // 闲置状态下才可以设置
     if (next_state_ == STATE_IDLE) {
       draw_calib_params();
     }
     calibration();
     if (next_state_ == STATE_IDLE) {
-      if (ImGui::Button("start")) {
+      if (ImGui::Button("START")) {
         // 检测相机模型是否已经选择
         if (!cam_dev_ptr_->camera_model()) {
           std::string msg = "please set camera model first!";
@@ -105,24 +110,28 @@ void CameraCalib::draw_ui() {
         }
       }
     } else {
-      if (ImGui::Button("stop")) {
+      if (ImGui::Button("STOP")) {
         next_state_ = STATE_IDLE;
       }
     }
+  }
     // 标定状态只需要设定一次
-    if (cur_state_ == STATE_IN_CALIB) {
+    if (cur_state_ == STATE_IN_CALIB)
+    {
       next_state_ = STATE_IDLE;
     }
 
     // 大于6帧数据就可以开始进行标定操作了
-    if (calib_valid_data_vec_.size() > 6) {
+    if (calib_valid_data_vec_.size() > 6)
+    {
       ImGui::SameLine();
       // 开始执行标定
-      if (ImGui::Button("calib")) {
+      if (ImGui::Button("CALIB & SAVE "))
+      {
         next_state_ = STATE_START_CALIB;
       }
     }
-  }
+
   // 标定数据相关操作
   if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
@@ -173,26 +182,24 @@ void CameraCalib::draw_ui() {
           selected_calib_data_id_ = 1;
         }
       }
+
       // tips
       if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("delete one item of calib data");
       }
     }
+
     ImGui::SameLine();
     ImGui::TextDisabled("Number of valid pictures: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
-  } else if (cam_dev_ptr_ ) {
+  }else if (cam_dev_ptr_ ) {
     ImGui::SameLine();
     ImGui::TextDisabled("Number of valid pictures: %zu", calib_valid_data_vec_.size());
   }
+
   ImGui::End();
   if (b_show_image_) {
     image_imshow_ptr_->show_image(b_show_image_);
   }
-}
-// 通过ui中更新相关的矩阵
-void CameraCalib::draw_ui_transform()
-{
-
 }
 void CameraCalib::draw_gl(glk::GLSLShader& shader) {
   if (!b_show_window_) {
@@ -202,13 +209,10 @@ void CameraCalib::draw_gl(glk::GLSLShader& shader) {
 /// 设置标定参数
 void CameraCalib::draw_calib_params() {
   ImGui::Separator();
-  ImGui::Text("calibration info:");
-  ImGui::Separator();
   const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
-  ImGui::Text("type:%s",camera_type[cam_dev_ptr_->camera_model()->modelType()]);
+  ImGui::Text("camera type:%s",camera_type[cam_dev_ptr_->camera_model()->modelType()]);
   draw_ui_params();
 }
-bool CameraCalib::load_calib_data(const std::string& file_path) {}
 //更新3D图像点信息
 void CameraCalib::update_3d_show() {
   // 更新显示图象
@@ -330,7 +334,7 @@ void CameraCalib::calibration() {
         double dist = (calib_data_vec_.at(0).t_ac - calib_data_.t_ac).norm();
         // 四元数的转角是原本的1/2
         double theta = 2 * std::acos((calib_data_vec_.at(0).q_ac.inverse() * calib_data_.q_ac).w());
-        std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
+        //std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
         // 抖动小于1cm与0.8°
         if (dist < 0.01 && theta < DEG2RAD_RBT(0.8)) {
           calib_data_vec_.push_back(calib_data_);
@@ -356,7 +360,7 @@ void CameraCalib::calibration() {
         // 结束后需要读取结果
         if (task_ptr_->result<bool>()) {
           //update_related_pose();
-         // update_ui_transform();
+          // update_ui_transform();
           cur_state_ = STATE_IDLE;
         }
       }
@@ -369,11 +373,10 @@ bool CameraCalib::calc()
   cv::Size boardSize{0,0};
   boardSize.width =  (int)april_board_ptr_->board->cols();
   boardSize.height =  (int)april_board_ptr_->board->rows();
-  double square_size =april_board_ptr_->board->get_tagsize();
   camera_model::CameraCalibration cam_cal_(cam_dev_ptr_->camera_model()->modelType(),
                                            cam_dev_ptr_->camera_model()->cameraName(),
                                            cam_dev_ptr_->camera_model()->imageSize(),
-                                            boardSize,
+                                           boardSize,
                                            (float)april_board_ptr_->board->get_tagsize());
   //对相机的缓存点进行初始化
   cam_cal_.clear();

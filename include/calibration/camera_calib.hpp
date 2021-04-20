@@ -40,8 +40,6 @@ class CameraCalib : public BaseCalib {
   void draw_ui() override;
 
  private:
-
-  bool load_calib_data(const std::string& file_path);
   //图像旋转不连续检测
   bool get_pose_and_points();
   //进行矫正的基本配置
@@ -54,10 +52,9 @@ class CameraCalib : public BaseCalib {
   bool calc();
   /// 设置标定参数
   void draw_calib_params();
-  // 通过ui更新相关的信息
-  void draw_ui_transform();
   //显示出内参信息
   void draw_ui_params();
+
  private:
   // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
@@ -92,7 +89,6 @@ class CameraCalib : public BaseCalib {
     Eigen::Quaterniond q_ac;
     Eigen::Vector3d t_ac;
   };
-
   // 资源锁
   std::mutex mtx_;
   // 任务对象

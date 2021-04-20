@@ -12,15 +12,17 @@
 ## 依赖说明
 本工具依赖以下开源库或工程：
 
-- [gl3w-Simple OpenGL core profile loading](https://github.com/skaslev/gl3w)：openGL相关
-- [glfw](https://www.glfw.org/)：openGL相关
-- [Dear ImGui](https://github.com/ocornut/imgui)：GUI框架
-- [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)：GUI 文件对话框
-- [ROS](https://www.ros.org/)：通信与机器人交互
-- [openCV](https://opencv.org/): 图像数据处理相关
-- [ceres](http://ceres-solver.org/): 优化库
-- [nlohmann-json](https://github.com/nlohmann/json): json数据处理相关
-- [camera_model](https://github.com/gaowenliang/camera_model): 相机模型相关
+ - [gl3w-Simple OpenGL core profile loading](https://github.com/skaslev/gl3w)：openGL相关
+ - [glfw](https://www.glfw.org/)：openGL相关
+ - [Dear ImGui](https://github.com/ocornut/imgui)：GUI框架
+ - [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)：GUI 文件对话框
+ - [ROS](https://www.ros.org/)：通信与机器人交互
+ - [openCV](https://opencv.org/): 图像数据处理相关
+ - [ceres](http://ceres-solver.org/): 优化库
+ - [nlohmann-json](https://github.com/nlohmann/json): json数据处理相关
+ - [camera_model](https://github.com/gaowenliang/camera_model): 相机模型相关
+
+**ui框架参考了[interactive_slam](https://github.com/SMRT-AIST/interactive_slam) @koide3**。
 
 ## 安装
 
@@ -62,7 +64,6 @@ make test
 # for the EXPORT_BUILD_DIR option for more information.
 make install
 ```
-
 
 ### opencv
 
@@ -129,7 +130,7 @@ catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -DOpenCV_LIB_DIR="/p
 
 ## 运行
 
-```
+```cmake
 # 运行
 roslaunch robot_basic_tools run.launch
 
@@ -138,5 +139,5 @@ roslaunch robot_basic_tools sim.launch
 ```
 
 ## License
-本工具遵照 GPLv3 license。
 
+本工具遵照 GPLv3 license。

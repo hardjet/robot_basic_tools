@@ -227,10 +227,9 @@ static bool double_literal(const char* start, char const** end, double* val) {
     return false;
   }
 
-  bool hasFracDigits = false;
   if (*pos == '.') {
     ++pos;
-    hasFracDigits = is_digit(*pos);
+    bool hasFracDigits = is_digit(*pos);
     if (hasFracDigits) {
       double scale = 0.1;
       do {

@@ -24,10 +24,6 @@ AprilBoard::AprilBoard(std::string& data_path) {
   board->points(april_points_);
   update_aprilboard_edges();
 
-  // debug
-  // for(const auto& pt : april_points_) {
-  //   std::cout << pt.transpose() << std::endl;
-  // }
 }
 
 void AprilBoard::update_aprilboard_edges() {
@@ -35,9 +31,10 @@ void AprilBoard::update_aprilboard_edges() {
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
 
   for (uint r = 0; r < tag_rows_; r++) {
-    // 行线
+    // 行线 第一行
     vertices.emplace_back(april_points_.at(r * 2 * tag_cols_ * 2).cast<float>());
     vertices.emplace_back(april_points_.at(r * 2 * tag_cols_ * 2 + tag_cols_ * 2 - 1).cast<float>());
+    // 行线 第二行
     vertices.emplace_back(april_points_.at((r * 2 + 1) * tag_cols_ * 2).cast<float>());
     vertices.emplace_back(april_points_.at((r * 2 + 1) * tag_cols_ * 2 + tag_cols_ * 2 - 1).cast<float>());
     // id用X显示
@@ -121,7 +118,6 @@ void AprilBoard::draw_gl(glk::GLSLShader& shader) {
 }
 
 void AprilBoard::draw_ui() {
-  static bool b_need_renew = false;
   const double zero{0.};
   const uint u_2{2};
   const uint u_20{20};
@@ -133,13 +129,9 @@ void AprilBoard::draw_ui() {
     ImGui::Begin("AprilBoard Setting", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGui::PushItemWidth(80);
-    if (ImGui::DragScalar("tagRows   ", ImGuiDataType_U32, &tag_rows_, 1, &u_2, &u_20, "%d")) {
-      b_need_renew = true;
-    }
+    ImGui::DragScalar("tagRows   ", ImGuiDataType_U32, &tag_rows_, 1, &u_2, &u_20, "%d");
     ImGui::SameLine();
-    if (ImGui::DragScalar("tagCols", ImGuiDataType_U32, &tag_cols_, 1, &u_2, &u_20, "%d")) {
-      b_need_renew = true;
-    }
+    ImGui::DragScalar("tagCols", ImGuiDataType_U32, &tag_cols_, 1, &u_2, &u_20, "%d");
 
     if (ImGui::DragScalar("tagSize(m)", ImGuiDataType_Double, &tag_size_, 0.01, &zero, nullptr, "%.3f")) {
       board->set_params(tag_size_, tag_spacing_);
@@ -162,12 +154,7 @@ void AprilBoard::draw_ui() {
 
     ImGui::SameLine();
     if (ImGui::Button("update params")) {
-      if (!b_need_renew) {
-        board->updata_params();
-      } else {
-        board.reset(new aslam::cameras::GridCalibrationTargetAprilgrid(tag_rows_, tag_cols_, tag_size_, tag_spacing_));
-        b_need_renew = false;
-      }
+      board.reset(new aslam::cameras::GridCalibrationTargetAprilgrid(tag_rows_, tag_cols_, tag_size_, tag_spacing_));
 
       // 更新点坐标
       board->points(april_points_);

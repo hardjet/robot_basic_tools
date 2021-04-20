@@ -32,16 +32,20 @@ class Camera : public Sensor {
 
   ~Camera() override = default;
 
+  /// 释放3d模型
   void free() override { free_model(); }
 
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图
   void draw_ui() override;
+
   /// 获取当前图像数据
   boost::shared_ptr<cv_bridge::CvImage const> data();
   /// 获取当前相机对象
-  boost::shared_ptr<camera_model::Camera> camera_model() { return inst_ptr_; };
+  boost::shared_ptr<camera_model::Camera> camera_model() const { return inst_ptr_; };
+  /// 更新相机参数
+  void update_params();
 
  private:
   // 当前类型

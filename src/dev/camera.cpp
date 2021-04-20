@@ -128,6 +128,11 @@ void Camera::creat_instance(int current_camera_type) {
   inst_ptr_->writeParameters(inst_params_);
 }
 
+void Camera::update_params() {
+  // 更新ui参数
+  inst_ptr_->writeParameters(inst_params_);
+}
+
 void Camera::draw_ui_params() {
   static double const_0 = 0.0;
 

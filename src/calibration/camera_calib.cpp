@@ -81,7 +81,6 @@ void CameraCalib::draw_ui() {
       }
     }
   }
-
   if (cam_dev_ptr_) {
     //  选择是否显示图像
     if (ImGui::Checkbox("Display calibration image", &b_show_image_)) {
@@ -182,7 +181,6 @@ void CameraCalib::draw_ui() {
           selected_calib_data_id_ = 1;
         }
       }
-
       // tips
       if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("delete one item of calib data");
@@ -380,9 +378,6 @@ bool CameraCalib::calc()
                                            (float)april_board_ptr_->board->get_tagsize());
   //对相机的缓存点进行初始化
   cam_cal_.clear();
-  //准备标定数据
-  std::vector<std::vector<cv::Point2f> > m_imageGoodPoints;
-  std::vector<std::vector<cv::Point3f> > m_sceneGoodPoints;
   //从所有数据中加载特征信息
   for (const auto& data : calib_data_vec_)
   {
@@ -405,7 +400,6 @@ bool CameraCalib::calc()
 }
 
 void CameraCalib::draw_ui_params() {
-
   static double const_0 = 0.0;
   // ImGui::BeginGroup();
   //读取相机参数保存到容器中

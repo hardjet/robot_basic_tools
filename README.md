@@ -9,6 +9,19 @@
 标定展示
 ![标定展示](./doc/imgs/2.png)
 
+## 依赖说明
+本工具依赖以下开源库或工程：
+
+- [gl3w-Simple OpenGL core profile loading](https://github.com/skaslev/gl3w)：openGL相关
+- [glfw](https://www.glfw.org/)：openGL相关
+- [Dear ImGui](https://github.com/ocornut/imgui)：GUI框架
+- [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)：GUI 文件对话框
+- [ROS](https://www.ros.org/)：通信与机器人交互
+- [openCV](https://opencv.org/): 图像数据处理相关
+- [ceres](http://ceres-solver.org/): 优化库
+- [nlohmann-json](https://github.com/nlohmann/json): json数据处理相关
+- [camera_model](https://github.com/gaowenliang/camera_model): 相机模型相关
+
 ## 安装
 
 **本工具测试环境为Ubuntu 18.04，建议系统版本 >= Ubuntu 18.04。**
@@ -96,14 +109,34 @@ cmake \
 
 根据自己系统安装相应的版本，参考[ros wifi](http://wiki.ros.org/ROS/Installation)。
 
-[ubuntu 18.04](http://wiki.ros.org/melodic/Installation/Ubuntu)
+[ubuntu 18.04](http://wiki.ros.org/melodic/Installation/Ubuntu)安装参考
 
 ### robot basic tools
 
 ```cmake
+# 获取代码
+git clone https://github.com/hardjet/robot_basic_tools.git
+# 更新子模块
+git submodule init
+git submodule update
+
 # 如果opencv,ceres安装在系统默认位置
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -j4
 
 # 指定opencv, ceres库位置
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -DOpenCV_LIB_DIR="/path/to/opencv/lib/" -DCeres_LIB_DIR="/path/to/ceres/lib/" -j4
 ```
+
+## 运行
+
+```
+# 运行
+roslaunch robot_basic_tools run.launch
+
+# 使用rosbag回放时
+roslaunch robot_basic_tools sim.launch
+```
+
+## License
+本工具遵照 GPLv3 license。
+

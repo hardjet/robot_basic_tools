@@ -56,6 +56,57 @@ void CameraCalib::draw_ui() {
   ImGui::Begin("Monocular camera Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
+  if (cam_dev_ptr_) {
+    // 从文件加载标定数据
+    ImGui::SameLine();
+    if (ImGui::Button("R")) {
+      // 选择加载文件路径
+      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+      std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
+      while (!dialog->ready()) {
+        usleep(1000);
+      }
+      auto file_paths = dialog->result();
+      if (!file_paths.empty()) {
+        // 从文件读数据
+        if (load_calib_data(file_paths.front())) {
+          std::string msg = "load calib data from " + file_paths.front() + " ok!";
+          dev::show_pfd_info("load calib data", msg);
+        } else {
+          std::string msg = "load calib data from " + file_paths.front() + " failed!";
+          dev::show_pfd_info("load calib data", msg);
+        }
+      }
+    }
+    // tips
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("load from .json");
+    }
+  }
+  if (!calib_valid_data_vec_.empty()) {
+    ImGui::SameLine();
+    // 保存标定数据
+    if (ImGui::Button("W")) {
+      // 选择保存文件路径
+      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+      std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+      while (!dialog->ready()) {
+        usleep(1000);
+      }
+      auto file_path = dialog->result();
+      if (!file_path.empty()) {
+        // 导出标定数据
+        if (!save_calib_data(file_path)) {
+          std::string msg = "save calib data to " + file_path + " failed!";
+          dev::show_pfd_info("save calib data", msg);
+        }
+      }
+    }
+    // tips
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("save calib data to .json file");
+    }
+  }
   if (cam_dev_ptr_)
   {
     //将信息保存到文件中
@@ -66,7 +117,7 @@ void CameraCalib::draw_ui() {
       if (ImGui::Button("SAVE PATH"))
       {
         // 选择保存文件路径
-        std::vector<std::string> filters = {"calib data file (.yaml)", "*.yaml"};
+        std::vector<std::string> filters = {"create calib result (.yaml)", "*.yaml"};
         std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
         while (!dialog->ready())
         {
@@ -77,7 +128,7 @@ void CameraCalib::draw_ui() {
       // tips
       if (ImGui::IsItemHovered())
       {
-        ImGui::SetTooltip("save calib data to .yaml file");
+        ImGui::SetTooltip("save calib result to .yaml file");
       }
     }
   }
@@ -365,6 +416,7 @@ void CameraCalib::calibration() {
       break;
   }
 }
+
 //核心矫正算法函数
 bool CameraCalib::calc()
 {
@@ -471,5 +523,148 @@ void CameraCalib::draw_ui_params() {
   ImGui::PopItemWidth();
   // ImGui::EndGroup();
 }
+
+
+void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
+  if (!b_show_calib_data_) {
+    return;
+  }
+  // 更新显示直线
+  if (b_need_to_update_cd_) {
+    b_need_to_update_cd_ = false;
+  }
+  for(auto a :calib_valid_data_vec_)
+  {
+
+  }
+}
+
+/*
+ * json点与point2f点之间的转换关系
+ */
+//将Point2f转换成json
+static nlohmann::json convert_pts2f_to_json(const std::vector<cv::Point2f>& pts) {
+  std::vector<nlohmann::json> json_pts(pts.size());
+  for (unsigned int idx = 0; idx < pts.size(); ++idx)
+  {
+    json_pts.at(idx) = {pts[idx].x, pts[idx].y};
+  }
+  return json_pts;
+}
+//将Point3f转换成json
+static nlohmann::json convert_pts3f_to_json(const std::vector<cv::Point3f>& pts) {
+  std::vector<nlohmann::json> json_pts(pts.size());
+  for (unsigned int idx = 0; idx < pts.size(); ++idx)
+  {
+    json_pts.at(idx) = {pts[idx].x, pts[idx].y,pts[idx].z};
+  }
+  return json_pts;
+}
+
+//将json文件保存为Point2f数据
+static void convert_json_to_pts2f(std::vector<cv::Point2f>& pts, nlohmann::json& js) {
+  std::vector<Eigen::Vector2f> pts_eigen;
+  pts_eigen.resize(js.size());
+  pts.resize(js.size());
+  for (unsigned int idx = 0; idx < js.size(); ++idx) {
+    std::vector<float> v;
+    js.at(idx).get_to<std::vector<float>>(v);
+    pts_eigen.at(idx) = Eigen::Map<Eigen::VectorXf>(v.data(), 2);
+    pts[idx].x =pts_eigen.at(idx).x();
+    pts[idx].y =pts_eigen.at(idx).y();
+  }
+}
+//将json文件保存为Point3f数据
+static void convert_json_to_pts3f(std::vector<cv::Point3f>& pts, nlohmann::json& js) {
+  std::vector<Eigen::Vector3f> pts_eigen;
+  pts_eigen.resize(js.size());
+  pts.resize(js.size());
+  for (unsigned int idx = 0; idx < js.size(); ++idx) {
+    std::vector<float> v;
+    js.at(idx).get_to<std::vector<float>>(v);
+    pts_eigen.at(idx) = Eigen::Map<Eigen::VectorXf>(v.data(), 3);
+    pts[idx].x =pts_eigen.at(idx).x();
+    pts[idx].y =pts_eigen.at(idx).y();
+    pts[idx].z =pts_eigen.at(idx).z();
+  }
+}
+
+bool CameraCalib::save_calib_data(const std::string& file_path) {
+  if (calib_valid_data_vec_.empty()) {
+    return false;
+  }
+  nlohmann::json js_whole;
+  js_whole["type"] = "Monocular camera Calibration";
+
+  // 整理数据
+  std::vector<nlohmann::json> js_data;
+  for (const auto& data : calib_valid_data_vec_) {
+    nlohmann::json js = {{"timestamp", data.timestamp},
+                         {"q_ac", {data.q_ac.x(), data.q_ac.y(), data.q_ac.z(), data.q_ac.w()}},
+                         {"t_ac", {data.t_ac.x(), data.t_ac.y(), data.t_ac.z()}},
+                         {"imagePoints", convert_pts2f_to_json(data.imagePoints)},
+                         {"objectPoints", convert_pts3f_to_json(data.objectPoints)}};
+    js_data.push_back(js);
+  }
+  js_whole["data"] = js_data;
+  // 保存文件 not std::ios::binary
+  std::ofstream ofs(file_path, std::ios::out);
+
+  if (ofs.is_open()) {
+    std::cout << "save data to " << file_path.c_str() << std::endl;
+    // const auto msgpack = nlohmann::json::to_msgpack(js_data);
+    // ofs.write(reinterpret_cast<const char*>(msgpack.data()), msgpack.size() * sizeof(uint8_t));
+    // 设置显示格式
+    ofs << std::setw(2) << js_whole << std::endl;
+    ofs.close();
+    return true;
+  }
+  else
+  {
+    std::cout << "cannot create a file at " << file_path.c_str() << std::endl;
+    return false;
+  }
+}
+bool CameraCalib::load_calib_data(const std::string& file_path) {
+  // 读取文件
+  std::ifstream ifs(file_path, std::ios::in);
+  nlohmann::json js_whole;
+  if (ifs.is_open()) {
+    std::cout << "load calib data from " << file_path.c_str() << std::endl;
+    // 设置显示格式
+    ifs >> js_whole;
+    ifs.close();
+  } else {
+    std::cout << "cannot open file " << file_path.c_str() << std::endl;
+    return false;
+  }
+  if (!js_whole.contains("type") || js_whole["type"] != "Monocular camera Calibration") {
+    std::cout << "wrong file type!" << std::endl;
+    return false;
+  }
+  // 清空之前的数据
+  calib_valid_data_vec_.clear();
+  // 加载数据
+  for (const auto& data : js_whole["data"].items()) {
+    CalibData d;
+    std::vector<double> v;
+    d.timestamp = data.value().at("timestamp").get<double>();
+    data.value().at("q_ac").get_to<std::vector<double>>(v);
+    d.q_ac.x() = v[0];
+    d.q_ac.y() = v[1];
+    d.q_ac.z() = v[2];
+    d.q_ac.w() = v[3];
+    v.clear();
+    data.value().at("t_ac").get_to<std::vector<double>>(v);
+    d.t_ac = Eigen::Map<Eigen::VectorXd>(v.data(), 3);
+    v.clear();
+    convert_json_to_pts2f(d.imagePoints, data.value().at("imagePoints"));
+    // 加载直线上的点
+    convert_json_to_pts3f(d.objectPoints, data.value().at("objectPoints"));
+    calib_valid_data_vec_.push_back(d);
+  }
+  return true;
+}
+
 
 }  // namespace calibration

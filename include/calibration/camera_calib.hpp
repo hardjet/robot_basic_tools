@@ -16,7 +16,7 @@ class CvImage;
 }
 
 namespace glk {
-class SimpleLines;
+class PointCloudBuffer;
 }
 
 namespace dev {
@@ -47,6 +47,8 @@ class CameraCalib : public BaseCalib {
   void update_data();
   /// 保证保存的帧角度不同
   void check_and_save();
+  // opengl显示矫正数据
+  void draw_calib_data(glk::GLSLShader& shader);
   void update_3d_show();
   //核心矫正算法
   bool calc();
@@ -54,13 +56,17 @@ class CameraCalib : public BaseCalib {
   void draw_calib_params();
   //显示出内参信息
   void draw_ui_params();
-
+  //保存矫正过程中产生的数据
+  bool save_calib_data(const std::string& file_path);
+  //加载矫正过程中产生的数据
+  bool load_calib_data(const std::string& file_path);
  private:
   // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 图像显示对象
   std::shared_ptr<dev::ImageShow> image_imshow_ptr_{nullptr};
-
+  // 标定数据中点云数据显示所用
+  std::shared_ptr<glk::PointCloudBuffer> calib_pointcloud_ptr_{nullptr};
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
   // 是否需要更新显示的标定数据
@@ -82,12 +88,12 @@ class CameraCalib : public BaseCalib {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
     // 相机坐标系到世界坐标系的变换(这里的世界坐标系实际上是标定板的坐标系)
+    Eigen::Quaterniond q_ac;
+    Eigen::Vector3d t_ac;
     // 检测到的角点空间坐标
     std::vector<cv::Point2f> imagePoints;
     // 检测到的角点图像坐标
     std::vector<cv::Point3f> objectPoints;
-    Eigen::Quaterniond q_ac;
-    Eigen::Vector3d t_ac;
   };
   // 资源锁
   std::mutex mtx_;

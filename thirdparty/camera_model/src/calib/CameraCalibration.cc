@@ -298,7 +298,6 @@ bool CameraCalibration::writeChessboardData(const std::string& filename) const {
   if (!ofs.is_open()) {
     return false;
   }
-
   writeData(ofs, m_boardSize.width);
   writeData(ofs, m_boardSize.height);
   writeData(ofs, m_squareSize);

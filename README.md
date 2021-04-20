@@ -1,5 +1,7 @@
 # 机器人基础工具箱
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/325c35bd89874e788f26c65355ad6b4c)](https://app.codacy.com/gh/hardjet/robot_basic_tools?utm_source=github.com&utm_medium=referral&utm_content=hardjet/robot_basic_tools&utm_campaign=Badge_Grade_Settings)
+
 ## 简介
 机器人基础工具箱(Robot Basic Tools, 简称RBT)旨在对机器人上常用的传感器，比如相机、单多线激光雷达、IMU、里程计等，进行单个或者多个传感器的内外参标定，对不同传感器数据进行时序分析。本工具基于openGL开发，为用户提供了友善的UI界面与明晰的结果展示。
 

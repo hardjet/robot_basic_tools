@@ -387,8 +387,7 @@ bool CameraCalib::calc()
   cam_cal_.calibrate();
   //相机参数保存
   cam_cal_.camera()->writeParametersToYamlFile(save_yaml_path);
-  //更新智能相机指针
-
+  //相机准备参数
   std::vector<double> inst_param_temp;
   //从矫正好的相机中读取参数
   cam_cal_.camera()->writeParameters(inst_param_temp);
@@ -398,7 +397,6 @@ bool CameraCalib::calc()
   cam_dev_ptr_->update_params();
   return true;
 }
-
 void CameraCalib::draw_ui_params() {
   static double const_0 = 0.0;
   // ImGui::BeginGroup();

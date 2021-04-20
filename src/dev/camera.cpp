@@ -1,8 +1,8 @@
 #include <iostream>
-#include <cv_bridge/cv_bridge.h>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
+#include <cv_bridge/cv_bridge.h>
 
 #include "glk/glsl_shader.hpp"
 #include "glk/primitives/primitives.hpp"
@@ -125,6 +125,11 @@ void Camera::creat_instance(int current_camera_type) {
     default:
       break;
   }
+  inst_ptr_->writeParameters(inst_params_);
+}
+
+void Camera::update_params() {
+  // 更新ui参数
   inst_ptr_->writeParameters(inst_params_);
 }
 
@@ -429,6 +434,8 @@ void Camera::draw_ui() {
         sensor_name = inst_ptr_->cameraName();
         // 加载参数
         inst_ptr_->writeParameters(inst_params_);
+        // 更新相机类型
+        current_camera_type_ = inst_ptr_->modelType();
         std::cout << "load ok!" << sensor_name << ": type [" << inst_ptr_->modelType()
                   << "], params size: " << inst_params_.size() << std::endl;
       } else {

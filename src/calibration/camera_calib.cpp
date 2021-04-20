@@ -45,13 +45,14 @@ CameraCalib::CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr
   image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
+  //cam_dev_ptr_->camera_model()->writeParameters(inst_params_);
 }
 void CameraCalib::draw_ui() {
   if (!b_show_window_) {
     return;
   }
   // 新建窗口
-  ImGui::Begin("one camera Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin("Monocular camera Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera", dev::CAMERA, cam_dev_ptr_);
 
@@ -68,15 +69,11 @@ void CameraCalib::draw_ui() {
       }
       save_yaml_path = dialog->result();
     }
-
     // tips
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("save calib data to .json file");
     }
   }
-//  cam_dev_ptr_->draw_ui_params();
-
-
   //控制是否显示图像
   if (cam_dev_ptr_) {
     ImGui::SameLine();
@@ -181,19 +178,16 @@ void CameraCalib::draw_ui() {
         ImGui::SetTooltip("delete one item of calib data");
       }
     }
-
     ImGui::SameLine();
-    ImGui::TextDisabled("vaild: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
+    ImGui::TextDisabled("Number of valid pictures: %d/%zu", selected_calib_data_id_, calib_valid_data_vec_.size());
   } else if (cam_dev_ptr_ ) {
     ImGui::SameLine();
-    ImGui::TextDisabled("vaild: %zu", calib_valid_data_vec_.size());
+    ImGui::TextDisabled("Number of valid pictures: %zu", calib_valid_data_vec_.size());
   }
   ImGui::End();
   if (b_show_image_) {
     image_imshow_ptr_->show_image(b_show_image_);
   }
-
-
 }
 // 通过ui中更新相关的矩阵
 void CameraCalib::draw_ui_transform()
@@ -207,17 +201,12 @@ void CameraCalib::draw_gl(glk::GLSLShader& shader) {
 }
 /// 设置标定参数
 void CameraCalib::draw_calib_params() {
-  const double min_v = 0.;
   ImGui::Separator();
-  ImGui::Text("calibration params:");
-
-  // 设定宽度
-  ImGui::PushItemWidth(80);
-//  ImGui::DragScalar("grid_size(mm)", ImGuiDataType_Double, &grid_size_, 0.1, nullptr, nullptr, "%.2f");
-  // tips
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("set board grid size.");
-  }
+  ImGui::Text("calibration info:");
+  ImGui::Separator();
+  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
+  ImGui::Text("type:%s",camera_type[cam_dev_ptr_->camera_model()->modelType()]);
+  draw_ui_params();
 }
 bool CameraCalib::load_calib_data(const std::string& file_path) {}
 //更新3D图像点信息
@@ -270,7 +259,6 @@ bool CameraCalib::get_pose_and_points() {
   } else {
     img_show = cur_image->image.clone();
   }
-
   //通过图像得到april board中角点的位置和图像点
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
     //每一张图像进入后都要进行外参计算
@@ -280,7 +268,6 @@ bool CameraCalib::get_pose_and_points() {
     Eigen::Matrix3d R_ac = T_ac.block(0, 0, 3, 3);
     Eigen::Quaterniond q_ac(R_ac);
     calib_data_.q_ac = q_ac;
-
     calib_data_.imagePoints = imagePoints;
     calib_data_.objectPoints = objectPoints;
     //用来显示图像
@@ -380,7 +367,6 @@ void CameraCalib::calibration() {
 bool CameraCalib::calc()
 {
   cv::Size boardSize{0,0};
-
   boardSize.width =  (int)april_board_ptr_->board->cols();
   boardSize.height =  (int)april_board_ptr_->board->rows();
   double square_size =april_board_ptr_->board->get_tagsize();
@@ -399,8 +385,96 @@ bool CameraCalib::calc()
   {
     cam_cal_.addChessboardData(data.imagePoints,data.objectPoints);
   }
+  //进行矫正
   cam_cal_.calibrate();
-  cam_cal_.camera()->    65555555555555555555555555555555555(save_yaml_path);
+  //相机参数保存
+  cam_cal_.camera()->writeParametersToYamlFile(save_yaml_path);
+  //更新智能相机指针
+
+  std::vector<double> inst_param_temp;
+  //从矫正好的相机中读取参数
+  cam_cal_.camera()->writeParameters(inst_param_temp);
+  //在相机设备中更新参数
+  cam_dev_ptr_->camera_model()->readParameters(inst_param_temp);
+  //更新相机参数
+  cam_dev_ptr_->update_params();
   return true;
 }
+
+void CameraCalib::draw_ui_params() {
+
+  static double const_0 = 0.0;
+  // ImGui::BeginGroup();
+  //读取相机参数保存到容器中
+  cam_dev_ptr_->camera_model()->writeParameters(inst_params_);
+  ImGui::Text("width:%d",  cam_dev_ptr_->camera_model()->imageWidth());
+  ImGui::SameLine();
+  ImGui::Text("height:%d",  cam_dev_ptr_->camera_model()->imageHeight());
+  ImGui::Separator();
+  ImGui::Text("params:");
+
+  // 设定宽度
+  ImGui::PushItemWidth(80);
+  switch ( cam_dev_ptr_->camera_model()->modelType()) {
+    case camera_model::Camera::ModelType::KANNALA_BRANDT:
+      ImGui::DragScalar("mu", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("mv", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("u0", ImGuiDataType_Double, &inst_params_[6], 1.0, nullptr, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("v0", ImGuiDataType_Double, &inst_params_[7], 1.0, nullptr, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k3", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k4", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k5", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      break;
+    case camera_model::Camera::ModelType::MEI:
+      // 新行
+      ImGui::DragScalar("xi", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("u0", ImGuiDataType_Double, &inst_params_[7], 0.001, nullptr, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("v0", ImGuiDataType_Double, &inst_params_[8], 0.001, nullptr, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("gamma1", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("gamma2", ImGuiDataType_Double, &inst_params_[6], 0.001, nullptr, nullptr, "%.6f");
+      // 新行
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      break;
+    case camera_model::Camera::ModelType::PINHOLE:
+      ImGui::DragScalar("fx", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("fy", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cx", ImGuiDataType_Double, &inst_params_[6], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cy", ImGuiDataType_Double, &inst_params_[7], 1.0, &const_0, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      break;
+    default:
+      break;
+  }
+  ImGui::PopItemWidth();
+  // ImGui::EndGroup();
+}
+
 }  // namespace calibration

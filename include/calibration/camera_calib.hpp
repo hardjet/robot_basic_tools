@@ -56,6 +56,8 @@ class CameraCalib : public BaseCalib {
   void draw_calib_params();
   // 通过ui更新相关的信息
   void draw_ui_transform();
+  //显示出内参信息
+  void draw_ui_params();
  private:
   // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
@@ -74,8 +76,10 @@ class CameraCalib : public BaseCalib {
   bool b_show_calib_data_{false};
   // 不同数据角度间隔 deg
   double between_angle_{3.0};
-
+  //保存的相机配置yaml存储路径
   std::string save_yaml_path;
+  // 相机内参
+  std::vector<double> inst_params_;
   // 标定数据
   struct CalibData {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

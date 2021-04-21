@@ -45,7 +45,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>;${catkin_INCLUDE_DIRS}
         )
 
 target_link_libraries(${PROJECT_NAME}

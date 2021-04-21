@@ -130,7 +130,7 @@ void Camera::creat_instance(int current_camera_type) {
 
 void Camera::update_params() {
   // 更新ui参数
-  inst_ptr_->writeParameters(inst_params_);
+  inst_ptr_->readParameters(inst_params_);
 }
 
 void Camera::draw_ui_params() {

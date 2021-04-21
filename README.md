@@ -22,7 +22,7 @@
 -   [nlohmann-json](https://github.com/nlohmann/json): json数据处理相关
 -   [camera_model](https://github.com/gaowenliang/camera_model): 相机模型相关
 
-**ui框架参考了[interactive_slam](https://github.com/SMRT-AIST/interactive_slam) @koide3**。
+**ui框架参考了[interactive_slam](https://github.com/SMRT-AIST/interactive_slam) @[koide3](https://github.com/koide3)**。
 
 ## 安装
 
@@ -108,7 +108,7 @@ cmake \
 
 ### ros
 
-根据自己系统安装相应的版本，参考[ros wifi](http://wiki.ros.org/ROS/Installation)。
+根据自己系统安装相应的版本，参考[ros wiki](http://wiki.ros.org/ROS/Installation)。
 
 [ubuntu 18.04](http://wiki.ros.org/melodic/Installation/Ubuntu)安装参考
 

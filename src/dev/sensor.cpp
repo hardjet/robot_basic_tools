@@ -1,8 +1,12 @@
+#include <Eigen/Geometry>
+
 #include "imgui.h"
 #include "portable-file-dialogs.h"
 
 #include "glk/mesh.hpp"
 #include "glk/loaders/ply_loader.hpp"
+#include "glk/glsl_shader.hpp"
+#include "glk/primitives/primitives.hpp"
 
 #include "dev/sensor.hpp"
 #include "dev/util.hpp"
@@ -63,6 +67,18 @@ void Sensor::draw_status() {
   } else {
     ImGui::TextColored(ImVec4(COLOR_OFFLINE[0], COLOR_OFFLINE[1], COLOR_OFFLINE[2], 1.0f), "·");
   }
+}
+
+void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader) const{
+  Eigen::Isometry3f T = Eigen::Isometry3f::Identity();
+  T.rotate(T_.block<3, 3>(0, 0));
+  T.pretranslate(T_.block<3, 1>(0, 3));
+
+  // 画坐标系
+  shader.set_uniform("color_mode", 2);
+  shader.set_uniform("model_matrix", (T * Eigen::UniformScaling<float>(0.05f)).matrix());
+  const auto& coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
+  coord.draw(shader);
 }
 
 void Sensor::draw_data_color_selector() {

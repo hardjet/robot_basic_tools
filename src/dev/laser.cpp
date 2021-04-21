@@ -62,6 +62,9 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
   // 获取最新的激光数据
   auto laser_data = data();
 
+  // 画坐标轴
+  draw_gl_coordinate_system(shader);
+
   // 如果有数据
   if (laser_data) {
     // 时间戳不等才更新

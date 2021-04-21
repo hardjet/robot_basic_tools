@@ -5,7 +5,6 @@
 #include "cv_bridge_rbt/cv_bridge.h"
 
 #include "glk/glsl_shader.hpp"
-#include "glk/primitives/primitives.hpp"
 
 #include "dev/camera.hpp"
 #include "dev/sensor_data.hpp"
@@ -34,15 +33,8 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {
-  Eigen::Isometry3f T = Eigen::Isometry3f::Identity();
-  T.rotate(T_.block<3, 3>(0, 0));
-  T.pretranslate(T_.block<3, 1>(0, 3));
-
-  // 画坐标系
-  shader.set_uniform("color_mode", 2);
-  shader.set_uniform("model_matrix", (T * Eigen::UniformScaling<float>(0.05f)).matrix());
-  const auto& coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-  coord.draw(shader);
+  // 画坐标轴
+  draw_gl_coordinate_system(shader);
 
   if (ply_model_ptr_) {
     shader.set_uniform("color_mode", 1);

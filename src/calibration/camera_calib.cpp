@@ -45,7 +45,6 @@ CameraCalib::CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr
   image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
-  // cam_dev_ptr_->camera_model()->writeParameters(inst_params_);
 }
 void CameraCalib::draw_ui() {
   if (!b_show_window_) {
@@ -412,22 +411,21 @@ bool CameraCalib::calc() {
   cv::Size boardSize{0, 0};
   boardSize.width = (int)april_board_ptr_->board->cols();
   boardSize.height = (int)april_board_ptr_->board->rows();
+  //类初始化
   camera_model::CameraCalibration cam_cal_(
       cam_dev_ptr_->camera_model()->modelType(), cam_dev_ptr_->camera_model()->cameraName(),
       cam_dev_ptr_->camera_model()->imageSize(), boardSize, (float)april_board_ptr_->board->get_tagsize());
-  //
+  //显示标定板加载信息
   std::cout <<"boardSize.width:  "<<boardSize.width<<std::endl;
   std::cout <<"boardSize.height:  "<<boardSize.height<<std::endl;
   std::cout <<"tagsize:  "<<april_board_ptr_->board->get_tagsize()
             <<std::endl;
-
   //对相机的缓存点进行初始化
   cam_cal_.clear();
   //从所有数据中加载特征信息
   for (const auto& data : calib_data_vec_) {
     cam_cal_.addChessboardData(data.imagePoints, data.objectPoints);
   }
-
   //进行矫正
   cam_cal_.calibrate();
   //相机参数保存
@@ -518,7 +516,6 @@ void CameraCalib::draw_ui_params() {
   ImGui::PopItemWidth();
   // ImGui::EndGroup();
 }
-
 void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
   if (!b_show_calib_data_) {
     return;
@@ -611,7 +608,6 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
       }
     }
   }
-
 }
 /*
  * json点与point2f点之间的转换关系
@@ -632,7 +628,6 @@ static nlohmann::json convert_pts3f_to_json(const std::vector<cv::Point3f>& pts)
   }
   return json_pts;
 }
-
 //将json文件保存为Point2f数据
 static void convert_json_to_pts2f(std::vector<cv::Point2f>& pts, nlohmann::json& js) {
   std::vector<Eigen::Vector2f> pts_eigen;
@@ -733,5 +728,4 @@ bool CameraCalib::load_calib_data(const std::string& file_path) {
   }
   return true;
 }
-
 }  // namespace calibration

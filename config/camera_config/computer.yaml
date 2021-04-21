@@ -1,0 +1,16 @@
+%YAML:1.0
+---
+model_type: PINHOLE
+camera_name: realsense_480p
+image_width: 640
+image_height: 480
+distortion_parameters:
+   k1: 2.2371147018815964e-03
+   k2: -5.4571102136116297e-07
+   p1: 3.7218043925504908e-02
+   p2: -3.4413064579289505e-02
+projection_parameters:
+   fx: 1.1665188765553607e+02
+   fy: 1.8375782870480887e+01
+   cx: 5.6385085447791357e+02
+   cy: -9.1861959658048568e+02

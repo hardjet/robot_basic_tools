@@ -90,7 +90,7 @@ class CameraCalib : public BaseCalib {
     // 相机坐标系到世界坐标系的变换(这里的世界坐标系实际上是标定板的坐标系)
     Eigen::Quaterniond q_ac;
     Eigen::Vector3d t_ac;
-    // 是否需要计算?计算啥
+    // 是否需要计算
     bool b_need_calc{true};
     // 图像点投射在标定板上的点
     std::vector<Eigen::Vector3d> pts_on_board;

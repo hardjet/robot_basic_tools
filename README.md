@@ -35,7 +35,7 @@ sudo apt install libglm-dev libglfw3-dev
 ```
 
 ### ceres
-参考[Installation](http://ceres-solver.org/installation.html):Linux
+建议安装2.0.0及以上版本。参考[Installation](http://ceres-solver.org/installation.html):Linux
 
 ```cmake
 # 安装ceres依赖
@@ -67,7 +67,7 @@ make install
 
 ### opencv
 
-参考[Installation in Linux](https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html):Build core modules
+建议安装4.3.0及以上版本。参考[Installation in Linux](https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html):Build core modules
 
 ```cmake
 # 安装opencv依赖

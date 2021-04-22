@@ -73,6 +73,8 @@ class OCAMCamera : public Camera {
   std::string& cameraName() override { mParameters.cameraName(); }
   int imageWidth() const;
   int imageHeight() const;
+  int& imageWidth() override {return mParameters.imageWidth();}
+  int& imageHeight() override {return mParameters.imageHeight();}
   cv::Size imageSize() const { return cv::Size(imageWidth(), imageHeight()); }
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.center_x(), mParameters.center_y()); }
 

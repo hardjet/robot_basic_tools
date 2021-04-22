@@ -76,6 +76,8 @@ class Camera {
   virtual const std::string& cameraName() const = 0;
   virtual int imageWidth() const = 0;
   virtual int imageHeight() const = 0;
+  virtual int& imageWidth() = 0;
+  virtual int& imageHeight() = 0;
   virtual cv::Size imageSize() const = 0;
   virtual cv::Point2f getPrinciple() const = 0;
 

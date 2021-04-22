@@ -76,6 +76,8 @@ void Camera::check_online_status() {
     // 设置在线状态
     if (ros::Time::now().sec - image_msg_ptr->header.stamp.sec < 2) {
       online = true;
+      inst_ptr_->imageWidth() = int(image_msg_ptr->width);
+      inst_ptr_->imageHeight() = int(image_msg_ptr->height);
     }
 
     // 检查图像是否需要更新，避免重复更新
@@ -364,6 +366,7 @@ void Camera::draw_ui_topic_name() {
 }
 
 void Camera::draw_ui() {
+  // 检查设备在线状态
   check_online_status();
 
   if (!b_show_window_) {
@@ -530,9 +533,6 @@ void Camera::draw_ui() {
   }
 
   ImGui::End();
-
-  // 检查设备在线状态
-  check_online_status();
 
   im_show_ptr_->show_image(b_show_image_);
 }

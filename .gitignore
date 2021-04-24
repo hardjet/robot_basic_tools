@@ -6,8 +6,7 @@ data/calib_data/
 *.ini
 gitstats/
 include/version_info.h
-
-*png
+doc/*.png
 
 # Prerequisites
 *.d

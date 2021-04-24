@@ -2,10 +2,9 @@
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
-#include <cv_bridge/cv_bridge.h>
+#include "cv_bridge_rbt/cv_bridge.h"
 
 #include "glk/glsl_shader.hpp"
-#include "glk/primitives/primitives.hpp"
 
 #include "dev/camera.hpp"
 #include "dev/sensor_data.hpp"
@@ -34,15 +33,8 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {
-  Eigen::Isometry3f T = Eigen::Isometry3f::Identity();
-  T.rotate(T_.block<3, 3>(0, 0));
-  T.pretranslate(T_.block<3, 1>(0, 3));
-
-  // 画坐标系
-  shader.set_uniform("color_mode", 2);
-  shader.set_uniform("model_matrix", (T * Eigen::UniformScaling<float>(0.05f)).matrix());
-  const auto& coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-  coord.draw(shader);
+  // 画坐标轴
+  draw_gl_coordinate_system(shader);
 
   if (ply_model_ptr_) {
     shader.set_uniform("color_mode", 1);
@@ -84,6 +76,8 @@ void Camera::check_online_status() {
     // 设置在线状态
     if (ros::Time::now().sec - image_msg_ptr->header.stamp.sec < 2) {
       online = true;
+      inst_ptr_->imageWidth() = int(image_msg_ptr->width);
+      inst_ptr_->imageHeight() = int(image_msg_ptr->height);
     }
 
     // 检查图像是否需要更新，避免重复更新
@@ -372,6 +366,7 @@ void Camera::draw_ui_topic_name() {
 }
 
 void Camera::draw_ui() {
+  // 检查设备在线状态
   check_online_status();
 
   if (!b_show_window_) {
@@ -538,9 +533,6 @@ void Camera::draw_ui() {
   }
 
   ImGui::End();
-
-  // 检查设备在线状态
-  check_online_status();
 
   im_show_ptr_->show_image(b_show_image_);
 }

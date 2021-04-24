@@ -69,6 +69,8 @@ class PinholeCamera : public Camera {
   std::string& cameraName() override { mParameters.cameraName(); }
   int imageWidth() const override;
   int imageHeight() const override;
+  int& imageWidth() override {return mParameters.imageWidth();}
+  int& imageHeight() override {return mParameters.imageHeight();}
   cv::Size imageSize() const override { return cv::Size{imageWidth(), imageHeight()}; }
   cv::Point2f getPrinciple() const override { return cv::Point2f{float(mParameters.cx()), float(mParameters.cy())}; }
 

@@ -12,7 +12,11 @@
                     "created": 1611057162645,
                     "text": "传感器模块",
                     "expandState": "expand",
-                    "layout": null
+                    "layout": null,
+                    "layout_mind_offset": {
+                        "x": -865.6666352086609,
+                        "y": 202.9999974171322
+                    }
                 },
                 "children": [
                     {
@@ -121,7 +125,11 @@
                     "id": "c8n441j6yn40",
                     "created": 1611057193864,
                     "text": "数据时间分析",
-                    "layout": null
+                    "layout": null,
+                    "layout_mind_offset": {
+                        "x": -50.666667395167906,
+                        "y": -244.99999165535002
+                    }
                 },
                 "children": [
                     {
@@ -149,7 +157,11 @@
                     "id": "c8n47r23gio0",
                     "created": 1611057484519,
                     "text": "标定功能",
-                    "layout": null
+                    "layout": null,
+                    "layout_mind_offset": {
+                        "x": -54.66666560702845,
+                        "y": -525.6666522953252
+                    }
                 },
                 "children": [
                     {
@@ -158,92 +170,76 @@
                             "created": 1611057497041,
                             "text": "单线激光与相机标定",
                             "layout": null,
-                            "progress": null
+                            "progress": null,
+                            "layout_right_offset": {
+                                "x": 193.16666093799859,
+                                "y": 146.16666173272682
+                            },
+                            "expandState": "expand"
                         },
                         "children": [
                             {
                                 "data": {
-                                    "id": "c8tredt30zk0",
-                                    "created": 1611732249493,
-                                    "text": "数据源选择",
-                                    "progress": 9,
-                                    "layout": null
+                                    "id": "c8umv5blhz40",
+                                    "created": 1611821017619,
+                                    "text": "检测april board",
+                                    "progress": 9
                                 },
                                 "children": []
                             },
                             {
                                 "data": {
-                                    "id": "c8trepzqp0g0",
-                                    "created": 1611732276017,
-                                    "text": "标定过程",
-                                    "progress": null,
-                                    "layout": null
+                                    "id": "c8zk6d9lfsg0",
+                                    "created": 1612321233372,
+                                    "text": "计算相机与标点板之间的位姿",
+                                    "progress": 9
                                 },
-                                "children": [
-                                    {
-                                        "data": {
-                                            "id": "c8umv5blhz40",
-                                            "created": 1611821017619,
-                                            "text": "检测april board",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    },
-                                    {
-                                        "data": {
-                                            "id": "c8zk6d9lfsg0",
-                                            "created": 1612321233372,
-                                            "text": "计算相机与标点板之间的位姿",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    },
-                                    {
-                                        "data": {
-                                            "id": "c8zk5ydybh40",
-                                            "created": 1612321200984,
-                                            "text": "提取激光数据中的线条",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    },
-                                    {
-                                        "data": {
-                                            "id": "c8xt0x40bc00",
-                                            "created": 1612143076461,
-                                            "text": "筛选静态的图片与激光数据",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    },
-                                    {
-                                        "data": {
-                                            "id": "c931h18pddc0",
-                                            "created": 1612674707941,
-                                            "text": "从文件加载保存标定数据",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    },
-                                    {
-                                        "data": {
-                                            "id": "c92axt8o9js0",
-                                            "created": 1612599852748,
-                                            "text": "对直线点做直线拟合",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    },
-                                    {
-                                        "data": {
-                                            "id": "c93bnbgln940",
-                                            "created": 1612703411470,
-                                            "text": "计算位姿",
-                                            "progress": 9
-                                        },
-                                        "children": []
-                                    }
-                                ]
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c8zk5ydybh40",
+                                    "created": 1612321200984,
+                                    "text": "提取激光数据中的线条",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c8xt0x40bc00",
+                                    "created": 1612143076461,
+                                    "text": "筛选静态的图片与激光数据",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c931h18pddc0",
+                                    "created": 1612674707941,
+                                    "text": "从文件加载保存标定数据",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c92axt8o9js0",
+                                    "created": 1612599852748,
+                                    "text": "对直线点做直线拟合",
+                                    "progress": 9
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "c93bnbgln940",
+                                    "created": 1612703411470,
+                                    "text": "计算位姿",
+                                    "progress": 9
+                                },
+                                "children": []
                             }
                         ]
                     },
@@ -253,7 +249,11 @@
                             "created": 1611057534346,
                             "text": "多单线之间标定",
                             "layout": null,
-                            "expandState": "expand"
+                            "expandState": "expand",
+                            "layout_right_offset": {
+                                "x": 27,
+                                "y": 42
+                            }
                         },
                         "children": [
                             {
@@ -306,16 +306,7 @@
                                 "data": {
                                     "id": "c9yniehank00",
                                     "created": 1615885238198,
-                                    "text": "保存标定数据",
-                                    "progress": 9
-                                },
-                                "children": []
-                            },
-                            {
-                                "data": {
-                                    "id": "c9z79nd682o0",
-                                    "created": 1615940974460,
-                                    "text": "加载标定数据",
+                                    "text": "保存加载标定数据",
                                     "progress": 9
                                 },
                                 "children": []
@@ -354,7 +345,12 @@
                             "id": "c8n48psyn400",
                             "created": 1611057560154,
                             "text": "多相机之间标定",
-                            "layout": null
+                            "layout": null,
+                            "expandState": "expand",
+                            "layout_right_offset": {
+                                "x": -471.3333010143715,
+                                "y": -184.3333254522753
+                            }
                         },
                         "children": [
                             {
@@ -362,7 +358,12 @@
                                     "id": "caia04acu7s0",
                                     "created": 1617878330160,
                                     "text": "标定逻辑与菜单显示",
-                                    "progress": 9
+                                    "progress": 9,
+                                    "layout": null,
+                                    "layout_right_offset": {
+                                        "x": -469,
+                                        "y": -7
+                                    }
                                 },
                                 "children": []
                             },
@@ -371,7 +372,12 @@
                                     "id": "caln7fcz3h40",
                                     "created": 1618220257111,
                                     "text": "标定数据保存与加载",
-                                    "progress": 9
+                                    "progress": 9,
+                                    "layout": null,
+                                    "layout_right_offset": {
+                                        "x": -464,
+                                        "y": -10
+                                    }
                                 },
                                 "children": []
                             },
@@ -380,7 +386,12 @@
                                     "id": "camgq6cwhjk0",
                                     "created": 1618303538622,
                                     "text": "标定数据可视化",
-                                    "progress": 9
+                                    "progress": 9,
+                                    "layout": null,
+                                    "layout_right_offset": {
+                                        "x": -462,
+                                        "y": -4
+                                    }
                                 },
                                 "children": []
                             },
@@ -389,7 +400,12 @@
                                     "id": "cane0ap8rd40",
                                     "created": 1618397428344,
                                     "text": "多数据优化",
-                                    "progress": 1
+                                    "progress": 9,
+                                    "layout": null,
+                                    "layout_right_offset": {
+                                        "x": -460,
+                                        "y": -6
+                                    }
                                 },
                                 "children": []
                             }
@@ -400,7 +416,11 @@
                             "id": "c8ul5ixegzs0",
                             "created": 1611816188658,
                             "text": "相机标定",
-                            "layout": null
+                            "layout": null,
+                            "layout_right_offset": {
+                                "x": -840.9999749660502,
+                                "y": -475.66664335462895
+                            }
                         },
                         "children": []
                     }
@@ -412,7 +432,11 @@
                     "created": 1611057669218,
                     "text": "系统消息控件设计",
                     "layout": null,
-                    "progress": null
+                    "progress": null,
+                    "layout_mind_offset": {
+                        "x": -263,
+                        "y": -67
+                    }
                 },
                 "children": []
             },
@@ -420,7 +444,11 @@
                 "data": {
                     "id": "c9k44o6k0cg0",
                     "created": 1614408721736,
-                    "text": "openGL viewer"
+                    "text": "openGL viewer",
+                    "layout_mind_offset": {
+                        "x": -32,
+                        "y": -63
+                    }
                 },
                 "children": [
                     {
@@ -433,18 +461,10 @@
                         "children": []
                     }
                 ]
-            },
-            {
-                "data": {
-                    "id": "c931ny5azqg0",
-                    "created": 1612675249754,
-                    "text": "..."
-                },
-                "children": []
             }
         ]
     },
-    "template": "right",
+    "template": "default",
     "theme": "fresh-red",
     "version": "1.4.43"
 }

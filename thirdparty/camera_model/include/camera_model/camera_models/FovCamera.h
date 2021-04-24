@@ -61,6 +61,8 @@ class FovCamera : public Camera {
 
   int imageWidth() const;
   int imageHeight() const;
+  int& imageWidth() override {return mParameters.imageWidth();}
+  int& imageHeight() override {return mParameters.imageHeight();}
   cv::Size imageSize() const { return cv::Size(imageWidth(), imageHeight()); }
   cv::Point2f getPrinciple() const { return cv::Point2f(mParameters.u0(), mParameters.v0()); }
 

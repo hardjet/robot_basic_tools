@@ -34,9 +34,8 @@ static pcl::PointCloud<pcl::PointXYZI>::Ptr convert_laserscan_to_pc(sensor_msgs:
 
   // 填充点云
   // 当前range数据对应的角度
-  float cur_angle;
   for (size_t i = 0; i < laser_scan->ranges.size(); i++) {
-    cur_angle = angle_min + i * angle_increment;
+    float cur_angle = angle_min + (float)i * angle_increment;
     pcl::PointXYZI p{};
     p.x = std::cos(cur_angle) * laser_scan->ranges.at(i);
     p.y = std::sin(cur_angle) * laser_scan->ranges.at(i);
@@ -62,6 +61,9 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
 
   // 获取最新的激光数据
   auto laser_data = data();
+
+  // 画坐标轴
+  draw_gl_coordinate_system(shader);
 
   // 如果有数据
   if (laser_data) {
@@ -152,12 +154,12 @@ void Laser::draw_ui_topic_name() {
   }
   ImGui::SameLine();
   // 从ros系统中选择话题
-  int selected_id = -1;
   if (ImGui::Button("...##laser")) {
     get_topic_name_from_list("sensor_msgs/LaserScan", ros_topic_selector_);
     ImGui::OpenPopup("popup##laser");
   }
   if (ImGui::BeginPopup("popup##laser")) {
+    int selected_id = -1;
     if (ros_topic_selector_.empty()) {
       ImGui::Text("no sensor_msgs/LaserScan msgs available.");
     } else {

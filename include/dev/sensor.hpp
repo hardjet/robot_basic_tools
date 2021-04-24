@@ -91,6 +91,12 @@ class Sensor {
   void draw_status();
 
   /**
+  * 在空间中绘制传感器的坐标系，表征传感器的位置
+  * @param shader
+  */
+  void draw_gl_coordinate_system(glk::GLSLShader& shader) const;
+
+  /**
    * @brief 打开显示ui开关
    */
   void show();
@@ -150,9 +156,9 @@ class Sensor {
 
  protected:
   // 设备在线颜色 绿色
-  const std::vector<double> COLOR_ONLINE{173.0 / 255, 1., 47.0 / 255};
+  const std::vector<float> COLOR_ONLINE{173.0 / 255, 1., 47.0 / 255};
   // 设备离线颜色 红色
-  const std::vector<double> COLOR_OFFLINE{204.0 / 255, 51.0 / 255, 51.0 / 255};
+  const std::vector<float> COLOR_OFFLINE{204.0 / 255, 51.0 / 255, 51.0 / 255};
   // 数据颜色
   std::vector<float> data_color_{1.0, 0., 0.};
 

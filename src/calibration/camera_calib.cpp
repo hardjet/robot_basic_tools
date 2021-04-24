@@ -420,7 +420,7 @@ bool CameraCalib::calc() {
   std::cout <<"boardSize.width:  "<<boardSize.width<<std::endl;
   std::cout <<"boardSize.height:  "<<boardSize.height<<std::endl;
   std::cout <<"tagsize:  "<<april_board_ptr_->board->get_tagsize()*100
-            <<std::endl;
+           <<std::endl;
   //对相机的缓存点进行初始化
   cam_cal_.clear();
   //从所有数据中加载特征信息
@@ -653,12 +653,10 @@ static void convert_json_to_pts3f(std::vector<cv::Point3f>& pts, nlohmann::json&
   std::vector<std::vector<float>> v;
   js.get_to<std::vector<std::vector<float>>>(v);
   pts.resize(v.size());
-  for (uint j = 0; j < pts.size(); j++)
-  {
+  for (uint j = 0; j < pts.size(); j++) {
     pts.at(j) = cv::Point3f{v[j][0], v[j][1], v[j][2]};
   }
 }
-
 bool CameraCalib::save_calib_data(const std::string& file_path) {
   if (calib_valid_data_vec_.empty()) {
     return false;

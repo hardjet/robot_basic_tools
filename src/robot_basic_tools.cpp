@@ -24,10 +24,6 @@
 #include "calibration/two_lasers_calib.hpp"
 #include "calibration/two_cameras_calib.hpp"
 #include "calibration/camera_calib.hpp"
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 // ros相关
 #include <ros/package.h>
 #include <ros/node_handle.h>
@@ -72,11 +68,8 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   // 两个单线激光标定
   tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
 
-<<<<<<< HEAD
-  //单目相机标定
-=======
+
   // 单目相机标定
->>>>>>> master
   cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_);
 
   // initialize the main OpenGL canvas
@@ -97,12 +90,10 @@ void RobotBasicTools::draw_ui() {
   if (b_show_imgui_demo_) {
     ImGui::ShowDemoWindow(&b_show_imgui_demo_);
   }
-
   // show basic graph statistics and FPS
   // 设置窗口位置和大小
   int width, height;
   glfwGetWindowSize(window, &width, &height);
-
   ImGui::SetNextWindowPos(ImVec2(float(width) - 150, 22), ImGuiCond_Always);
   ImGui::SetNextWindowSize(ImVec2(145, 100), ImGuiCond_Always);
   ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
@@ -158,10 +149,7 @@ void RobotBasicTools::draw_ui() {
   tl_calib_ptr_->draw_ui();
   tc_calib_ptr_->draw_ui();
   cam_calib_ptr_->draw_ui();
-<<<<<<< HEAD
-=======
 
->>>>>>> master
   context_menu();
   mouse_control();
 }
@@ -195,10 +183,7 @@ void RobotBasicTools::draw_gl() {
     tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tc_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     cam_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
-<<<<<<< HEAD
-=======
 
->>>>>>> master
     // flush to the screen
     main_canvas_ptr_->unbind();
     main_canvas_ptr_->render_to_screen();
@@ -260,11 +245,8 @@ void RobotBasicTools::main_menu() {
     if (ImGui::MenuItem("two cameras")) {
       tc_calib_ptr_->show();
     }
-<<<<<<< HEAD
-    if (ImGui::MenuItem("one camera")) {
-=======
+
      if (ImGui::MenuItem("monocular camera")) {
->>>>>>> master
       cam_calib_ptr_->show();
     }
     ImGui::EndMenu();

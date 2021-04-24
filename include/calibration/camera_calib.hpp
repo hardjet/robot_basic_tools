@@ -98,11 +98,9 @@ class CameraCalib : public BaseCalib {
     std::vector<cv::Point2f> imagePoints;
     // 检测到的角点图像坐标
     std::vector<cv::Point3f> objectPoints;
-<<<<<<< HEAD
     //需要显示的图像
     cv::Mat pic_show;
-=======
->>>>>>> master
+
   };
   // 资源锁
   std::mutex mtx_;

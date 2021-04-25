@@ -21,8 +21,7 @@
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/camera_models/Camera.h"
 
-#include "camera_model/calib/CameraCalibration.h"
-
+#include "camera_model/camera_models/CameraFactory.h"
 // ---- 相机-单线激光标定状态
 // 空闲
 #define STATE_IDLE 0
@@ -305,7 +304,15 @@ bool CameraCalib::get_pose_and_points() {
   imagePoints.clear();
   if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
     //每一张图像进入后都要进行外参计算
-    cam_dev_ptr_->camera_model()->estimateExtrinsics(objectPoints, imagePoints, T_ac, img_show);
+    auto pi_cam = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE,
+                                                                        "pi_camera",
+                                                                          cam_dev_ptr_->camera_model()->imageSize());
+    std::vector<std::vector<cv::Point3f> > all_objectPoints;
+    std::vector<std::vector<cv::Point2f> > all_imagePoints;
+    all_objectPoints.push_back(objectPoints);
+    all_imagePoints.push_back(imagePoints);
+    pi_cam->setInitIntrinsics(all_objectPoints,all_imagePoints);
+    pi_cam->estimateExtrinsics(objectPoints, imagePoints, T_ac, img_show);
     calib_data_.timestamp = cur_image->header.stamp.toSec();
     calib_data_.t_ac = T_ac.block(0, 3, 3, 1);
     Eigen::Matrix3d R_ac = T_ac.block(0, 0, 3, 3);

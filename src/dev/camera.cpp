@@ -109,12 +109,12 @@ void Camera::creat_instance(int current_camera_type) {
           camera_model::Camera::ModelType::KANNALA_BRANDT, sensor_name, cv::Size{640, 480});
       break;
     case camera_model::Camera::ModelType::MEI:
-      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::MEI,
-                                                                          sensor_name, cv::Size{640, 480});
+      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(
+          camera_model::Camera::ModelType::MEI, sensor_name, cv::Size{640, 480});
       break;
     case camera_model::Camera::ModelType::PINHOLE:
-      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE,
-                                                                          sensor_name, cv::Size{640, 480});
+      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(
+          camera_model::Camera::ModelType::PINHOLE,sensor_name, cv::Size{640, 480});
       break;
     default:
       break;

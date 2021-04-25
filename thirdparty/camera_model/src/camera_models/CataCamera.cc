@@ -275,7 +275,6 @@ void CataCamera::estimateIntrinsics(const cv::Size& boardSize,
 
       cv::Mat C;
       cv::SVD::solveZ(P, C);
-
       double t = square(C.at<double>(0)) + square(C.at<double>(1)) + C.at<double>(2) * C.at<double>(3);
       if (t < 0.0) {
         continue;

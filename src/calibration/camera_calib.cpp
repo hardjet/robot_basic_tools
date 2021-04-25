@@ -431,10 +431,9 @@ bool CameraCalib::calc() {
       cam_dev_ptr_->camera_model()->modelType(), cam_dev_ptr_->camera_model()->cameraName(),
       cam_dev_ptr_->camera_model()->imageSize(), boardSize, (float)april_board_ptr_->board->get_tagsize()*100);
   //显示标定板加载信息
-  std::cout <<"boardSize.width:  "<<boardSize.width<<std::endl;
-  std::cout <<"boardSize.height:  "<<boardSize.height<<std::endl;
-  std::cout <<"tagsize:  "<<april_board_ptr_->board->get_tagsize()*100
-           <<std::endl;
+  std::cout <<"boardSize.width:"<<boardSize.width<<std::endl;
+  std::cout <<"boardSize.height:"<<boardSize.height<<std::endl;
+  std::cout <<"tagsize:"<<april_board_ptr_->board->get_tagsize()*100<<"mm"<<std::endl;
   //对相机的缓存点进行初始化
   cam_cal_.clear();
   //从所有数据中加载特征信息
@@ -455,7 +454,7 @@ bool CameraCalib::calc() {
   inst_params_ =inst_param_temp;
   //更新相机参数
   cam_dev_ptr_->update_params();
-  // 相机坐标系到 april board 坐标系的变换
+  // 更新相机坐标系到 april board 坐标系的变换
   Eigen::Matrix4d T_ac;
   for (auto& data : calib_valid_data_vec_) {
     cam_dev_ptr_->camera_model()->estimateExtrinsics(data.objectPoints, data.imagePoints, T_ac, data.pic_show);

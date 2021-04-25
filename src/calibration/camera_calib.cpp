@@ -57,21 +57,26 @@ void CameraCalib::draw_ui() {
     // 从文件加载标定数据
     ImGui::SameLine();
     if (ImGui::Button("R")) {
-      // 选择加载文件路径
-      std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
-      std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
-      while (!dialog->ready()) {
-        usleep(1000);
-      }
-      auto file_paths = dialog->result();
-      if (!file_paths.empty()) {
-        // 从文件读数据
-        if (load_calib_data(file_paths.front())) {
-          std::string msg = "load calib data from " + file_paths.front() + " ok!";
-          dev::show_pfd_info("load calib data", msg);
-        } else {
-          std::string msg = "load calib data from " + file_paths.front() + " failed!";
-          dev::show_pfd_info("load calib data", msg);
+      if (!cam_dev_ptr_->camera_model()) {
+        std::string msg = "please set camera model first!";
+        dev::show_pfd_info("info", msg);
+      } else {
+        // 选择加载文件路径
+        std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+        std::unique_ptr<pfd::open_file> dialog(new pfd::open_file("choose file", dev::data_default_path, filters));
+        while (!dialog->ready()) {
+          usleep(1000);
+        }
+        auto file_paths = dialog->result();
+        if (!file_paths.empty()) {
+          // 从文件读数据
+          if (load_calib_data(file_paths.front())) {
+            std::string msg = "load calib data from " + file_paths.front() + " ok!";
+            dev::show_pfd_info("load calib data", msg);
+          } else {
+            std::string msg = "load calib data from " + file_paths.front() + " failed!";
+            dev::show_pfd_info("load calib data", msg);
+          }
         }
       }
     }
@@ -133,11 +138,13 @@ void CameraCalib::draw_ui() {
         image_imshow_ptr_->disable();
       }
     }
-    // 闲置状态下才可以设置
-    if (next_state_ == STATE_IDLE) {
-      draw_calib_params();
+    if (cam_dev_ptr_->camera_model()) {
+      // 闲置状态下才可以设置
+      if (next_state_ == STATE_IDLE) {
+        draw_calib_params();
+      }
+      calibration();
     }
-    calibration();
     if (next_state_ == STATE_IDLE) {
       if (ImGui::Button("START")) {
         // 检测相机模型是否已经选择
@@ -320,7 +327,7 @@ bool CameraCalib::get_pose_and_points() {
     calib_data_.q_ac = q_ac;
     calib_data_.imagePoints = imagePoints;
     calib_data_.objectPoints = objectPoints;
-    calib_data_.pic_show =img_show;
+    calib_data_.pic_show =img;
     //用来显示图像
     show_cam_cv_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
     return true;

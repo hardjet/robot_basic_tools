@@ -5,6 +5,7 @@
 namespace dev {
 class SensorManager;
 class AprilBoard;
+class chessboard;
 }  // namespace dev
 
 namespace calibration {
@@ -86,8 +87,11 @@ class RobotBasicTools : public guik::Application {
   // 传感器管理器
   std::shared_ptr<dev::SensorManager> sensor_manager_ptr_;
 
-  // 标定板
+  // APRILTAG标定板
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
+
+  // 标准棋盘格标定板
+  std::shared_ptr<dev::chessboard> chess_board_ptr_;
 
   // 相机与单线激光标定
   std::unique_ptr<calibration::CamLaserCalib> cl_calib_ptr_;

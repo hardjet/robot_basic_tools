@@ -22,7 +22,9 @@ Chessboard::Chessboard(cv::Size boardSize, cv::Mat& image) : mBoardSize(boardSiz
     cv::cvtColor(image, mImage, cv::COLOR_GRAY2BGR);
   }
 }
+Chessboard::Chessboard(cv::Size boardSize,double &tag_size) : mBoardSize(boardSize), mCornersFound(false) {
 
+}
 void Chessboard::findCorners(bool useOpenCV) {
   mCornersFound = findChessboardCorners(
       mImage, mBoardSize, mCorners,
@@ -45,6 +47,7 @@ const cv::Mat& Chessboard::getSketch(void) const { return mSketch; }
 
 bool Chessboard::findChessboardCorners(const cv::Mat& image, const cv::Size& patternSize,
                                        std::vector<cv::Point2f>& corners, int flags, bool useOpenCV) {
+
   if (useOpenCV) {
     if (cv::findChessboardCorners(image, patternSize, corners, flags))
       return true;

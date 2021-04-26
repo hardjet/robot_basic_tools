@@ -289,6 +289,7 @@ add_executable(${PROJECT_NAME}
         src/dev/sensor_manager.cpp
         src/dev/image_show.cpp
         src/dev/april_board.cpp
+        src/dev/chess_board.cpp
         src/dev/util.cpp
         src/calibration/camera_laser_calib.cpp
         src/calibration/two_lasers_calib.cpp
@@ -296,7 +297,7 @@ add_executable(${PROJECT_NAME}
         src/calibration/camera_calib.cpp
         src/util/image_loader.cpp
         src/robot_basic_tools.cpp
-        include/dev/chess_board.hpp)
+       )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${catkin_INCLUDE_DIRS}

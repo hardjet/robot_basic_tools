@@ -15,7 +15,7 @@ typedef boost::shared_ptr<ChessboardQuad> ChessboardQuadPtr;
 class Chessboard {
  public:
   Chessboard(cv::Size boardSize, cv::Mat& image);
-
+  Chessboard(cv::Size boardSize, double &tag_size);
   void findCorners(bool useOpenCV = false);
   const std::vector<cv::Point2f>& getCorners(void) const;
   bool cornersFound(void) const;

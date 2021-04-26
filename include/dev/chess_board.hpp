@@ -1,9 +1,8 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
-#include "camera_model/chessboard/Chessboard.h"
-#include "camera_model/chessboard/ChessboardQuad.h"
 
 namespace camera_model
 {
@@ -21,9 +20,9 @@ namespace dev {
  * @brief 棋盘格标定板对象
  *
  */
-class ChessBoard {
+class chessboard{
  public:
-  explicit ChessBoard(std::string& data_path);
+  explicit chessboard(std::string& data_path);
   /**
    * @brief 画ui
    */
@@ -74,9 +73,9 @@ class ChessBoard {
   // 是否显示3d内容
   bool b_show_3d_{false};
   // tagRows
-  uint tag_rows_{6};
+  int tag_rows_{6};
   // tagCols
-  uint tag_cols_{6};
+  int tag_cols_{6};
   // tagSize
   double tag_size_{0.03};
   // 板子长度
@@ -88,7 +87,7 @@ class ChessBoard {
   // chess board上的角点
   std::vector<Eigen::Vector3d> chess_board_points_;
   // april board的边
-  std::shared_ptr<glk::Drawable> april_edges_ptr_{nullptr};
+  std::shared_ptr<glk::Drawable> chess_edges_ptr_{nullptr};
   // 设备在世界坐标系下的位姿
   Eigen::Matrix4f T_{};
 };

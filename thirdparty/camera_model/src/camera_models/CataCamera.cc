@@ -8,7 +8,6 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include "camera_model/gpl/gpl.h"
 
 namespace camera_model {
@@ -236,8 +235,9 @@ int CataCamera::imageHeight() const { return mParameters.imageHeight(); }
 void CataCamera::estimateIntrinsics(const cv::Size& boardSize,
                                     const std::vector<std::vector<cv::Point3f> >& objectPoints,
                                     const std::vector<std::vector<cv::Point2f> >& imagePoints) {
-  Parameters params = getParameters();
 
+  std::cout <<"start estimateIntrinsics()"<< std::endl;
+  Parameters params = getParameters();
   double u0 = params.imageWidth() / 2.0;
   double v0 = params.imageHeight() / 2.0;
 
@@ -258,11 +258,14 @@ void CataCamera::estimateIntrinsics(const cv::Size& boardSize,
 
   // Initialize gamma (focal length)
   // Use non-radial line image and xi = 1
+  //这里要重新写，这里用的不是标准的棋盘格。而是用的april_board;
   for (size_t i = 0; i < imagePoints.size(); ++i) {
+    //遍历所有的高度
     for (int r = 0; r < boardSize.height; ++r) {
       cv::Mat P(boardSize.width, 4, CV_64F);
-      for (int c = 0; c < boardSize.width; ++c) {
-        const cv::Point2f& imagePoint = imagePoints.at(i).at(r * boardSize.width + c);
+      //遍历所有的宽度
+      for (int c = 0; c < boardSize.width/2; ++c) {
+        const cv::Point2f& imagePoint = imagePoints.at(i).at(r * (boardSize.width +0.9) + c);
 
         double u = imagePoint.x - u0;
         double v = imagePoint.y - v0;
@@ -275,6 +278,7 @@ void CataCamera::estimateIntrinsics(const cv::Size& boardSize,
 
       cv::Mat C;
       cv::SVD::solveZ(P, C);
+
       double t = square(C.at<double>(0)) + square(C.at<double>(1)) + C.at<double>(2) * C.at<double>(3);
       if (t < 0.0) {
         continue;
@@ -306,7 +310,7 @@ void CataCamera::estimateIntrinsics(const cv::Size& boardSize,
       }
     }
   }
-
+  std::cout <<"finish estimateIntrinsics()"<< std::endl;
   if (gamma0 <= 0.0 && minReprojErr >= std::numeric_limits<double>::max()) {
     std::cout << "[" << params.cameraName() << "] "
               << "# INFO: CataCamera model fails with given data. " << std::endl;

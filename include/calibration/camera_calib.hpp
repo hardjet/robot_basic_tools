@@ -85,7 +85,6 @@ class CameraCalib : public BaseCalib {
   std::vector<double> inst_params_;
   // 标定数据
   struct CalibData {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
     // 相机坐标系到世界坐标系的变换(这里的世界坐标系实际上是标定板的坐标系)
     Eigen::Quaterniond q_ac;
@@ -100,7 +99,6 @@ class CameraCalib : public BaseCalib {
     std::vector<cv::Point3f> objectPoints;
     //需要显示的图像
     cv::Mat pic_show;
-
   };
   // 资源锁
   std::mutex mtx_;

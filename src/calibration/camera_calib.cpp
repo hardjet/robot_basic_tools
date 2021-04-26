@@ -433,7 +433,7 @@ bool CameraCalib::calc() {
   //显示标定板加载信息
   std::cout <<"boardSize.width:"<<boardSize.width<<std::endl;
   std::cout <<"boardSize.height:"<<boardSize.height<<std::endl;
-  std::cout <<"tagsize:"<<april_board_ptr_->board->get_tagsize()*100<<"mm"<<std::endl;
+  std::cout <<"tag_size:"<<april_board_ptr_->board->get_tagsize()*100<<"mm"<<std::endl;
   //对相机的缓存点进行初始化
   cam_cal_.clear();
   //从所有数据中加载特征信息
@@ -463,6 +463,7 @@ bool CameraCalib::calc() {
     Eigen::Quaterniond q_ac(R_ac);
     data.q_ac = q_ac;
   }
+  std::cout<<"End of camera calibration！"<<std::endl;
   return true;
 }
 void CameraCalib::draw_ui_params() {
@@ -475,7 +476,6 @@ void CameraCalib::draw_ui_params() {
   ImGui::Text("height:%d", cam_dev_ptr_->camera_model()->imageHeight());
   ImGui::Separator();
   ImGui::Text("params:");
-
   // 设定宽度
   ImGui::PushItemWidth(80);
   switch (cam_dev_ptr_->camera_model()->modelType()) {
@@ -580,7 +580,6 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
     t_ca = -R_ca * cur_calib_data.t_ac;
     // 将标定板上三个不在一条线的点变换到相机坐标系下
     std::vector<Eigen::Vector3d> pts_on_april_board_in_cam;
-    // std::cout << "pts_on_april_board_in_cam:" << std::endl;
     for (const auto& p : pts_on_april_board) {
       pts_on_april_board_in_cam.emplace_back(R_ca * p + t_ca);
     }

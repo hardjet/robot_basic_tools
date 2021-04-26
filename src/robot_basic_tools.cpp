@@ -68,7 +68,6 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   // 两个单线激光标定
   tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
 
-
   // 单目相机标定
   cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_);
 

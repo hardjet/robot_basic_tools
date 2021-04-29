@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-
-=======
 # 机器人基础工具箱
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/0bf5a8ea57614cb5b80d1574fb3d65a2)](https://www.codacy.com/gh/hardjet/robot_basic_tools/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=hardjet/robot_basic_tools&amp;utm_campaign=Badge_Grade)
 ## 简介
@@ -144,4 +141,3 @@ roslaunch robot_basic_tools sim.launch
 ## License
 
 本工具遵照 GPLv3 license。
->>>>>>> master

@@ -17,11 +17,20 @@ class Chessboard {
   Chessboard(cv::Size boardSize, cv::Mat& image);
   Chessboard(cv::Size boardSize, double &tag_size);
   void findCorners(bool useOpenCV = false);
+  bool findCorners(cv::Mat& image,
+                   std::vector<cv::Point3f> &objectPoints,
+                   std::vector<cv::Point2f> &imagePoints,
+                   bool useOpenCV= false);
   const std::vector<cv::Point2f>& getCorners(void) const;
   bool cornersFound(void) const;
 
   const cv::Mat& getImage(void) const;
   const cv::Mat& getSketch(void) const;
+
+  const int& cols(void) const;
+  const int& rows(void) const;
+
+  const double& get_tagsize(void) const;
 
  private:
   bool findChessboardCorners(const cv::Mat& image, const cv::Size& patternSize, std::vector<cv::Point2f>& corners,
@@ -65,6 +74,7 @@ class Chessboard {
   std::vector<cv::Point2f> mCorners;
   cv::Size mBoardSize;
   bool mCornersFound;
+  double m_tag_size;  //单位米
 };
 }  // namespace camera_model
 

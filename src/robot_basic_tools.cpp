@@ -72,7 +72,7 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
 
   // 单目相机标定
-  cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_);
+  cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_,chess_board_ptr_);
 
   // initialize the main OpenGL canvas
   main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());

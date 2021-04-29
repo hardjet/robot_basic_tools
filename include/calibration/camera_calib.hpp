@@ -21,6 +21,7 @@ class PointCloudBuffer;
 
 namespace dev {
 class AprilBoard;
+class chessboard;
 class Camera;
 class ImageShow;
 }  // namespace dev
@@ -33,7 +34,8 @@ class CameraCalib : public BaseCalib {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-              std::shared_ptr<dev::AprilBoard>& april_board_ptr);
+              std::shared_ptr<dev::AprilBoard>& april_board_ptr,
+              std::shared_ptr<dev::chessboard>& chess_board_ptr);
   // opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
   // im gui绘图
@@ -60,9 +62,14 @@ class CameraCalib : public BaseCalib {
   bool save_calib_data(const std::string& file_path);
   //加载矫正过程中产生的数据
   bool load_calib_data(const std::string& file_path);
+
  private:
-  // 标定板对象
+  // 是否使用标准棋盘
+  bool USE_APRIL_BOARD{true};
+  // AprilBoard标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
+  // 标准棋盘格标定板对象
+  std::shared_ptr<dev::chessboard> chess_board_ptr_;
   // 图像显示对象
   std::shared_ptr<dev::ImageShow> image_imshow_ptr_{nullptr};
   // 标定数据中点云数据显示所用
@@ -105,6 +112,7 @@ class CameraCalib : public BaseCalib {
   // 任务对象
   std::shared_ptr<Task> task_ptr_{nullptr};
   std::shared_ptr<dev::Camera> cam_dev_ptr_{nullptr};
+
   // 当前计算出的标定数据
   CalibData calib_data_;
   // 候选标定数据

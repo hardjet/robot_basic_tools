@@ -23,7 +23,7 @@ Chessboard::Chessboard(cv::Size boardSize, cv::Mat& image) : mBoardSize(boardSiz
   }
 }
 Chessboard::Chessboard(cv::Size boardSize,double &tag_size) : mBoardSize(boardSize), mCornersFound(false) {
-
+    m_tag_size=tag_size;
 }
 void Chessboard::findCorners(bool useOpenCV) {
   mCornersFound = findChessboardCorners(
@@ -36,7 +36,36 @@ void Chessboard::findCorners(bool useOpenCV) {
     cv::drawChessboardCorners(mSketch, mBoardSize, mCorners, mCornersFound);
   }
 }
-
+bool Chessboard::findCorners(cv::Mat& image,
+                             std::vector<cv::Point3f> &objectPoints,
+                             std::vector<cv::Point2f> &imagePoints,
+                             bool useOpenCV){
+  if (image.channels() == 1) {
+    //      cv::cvtColor( image, mSketch, CV_GRAY2BGR );
+    cv::cvtColor(image, mSketch, cv::COLOR_GRAY2BGR);
+    image.copyTo(mImage);
+  } else {
+    image.copyTo(mSketch);
+    //        cv::cvtColor( image, mImage, cv::COLOR_BGR2GRAY );
+    cv::cvtColor(image, mImage, cv::COLOR_GRAY2BGR);
+  }
+  mCornersFound = findChessboardCorners(
+      mImage, mBoardSize, mCorners,
+      cv::CALIB_CB_ADAPTIVE_THRESH + cv::CALIB_CB_NORMALIZE_IMAGE + cv::CALIB_CB_FILTER_QUADS + cv::CALIB_CB_FAST_CHECK,
+      useOpenCV);
+  imagePoints=mCorners;
+  for (int i = 0; i < mBoardSize.height; ++i) {
+    for (int j = 0; j < mBoardSize.width; ++j) {
+      objectPoints.push_back(cv::Point3f(i * m_tag_size, j * m_tag_size, 0.0));
+    }
+  }
+  if (mCornersFound) {
+    //        draw chessboard corners
+    cv::drawChessboardCorners(mSketch, mBoardSize, mCorners, mCornersFound);
+    return true;
+  }
+  return false;
+}
 const std::vector<cv::Point2f>& Chessboard::getCorners(void) const { return mCorners; }
 
 bool Chessboard::cornersFound(void) const { return mCornersFound; }
@@ -44,6 +73,12 @@ bool Chessboard::cornersFound(void) const { return mCornersFound; }
 const cv::Mat& Chessboard::getImage(void) const { return mImage; }
 
 const cv::Mat& Chessboard::getSketch(void) const { return mSketch; }
+
+const int& Chessboard::cols(void) const { return mImage.cols; }
+
+const int& Chessboard::rows(void) const{ return mImage.rows; }
+
+const double& Chessboard::get_tagsize(void) const{return m_tag_size;}
 
 bool Chessboard::findChessboardCorners(const cv::Mat& image, const cv::Size& patternSize,
                                        std::vector<cv::Point2f>& corners, int flags, bool useOpenCV) {
@@ -123,14 +158,12 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat& image, const cv::S
       return false;
     }
   }
-
   // PART 1: FIND LARGEST PATTERN
   //-----------------------------------------------------------------------
   // Checker patterns are tried to be found by dilating the background and
   // then applying a canny edge finder on the closed contours (checkers).
   // Try one dilation run, but if the pattern is not found, repeat until
   // max_dilations is reached.
-
   int prevSqrSize = 0;
   bool found = false;
   std::vector<ChessboardCornerPtr> outputCorners;

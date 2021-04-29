@@ -1,21 +1,16 @@
 #pragma once
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
-
 namespace camera_model
 {
   class Chessboard;
 }
-
 namespace glk {
 class GLSLShader;
 class Drawable;
 }  // namespace glk
-
 namespace dev {
-
 /**
  * @brief 棋盘格标定板对象
  *
@@ -36,7 +31,6 @@ class chessboard{
    * @brief 打开显示ui开关
    */
   void show() { b_show_window_ = true; };
-
   /**
    * @brief 打开显示3d开关
    */
@@ -46,13 +40,11 @@ class chessboard{
    * @param pose
    */
   const Eigen::Matrix4f& get_pose() const { return T_; }
-
   /**
    * 设置sensor位姿
    * @param new_pose
    */
   void set_pose(const Eigen::Matrix4f& new_pose) { T_ = new_pose; }
-
  public:
   // 标定板对象
   boost::shared_ptr<camera_model::Chessboard> board{nullptr};

@@ -1,5 +1,5 @@
 
-#include <opencv2/calib3d/calib3d.hpp>
+#include<opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -13,7 +13,6 @@
 #include "util/image_loader.hpp"
 #include "dev/chess_board.hpp"
 #include "camera_model/chessboard/Chessboard.h"
-#include "camera_model/chessboard/ChessboardQuad.h"
 
 namespace dev {
 chessboard::chessboard(std::string& data_path) {
@@ -30,7 +29,7 @@ chessboard::chessboard(std::string& data_path) {
   chess_board_points_.clear();
   for (int i = 0; i < tag_rows_; ++i) {
     for (int j = 0; j < tag_cols_; ++j) {
-      chess_board_points_.emplace_back(Eigen::Vector3d(i * tag_size_*tag_size_, j * tag_size_*tag_size_, 0.0));
+      chess_board_points_.emplace_back(Eigen::Vector3d(i * tag_size_, j * tag_size_, 0.0));
     }
   }
   update_chessboard_edges();
@@ -40,30 +39,15 @@ void chessboard::update_chessboard_edges() {
   // edges的顶点
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
   for (uint r = 0; r < tag_rows_; r++) {
-//    // 行线 第一行
-//    vertices.emplace_back(chess_board_points_.at(r * 2 * tag_cols_ * 2).cast<float>());
-//    vertices.emplace_back(chess_board_points_.at(r * 2 * tag_cols_ * 2 + tag_cols_ * 2 - 1).cast<float>());
-//    // 行线 第二行
-//    vertices.emplace_back(chess_board_points_.at((r * 2 + 1) * tag_cols_ * 2).cast<float>());
-//    vertices.emplace_back(chess_board_points_.at((r * 2 + 1) * tag_cols_ * 2 + tag_cols_ * 2 - 1).cast<float>());
-//    // id用X显示
-//    for (uint c = 0; c < tag_cols_; c++) {
-//      // 交叉线
-//      vertices.emplace_back(chess_board_points_.at(r * 2 * tag_cols_ * 2 + c * 2).cast<float>());
-//      vertices.emplace_back(chess_board_points_.at((r * 2 + 1) * tag_cols_ * 2 + c * 2 + 1).cast<float>());
-//
-//      vertices.emplace_back(chess_board_points_.at(r * 2 * tag_cols_ * 2 + c * 2 + 1).cast<float>());
-//      vertices.emplace_back(chess_board_points_.at((r * 2 + 1) * tag_cols_ * 2 + c * 2).cast<float>());
-//    }
+    // 行线
+      vertices.emplace_back(chess_board_points_.at(r * tag_cols_ ).cast<float>());
+      vertices.emplace_back(chess_board_points_.at(r * tag_cols_ + tag_cols_-1).cast<float>());
   }
-//  for (uint c = 0; c < tag_cols_; c++) {
-//    // 列线
-//    vertices.emplace_back(chess_board_points_.at(c * 2).cast<float>());
-//    vertices.emplace_back(chess_board_points_.at((tag_rows_ * 2 - 1) * tag_cols_ * 2 + c * 2).cast<float>());
-//
-//    vertices.emplace_back(chess_board_points_.at(c * 2 + 1).cast<float>());
-//    vertices.emplace_back(chess_board_points_.at((tag_rows_ * 2 - 1) * tag_cols_ * 2 + c * 2 + 1).cast<float>());
-//  }
+  for (uint c = 0; c < tag_cols_; c++) {
+    // 列线
+    vertices.emplace_back(chess_board_points_.at(c).cast<float>());
+    vertices.emplace_back(chess_board_points_.at((tag_rows_  - 1) * tag_cols_ + c ).cast<float>());
+  }
   chess_edges_ptr_.reset(new glk::Lines(0.0005f, vertices));
 }
 
@@ -76,17 +60,16 @@ void chessboard::draw_gl(glk::GLSLShader& shader) {
   T.pretranslate(T_.block<3, 1>(0, 3));
   // 设置板子起点位置
   Eigen::Isometry3f T_B = Eigen::Isometry3f::Identity();
-  T_B.pretranslate(Eigen::Vector3f(float(board_lenght_ / 2), float(board_height_ / 2), 0));
+  T_B.pretranslate(Eigen::Vector3f(float(board_height_ / 2), float(board_lenght_ / 2 ), 0));
 
   // 增加上下板子边界
   Eigen::Matrix4f model_matrix =
-      ((T * T_B) * Eigen::Scaling<float>(float(board_lenght_ + 0.04), float(board_height_ + 0.2), 0.0001)).matrix();
+      ((T * T_B) * Eigen::Scaling<float>(float(board_height_ + 0.04), float(board_lenght_ + 0.04), 0.0001)).matrix();
 
   shader.set_uniform("color_mode", 1);
   shader.set_uniform("model_matrix", model_matrix);
   shader.set_uniform("material_color", Eigen::Vector4f(1.0f, 1.0f, 1.0f, 0.2f));
   shader.set_uniform("info_values", Eigen::Vector4i(0, 0, 0, 0));
-
   auto& cube = glk::Primitives::instance()->primitive(glk::Primitives::CUBE);
   cube.draw(shader);
   // // 画角点
@@ -148,7 +131,7 @@ void chessboard::draw_ui() {
       //重新生成要显示的点
       for (int i = 0; i < tag_rows_; ++i) {
         for (int j = 0; j < tag_cols_; ++j) {
-          chess_board_points_.emplace_back(Eigen::Vector3d(i * tag_size_*tag_size_, j * tag_size_*tag_size_, 0.0));
+          chess_board_points_.emplace_back(Eigen::Vector3d(i * tag_size_, j * tag_size_, 0.0));
         }
       }
       // 更新3d显示

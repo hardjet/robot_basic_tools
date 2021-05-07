@@ -74,9 +74,9 @@ const cv::Mat& Chessboard::getImage(void) const { return mImage; }
 
 const cv::Mat& Chessboard::getSketch(void) const { return mSketch; }
 
-const int& Chessboard::cols(void) const { return mImage.cols; }
+const int& Chessboard::cols(void) const { return mBoardSize.width; }
 
-const int& Chessboard::rows(void) const{ return mImage.rows; }
+const int& Chessboard::rows(void) const{ return mBoardSize.height; }
 
 const double& Chessboard::get_tagsize(void) const{return m_tag_size;}
 

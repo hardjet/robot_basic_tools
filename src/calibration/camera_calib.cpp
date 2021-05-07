@@ -452,8 +452,8 @@ bool CameraCalib::calc() {
     boardSize.height = (int)april_board_ptr_->board->rows();
     tag_size = (float)april_board_ptr_->board->get_tagsize() * 100;
   } else {
-    boardSize.width = chess_board_ptr_->board->cols();
-    boardSize.height = chess_board_ptr_->board->rows();
+    boardSize.width = chess_board_ptr_->board->rows();
+    boardSize.height = chess_board_ptr_->board->cols();
     tag_size = (float)chess_board_ptr_->board->get_tagsize() * 100;
   }
   //类初始化

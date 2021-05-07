@@ -67,9 +67,9 @@ class chessboard{
   // tagRows
   int tag_rows_{6};
   // tagCols
-  int tag_cols_{6};
+  int tag_cols_{9};
   // tagSize
-  double tag_size_{0.03};
+  double tag_size_{0.02};
   // 板子长度
   double board_lenght_{};
   // 板子高度

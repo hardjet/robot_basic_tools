@@ -29,7 +29,7 @@ chessboard::chessboard(std::string& data_path) {
   chess_board_points_.clear();
   for (int i = 0; i < tag_rows_; ++i) {
     for (int j = 0; j < tag_cols_; ++j) {
-      chess_board_points_.emplace_back(Eigen::Vector3d(i * tag_size_, j * tag_size_, 0.0));
+      chess_board_points_.emplace_back(Eigen::Vector3d(j * tag_size_, i * tag_size_, 0.0));
     }
   }
   update_chessboard_edges();
@@ -60,7 +60,7 @@ void chessboard::draw_gl(glk::GLSLShader& shader) {
   T.pretranslate(T_.block<3, 1>(0, 3));
   // 设置板子起点位置
   Eigen::Isometry3f T_B = Eigen::Isometry3f::Identity();
-  T_B.pretranslate(Eigen::Vector3f(float(board_height_ / 2), float(board_lenght_ / 2 ), 0));
+  T_B.pretranslate(Eigen::Vector3f(float(board_lenght_  / 2), float(board_height_/ 2 ), 0));
 
   // 增加上下板子边界
   Eigen::Matrix4f model_matrix =

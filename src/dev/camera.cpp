@@ -79,7 +79,6 @@ void Camera::check_online_status() {
       inst_ptr_->imageWidth() = int(image_msg_ptr->width);
       inst_ptr_->imageHeight() = int(image_msg_ptr->height);
     }
-
     // 检查图像是否需要更新，避免重复更新
     if (!image_cv_ptr_ || image_cv_ptr_->header.stamp.nsec != image_msg_ptr->header.stamp.nsec) {
       if (cv_convert(image_msg_ptr)) {
@@ -88,7 +87,6 @@ void Camera::check_online_status() {
       }
     }
   }
-
   // 获取深度点云最新数据
   auto depth_data_ptr = points_data_ptr_->data();
   if (depth_data_ptr) {
@@ -97,7 +95,6 @@ void Camera::check_online_status() {
       online = true;
     }
   }
-
   is_online_ = online;
 }
 

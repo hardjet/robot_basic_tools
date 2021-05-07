@@ -65,7 +65,7 @@ class CameraCalib : public BaseCalib {
 
  private:
   // 是否使用标准棋盘
-  bool USE_APRIL_BOARD{true};
+  bool USE_APRIL_BOARD{false};
   // AprilBoard标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 标准棋盘格标定板对象

@@ -27,8 +27,8 @@ class Task {
   //  * @param task_name 任务名称
   //  * @param task 任务函数
   //  */
-  // template <typename T>
-  // bool do_task(const std::string &task_name, const std::function<T()> &task) {
+  // template <typename T, typename... ArgTypes>
+  // bool do_task(const std::string &task_name, std::function<T(ArgTypes...)> &task) {
   //   if (is_new_) {
   //     is_new_ = false;
   //     create(task_name, task);
@@ -43,8 +43,8 @@ class Task {
   //  * @param task_name 任务名称
   //  * @param task 任务函数
   //  */
-  // template <typename T>
-  // void create(const std::string &task_name, const std::function<T()> &task) {
+  // template <typename T, typename... ArgTypes>
+  // void create(const std::string &task_name, std::function<T(ArgTypes...)> &task) {
   //   task_name_ = task_name;
   //
   //   result_.clear();

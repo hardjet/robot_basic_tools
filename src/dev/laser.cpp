@@ -97,7 +97,7 @@ void Laser::check_online_status() {
   // 获取深度点云最新数据
   auto laser_data_ptr = laser_data_ptr_->data();
   if (laser_data_ptr) {
-    if (ros::Time::now().sec - laser_data_ptr->header.stamp.sec < 2) {
+    if (ros::Time::now().sec - laser_data_ptr->header.stamp.sec < 5) {
       online = true;
     }
   }

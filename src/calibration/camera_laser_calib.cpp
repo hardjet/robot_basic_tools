@@ -264,9 +264,9 @@ bool CamLaserCalib::get_pose_and_points() {
     // 检测激光中的直线
     cv::Mat laser_img_show;
     algorithm::LineDetector line_detector(*cur_laser_data, angle_range_, max_range_);
-    // if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
-    //                                    min_num_of_pts_)) {
-    if (line_detector.find_line(calib_data_.line_pts, calib_data_.line_params, laser_img_show)) {
+     if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
+                                        min_num_of_pts_)) {
+//    if (line_detector.find_line(calib_data_.line_pts, calib_data_.line_params, laser_img_show)) {
       // 计算直线上的点
       // 激光所在直线不能垂直于某个轴
       double x_start(calib_data_.line_pts.begin()->x()), x_end(calib_data_.line_pts.end()->x());

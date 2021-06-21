@@ -22,6 +22,7 @@ class PointCloudBuffer;
 namespace dev {
 class AprilBoard;
 class chessboard;
+class blob_board;
 class Camera;
 class ImageShow;
 }  // namespace dev
@@ -66,10 +67,16 @@ class CameraCalib : public BaseCalib {
  private:
   // 是否使用标准棋盘
   bool USE_APRIL_BOARD{false};
+  // 是否使用斑点棋盘
+  bool USE_BOARD_BOARD{true};
   // AprilBoard标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 标准棋盘格标定板对象
   std::shared_ptr<dev::chessboard> chess_board_ptr_;
+
+  // 标准圆斑标定板对象
+  std::shared_ptr<dev::blob_board> blob_board_ptr_;
+
   // 图像显示对象
   std::shared_ptr<dev::ImageShow> image_imshow_ptr_{nullptr};
   // 标定数据中点云数据显示所用

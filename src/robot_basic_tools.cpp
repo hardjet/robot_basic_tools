@@ -19,6 +19,7 @@
 #include "dev/sensor_manager.hpp"
 #include "dev/april_board.hpp"
 #include "dev/chess_board.hpp"
+#include "dev/blob_board.hpp"
 // 标定工具
 #include "calibration/camera_laser_calib.hpp"
 #include "calibration/two_lasers_calib.hpp"
@@ -61,6 +62,10 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
 
   // 标准棋盘格标定板
   chess_board_ptr_ = std::make_shared<dev::chessboard>(dev::data_default_path);
+
+  // 标准棋盘格标定板
+  blob_board_ptr_ = std::make_shared<dev::blob_board>(dev::data_default_path);
+
 
   // 单线激光与相机标定
   cl_calib_ptr_ = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr_, april_board_ptr_);
@@ -148,6 +153,7 @@ void RobotBasicTools::draw_ui() {
   sensor_manager_ptr_->draw_ui();
   april_board_ptr_->draw_ui();
   chess_board_ptr_->draw_ui();
+  blob_board_ptr_->draw_ui();
   cl_calib_ptr_->draw_ui();
   tl_calib_ptr_->draw_ui();
   tc_calib_ptr_->draw_ui();
@@ -183,6 +189,7 @@ void RobotBasicTools::draw_gl() {
     sensor_manager_ptr_->draw_gl(*main_canvas_ptr_->shader);
     april_board_ptr_->draw_gl(*main_canvas_ptr_->shader);
     chess_board_ptr_->draw_gl(*main_canvas_ptr_->shader);
+    blob_board_ptr_->draw_gl(*main_canvas_ptr_->shader);
     cl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tc_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
@@ -213,6 +220,9 @@ void RobotBasicTools::main_menu() {
     }
     if (ImGui::MenuItem("ChessBoard setting")) {
       chess_board_ptr_->show();
+    }
+    if (ImGui::MenuItem("BlobBoard setting")) {
+      blob_board_ptr_->show();
     }
     ImGui::Separator();
 

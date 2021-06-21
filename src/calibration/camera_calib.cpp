@@ -10,6 +10,7 @@
 
 #include "dev/april_board.hpp"
 #include "dev/chess_board.hpp"
+#include "dev/blob_board.hpp"
 #include "dev/sensor_manager.hpp"
 #include "dev/image_show.hpp"
 #include "dev/camera.hpp"
@@ -24,6 +25,7 @@
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/chessboard/Chessboard.h"
 
+#include <opencv2/calib3d.hpp>
 // ---- 相机标定状态
 // 空闲
 #define STATE_IDLE 0
@@ -256,9 +258,9 @@ void CameraCalib::draw_gl(glk::GLSLShader& shader) {
 }
 /// 设置标定参数
 void CameraCalib::draw_calib_params() {
-  ImGui::Separator();
-  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
-  ImGui::Text("camera type:%s", camera_type[cam_dev_ptr_->camera_model()->modelType()]);
+  //  ImGui::Separator();
+  //  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
+  //  ImGui::Text("camera type:%s", camera_type[cam_dev_ptr_->camera_model()->modelType()]);
   draw_ui_params();
 }
 //更新3D图像点信息
@@ -310,6 +312,20 @@ bool CameraCalib::get_pose_and_points() {
   } else {
     img_show = cur_image->image.clone();
   }
+  //是否灰度翻转
+  bool USE_IMAGE_INVERSE = false;
+
+  if(USE_IMAGE_INVERSE)
+  {
+    for (int row=0;row<img.rows;row++)
+    {
+      for (int col=0;col<img.cols;col++)
+      {
+        int px_value = img.at<uchar>(row,col);
+        img.at<uchar>(row, col) = 255 - px_value;
+      }
+    }
+  }
   //通过图像得到april board中角点的位置和图像点
   objectPoints.clear();
   imagePoints.clear();
@@ -322,7 +338,28 @@ bool CameraCalib::get_pose_and_points() {
     } else {
       result = false;  // 未找到
     }
-  } else  //是否使用标准的棋盘格检测角点
+  } else if(USE_BOARD_BOARD)
+  {
+    cv::Size boardSize  =blob_board_ptr_->get_board_size();
+    // 默认的就是对称圆环标定
+    if(cv::findCirclesGrid(img,boardSize,imagePoints))
+    {
+      result = true;
+      double m_tag_size =blob_board_ptr_->get_tag_size_();
+      objectPoints.clear();
+      for (int i = 0; i < boardSize.height; ++i) {
+        for (int j = 0; j < boardSize.width; ++j) {
+          objectPoints.push_back(cv::Point3f(i * m_tag_size, j * m_tag_size, 0.0));
+        }
+      }
+    }
+    else
+    {
+      result = false;
+    }
+  }
+  else
+  //是否使用标准的棋盘格检测角点
   {
     if (chess_board_ptr_->board->findCorners(img, objectPoints, imagePoints, true)) {
       // 判断是不是找到特征点
@@ -563,6 +600,32 @@ void CameraCalib::draw_ui_params() {
       ImGui::SameLine();
       ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
       break;
+    case camera_model::Camera::ModelType::PINHOLE_FULL:
+      // 新行
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k3", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k4", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      // 新行
+      ImGui::DragScalar("k5", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k6", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[6], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[7], 1.0, &const_0, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("fx", ImGuiDataType_Double, &inst_params_[8], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("fy", ImGuiDataType_Double, &inst_params_[9], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cx", ImGuiDataType_Double, &inst_params_[10], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cy", ImGuiDataType_Double, &inst_params_[11], 1.0, &const_0, nullptr, "%.2f");
+      break;
     default:
       break;
   }
@@ -626,11 +689,16 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
       Eigen::Vector3d p_in_space;
       cam_dev_ptr_->camera_model()->liftProjective(Eigen::Vector2d{p.x, p.y}, p_in_space);
       Eigen::Vector3d p_on_board;
+      Eigen::Vector3d p_in_space_temp;
       // 计算交点
       bool res = algorithm::plane_line_intersect_point(plane_params.head(3), pts_on_april_board_in_cam[1],
                                                        p_in_space, p_in_space, p_on_board);
       if (res)
       {
+        Eigen::Vector3d pts_on_board_temp;
+        pts_on_board_temp[0] =p_on_board[1];
+        pts_on_board_temp[1] =p_on_board[0];
+        pts_on_board_temp[2] =p_on_board[2];
         cur_calib_data.pts_on_board.emplace_back(p_on_board);
       }
     }

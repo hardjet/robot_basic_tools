@@ -102,11 +102,11 @@ message(STATUS "RDPARTY_SO_PATH: ${RDPARTY_SO_PATH}")
 
 # 设置依赖库地址
 #set(OpenCV_LIB_DIR "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" CACHE STRING "The directory containing a CMake configuration file for OpenCV." FORCE)
-set(OpenCV_LIB_DIR "/home/anson/work/lib/" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
+set(OpenCV_LIB_DIR "/home/moi/include/opencv4.5/lib/cmake/opencv4" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
 message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
 
 #set(Ceres_LIB_DIR "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" CACHE STRING "The Path for CMake to find Ceres library")
-set(Ceres_LIB_DIR "/home/anson/work/lib/" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
+set(Ceres_LIB_DIR "/home/moi/include/ceres/lib/cmake/Ceres" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
 message(STATUS "Ceres_LIB_DIR: ${Ceres_LIB_DIR}")
 
 # ----- Build thirdparty -----
@@ -155,14 +155,14 @@ message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #        thread)
 
 # OpenCV
-find_package(OpenCV 4.3 QUIET
+find_package(OpenCV 4.5 QUIET
         COMPONENTS
         core
         imgproc
         highgui
         )
 if (NOT OpenCV_FOUND)
-    find_package(OpenCV 4.3 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
+    find_package(OpenCV 4.5 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
             COMPONENTS
             core
             imgproc
@@ -290,6 +290,7 @@ add_executable(${PROJECT_NAME}
         src/dev/image_show.cpp
         src/dev/april_board.cpp
         src/dev/chess_board.cpp
+        src/dev/blob_board.cpp
         src/dev/util.cpp
         src/calibration/camera_laser_calib.cpp
         src/calibration/two_lasers_calib.cpp

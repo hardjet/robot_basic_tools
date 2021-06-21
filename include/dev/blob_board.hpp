@@ -2,10 +2,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
-namespace camera_model
-{
-  class Chessboard;
-}
+#include <opencv2/calib3d.hpp>
 namespace glk {
 class GLSLShader;
 class Drawable;
@@ -15,9 +12,9 @@ namespace dev {
  * @brief 棋盘格标定板对象
  *
  */
-class chessboard{
+class blob_board{
  public:
-  explicit chessboard(std::string& data_path);
+  explicit blob_board(std::string& data_path);
   /**
    * @brief 画ui
    */
@@ -45,13 +42,19 @@ class chessboard{
    * @param new_pose
    */
   void set_pose(const Eigen::Matrix4f& new_pose) { T_ = new_pose; }
- public:
-  // 标定板对象
-  boost::shared_ptr<camera_model::Chessboard> board{nullptr};
 
+ public:
+  cv::Size get_board_size()const
+  {
+    return cv::Size{tag_rows_,tag_cols_};
+  }
+  double  get_tag_size_()const
+  {
+    return tag_size_;
+  }
  private:
   /// 更新chessboard 3d边框显示相关
-  void update_chessboard_edges();
+  void update_blob_board_edges();
 
  private:
   // 图片texture id
@@ -77,9 +80,9 @@ class chessboard{
   // 显示角点 ---- 弃用，点没有深度，无法正常显示
   // std::shared_ptr<glk::PointCloudBuffer> points_3d_ptr_{nullptr};
   // chess board上的角点
-  std::vector<Eigen::Vector3d> chess_board_points_;
+  std::vector<Eigen::Vector3d> blob_board_points_;
   // april board的边
-  std::shared_ptr<glk::Drawable> chess_edges_ptr_{nullptr};
+  std::shared_ptr<glk::Drawable> blob_edges_ptr_{nullptr};
   // 设备在世界坐标系下的位姿
   Eigen::Matrix4f T_{};
 };

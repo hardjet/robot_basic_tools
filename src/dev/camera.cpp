@@ -114,6 +114,9 @@ void Camera::creat_instance(int current_camera_type) {
           camera_model::Camera::ModelType::PINHOLE,
                                                                           sensor_name, cv::Size{640, 480});
       break;
+    case camera_model::Camera::ModelType::PINHOLE_FULL:
+      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE_FULL,sensor_name,
+                                                                          cv::Size{640, 480});
     default:
       break;
   }
@@ -194,7 +197,32 @@ void Camera::draw_ui_params() {
       ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
       ImGui::SameLine();
       ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
-
+      break;
+    case camera_model::Camera::ModelType::PINHOLE_FULL:
+      // 新行
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k3", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k4", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      // 新行
+      ImGui::DragScalar("k5", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k6", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[6], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[7], 1.0, &const_0, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("fx", ImGuiDataType_Double, &inst_params_[8], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("fy", ImGuiDataType_Double, &inst_params_[9], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cx", ImGuiDataType_Double, &inst_params_[10], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cy", ImGuiDataType_Double, &inst_params_[11], 1.0, &const_0, nullptr, "%.2f");
       break;
     default:
       break;
@@ -374,7 +402,7 @@ void Camera::draw_ui() {
   // 名称控件变量
   char name_char[128]{""};
   // 相机类型控件变量
-  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
+  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE", "PINHOLE_FULL"};
 
   // 初始化为设备名称
   memcpy(name_char, sensor_name.c_str(), sensor_name.length());

@@ -93,6 +93,9 @@ class RobotBasicTools : public guik::Application {
   // 标准棋盘格标定板
   std::shared_ptr<dev::chessboard> chess_board_ptr_;
 
+  // 标准圆形标定板
+  std::shared_ptr<dev::blob_board> blob_board_ptr_;
+
   // 相机与单线激光标定
   std::unique_ptr<calibration::CamLaserCalib> cl_calib_ptr_;
 

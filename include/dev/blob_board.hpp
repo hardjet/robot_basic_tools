@@ -68,11 +68,11 @@ class blob_board{
   // 是否显示3d内容
   bool b_show_3d_{false};
   // tagRows
-  int tag_rows_{6};
+  int tag_rows_{4};
   // tagCols
-  int tag_cols_{9};
+  int tag_cols_{8};
   // tagSize
-  double tag_size_{0.03};
+  double tag_size_{0.052};
   // 板子长度
   double board_lenght_{};
   // 板子高度

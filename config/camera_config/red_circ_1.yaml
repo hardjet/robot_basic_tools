@@ -1,0 +1,16 @@
+%YAML:1.0
+---
+model_type: PINHOLE
+camera_name: new camere 1
+image_width: 640
+image_height: 400
+distortion_parameters:
+   k1: -4.6512119230995030e-01
+   k2: 3.1290515299397736e-01
+   p1: -3.3085104837033400e-04
+   p2: -1.8987835492852499e-03
+projection_parameters:
+   fx: 7.5663102568369436e+02
+   fy: 7.5818172781637440e+02
+   cx: 3.5070636125342628e+02
+   cy: 2.4038832190630231e+02

@@ -36,7 +36,8 @@ class CameraCalib : public BaseCalib {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
               std::shared_ptr<dev::AprilBoard>& april_board_ptr,
-              std::shared_ptr<dev::chessboard>& chess_board_ptr);
+              std::shared_ptr<dev::chessboard>& chess_board_ptr,
+              std::shared_ptr<dev::blob_board>& blob_board_ptr);
   // opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
   // im gui绘图
@@ -68,7 +69,7 @@ class CameraCalib : public BaseCalib {
   // 是否使用标准棋盘
   bool USE_APRIL_BOARD{false};
   // 是否使用斑点棋盘
-  bool USE_BOARD_BOARD{true};
+  bool USE_BLOB_BOARD{true};
   // AprilBoard标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 标准棋盘格标定板对象

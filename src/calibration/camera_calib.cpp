@@ -43,8 +43,13 @@
 namespace calibration {
 CameraCalib::CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
                          std::shared_ptr<dev::AprilBoard>& april_board_ptr,
-                         std::shared_ptr<dev::chessboard>& chess_board_ptr)
-    : BaseCalib(sensor_manager_ptr), april_board_ptr_(april_board_ptr), chess_board_ptr_(chess_board_ptr) {
+                         std::shared_ptr<dev::chessboard>& chess_board_ptr,
+                         std::shared_ptr<dev::blob_board>& blob_board_ptr)
+    : BaseCalib(sensor_manager_ptr),
+      april_board_ptr_(april_board_ptr),
+      chess_board_ptr_(chess_board_ptr),
+      blob_board_ptr_(blob_board_ptr)
+{
   // 图像显示
   image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
@@ -189,7 +194,11 @@ void CameraCalib::draw_ui() {
         // 显示棋盘格
         if (USE_APRIL_BOARD) {
           april_board_ptr_->show_3d();
-        } else {
+        }else if(USE_BLOB_BOARD)
+        {
+          blob_board_ptr_->show_3d();
+        }
+        else {
           chess_board_ptr_->show_3d();
         }
       }
@@ -312,9 +321,9 @@ bool CameraCalib::get_pose_and_points() {
   } else {
     img_show = cur_image->image.clone();
   }
+  //setp 1. 进行图像的灰度翻转，因为反光板是白色的
   //是否灰度翻转
-  bool USE_IMAGE_INVERSE = false;
-
+  bool USE_IMAGE_INVERSE =true;
   if(USE_IMAGE_INVERSE)
   {
     for (int row=0;row<img.rows;row++)
@@ -326,10 +335,12 @@ bool CameraCalib::get_pose_and_points() {
       }
     }
   }
+  // SETP 2. 清空所有的角点缓存
   //通过图像得到april board中角点的位置和图像点
   objectPoints.clear();
   imagePoints.clear();
   bool result = false;
+  // SETP 3. 根据标定板类型选择合适的标定板
   //判断是不是用Aprilboard标定板
   if (USE_APRIL_BOARD) {
     // 利用A标定板查找对应点
@@ -338,28 +349,55 @@ bool CameraCalib::get_pose_and_points() {
     } else {
       result = false;  // 未找到
     }
-  } else if(USE_BOARD_BOARD)
+  } else if(USE_BLOB_BOARD) //进入圆形标定板检测
   {
-    cv::Size boardSize  =blob_board_ptr_->get_board_size();
-    // 默认的就是对称圆环标定
+    cv::Size boardSize(blob_board_ptr_->get_board_size().height,
+                       blob_board_ptr_->get_board_size().width);
+    //    标定预处理，包括斑点器生成和图像预处理
+    //    threshold(img, img, 80, 255, cv::THRESH_OTSU);
+    //    cv::Canny(img, img, 80, 220);
+    //    cv::Mat kernel = getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3), cv::Point(-1, -1));
+    //    morphologyEx(img, img, cv::MORPH_TOPHAT, kernel);
+    //    cv::SimpleBlobDetector::Params params;
+    //    params.minArea = 2;
+    //    params.maxArea = 4000;
+    //    params.minCircularity = 0.2;
+    //    params.maxCircularity = 1.0;
+    //    params.filterByArea = true;
+    //    cv::Ptr<cv::SimpleBlobDetector> sbd = cv::SimpleBlobDetector::create(params);
+    //1.检测斑点检测板是不是存在
     if(cv::findCirclesGrid(img,boardSize,imagePoints))
+    //if(cv::findCirclesGrid(img,boardSize,imagePoints,cv::CALIB_CB_SYMMETRIC_GRID,sbd))
     {
-      result = true;
+      //2.检测到棋盘后,二值化后找边缘
+      threshold(img, img, 80, 255, cv::THRESH_OTSU);
+      std::vector<std::vector<cv::Point2i>> small_patch_contours;
+      std::vector<cv::Vec4i> small_patch_hierarchy;
+      cv::findContours(img, small_patch_contours, small_patch_hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+      //3.通过drawContours找所有边缘，并将边缘以外的区域置0
       double m_tag_size =blob_board_ptr_->get_tag_size_();
-      objectPoints.clear();
-      for (int i = 0; i < boardSize.height; ++i) {
-        for (int j = 0; j < boardSize.width; ++j) {
-          objectPoints.push_back(cv::Point3f(i * m_tag_size, j * m_tag_size, 0.0));
-        }
-      }
-    }
-    else
-    {
-      result = false;
-    }
+      cv::Mat roi(img.size(),CV_8U,cv::Scalar(0));
+      cv::drawContours(roi,small_patch_contours,-1,cv::Scalar(255),-1);
+      imagePoints.clear();
+      //4.再次进行标定板检测
+      if(cv::findCirclesGrid(roi,boardSize,imagePoints))
+      {
+          //5.根据找到的图像点生成世界点
+          result = true;
+          objectPoints.clear();
+          for (int i = 0; i < boardSize.height; ++i) {
+            for (int j = 0; j < boardSize.width; ++j) {
+              objectPoints.emplace_back(i * m_tag_size, j * m_tag_size, 0.0);
+            }
+          }
+          //6.将其转换到可现实图像
+          cv::cvtColor(roi, img_show, cv::COLOR_GRAY2RGB);
+          cv::drawChessboardCorners(img_show,boardSize,imagePoints,true);
+      }else{result = false;}
+    }else{result = false;}
   }
-  else
-  //是否使用标准的棋盘格检测角点
+  else//使用标准的棋盘格检测角点
   {
     if (chess_board_ptr_->board->findCorners(img, objectPoints, imagePoints, true)) {
       // 判断是不是找到特征点
@@ -488,7 +526,13 @@ bool CameraCalib::calc() {
     boardSize.width = (int)april_board_ptr_->board->cols();
     boardSize.height = (int)april_board_ptr_->board->rows();
     tag_size = (float)april_board_ptr_->board->get_tagsize() * 100;
-  } else {
+  } else if(USE_BLOB_BOARD)
+  {
+    boardSize.width =blob_board_ptr_->get_board_size().width;
+    boardSize.height =blob_board_ptr_->get_board_size().height;
+    tag_size =(float ) blob_board_ptr_->get_tag_size_()*100;  //转换成厘米
+  }
+  else{
     boardSize.width = chess_board_ptr_->board->rows();
     boardSize.height = chess_board_ptr_->board->cols();
     tag_size = (float)chess_board_ptr_->board->get_tagsize() * 100;
@@ -659,7 +703,10 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
   // 设置位姿
   if (USE_APRIL_BOARD) {
     april_board_ptr_->set_pose(T_wa);
-  } else {
+  }else if(USE_BLOB_BOARD)
+  {
+    blob_board_ptr_->set_pose(T_wa);
+  }else {
     chess_board_ptr_->set_pose(T_wa);
   }
   if (cur_calib_data.b_need_calc) {

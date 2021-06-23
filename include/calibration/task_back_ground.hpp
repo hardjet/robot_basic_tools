@@ -27,8 +27,8 @@ class Task {
   //  * @param task_name 任务名称
   //  * @param task 任务函数
   //  */
-  // template <typename T>
-  // bool do_task(const std::string &task_name, const std::function<T()> &task) {
+  // template <typename T, typename... ArgTypes>
+  // bool do_task(const std::string &task_name, std::function<T(ArgTypes...)> &task) {
   //   if (is_new_) {
   //     is_new_ = false;
   //     create(task_name, task);
@@ -37,24 +37,24 @@ class Task {
   //   return is_terminated(task_name);
   // }
   //
-  // /**
-  //  *
-  //  * @tparam T 任务的返回值
-  //  * @param task_name 任务名称
-  //  * @param task 任务函数
-  //  */
-  // template <typename T>
-  // void create(const std::string &task_name, const std::function<T()> &task) {
-  //   task_name_ = task_name;
-  //
-  //   result_.clear();
-  //   is_running_ = true;
-  //
-  //   thread_ = std::thread([this, task]() {
-  //     result_ = task();
-  //     is_running_ = false;
-  //   });
-  // }
+   /**
+    *
+    * @tparam T 任务的返回值
+    * @param task_name 任务名称
+    * @param task 任务函数
+    */
+   template <typename T, typename... ArgTypes>
+   void create(const std::string &task_name, std::function<T(ArgTypes...)> &task) {
+     task_name_ = task_name;
+
+     result_.clear();
+     is_running_ = true;
+
+     thread_ = std::thread([this, task]() {
+       result_ = task();
+       is_running_ = false;
+     });
+   }
 
   /**
    * @brief 后台运行一个任务

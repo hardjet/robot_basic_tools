@@ -6,7 +6,7 @@
 工具界面
 ![工具界面](./doc/imgs/1.png)
 
-标定展示
+标定展示Cancel changes
 ![标定展示](./doc/imgs/2.png)
 
 ## 依赖说明

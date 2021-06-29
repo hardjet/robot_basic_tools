@@ -157,22 +157,17 @@ message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #        thread)
 
 # OpenCV
-<<<<<<< HEAD
-find_package(OpenCV 4.5 QUIET
-=======
+
 find_package(OpenCV  QUIET
->>>>>>> master
         COMPONENTS
         core
         imgproc
         highgui
         )
 if (NOT OpenCV_FOUND)
-<<<<<<< HEAD
-    find_package(OpenCV 4.5 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
-=======
+
     find_package(OpenCV  PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
->>>>>>> master
+
             COMPONENTS
             core
             imgproc

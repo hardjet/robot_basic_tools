@@ -4,21 +4,13 @@ set(CMAKE_BUILD_TYPE "Release")
 #set(CMAKE_CXX_FLAGS "-std=c++11 -march=native")
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC -fopenmp -Wno-all")
-<<<<<<< HEAD
-# 设置依赖库地址
-#set(OpenCV_LIB_DIR "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" CACHE STRING "The directory containing a CMake configuration file for OpenCV." FORCE)
-set(OpenCV_LIB_DIR "/home/moi/include/opencv4.5/lib/cmake/opencv4" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
-message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
 
-#set(Ceres_LIB_DIR "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" CACHE STRING "The Path for CMake to find Ceres library")
-set(Ceres_LIB_DIR "/home/moi/include/ceres/lib/cmake/Ceres" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
-=======
 set(OpenCV_LIB_DIR "/home/moi/include/opencv4.5/lib/" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
 message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
 
 #set(Ceres_LIB_DIR "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" CACHE STRING "The Path for CMake to find Ceres library")
 set(Ceres_LIB_DIR "/home/moi/include/ceres/lib/" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
->>>>>>> master
+
 message(STATUS "Ceres_LIB_DIR: ${Ceres_LIB_DIR}")
 find_package(Boost REQUIRED COMPONENTS
         filesystem
@@ -27,11 +19,9 @@ find_package(Boost REQUIRED COMPONENTS
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 # OpenCV
-<<<<<<< HEAD
-find_package(OpenCV 4.5 QUIET
-=======
+
 find_package(OpenCV QUIET
->>>>>>> master
+
         COMPONENTS
         core
         imgproc
@@ -39,11 +29,9 @@ find_package(OpenCV QUIET
         highgui
         )
 if (NOT OpenCV_FOUND)
-<<<<<<< HEAD
-    find_package(OpenCV 4.5 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
-=======
+
     find_package(OpenCV PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
->>>>>>> master
+
             COMPONENTS
             core
             imgproc

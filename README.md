@@ -128,6 +128,13 @@ catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -j4
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -DOpenCV_LIB_DIR="/path/to/opencv/lib/" -DCeres_LIB_DIR="/path/to/ceres/lib/" -j4
 ```
 
+可以在源码根目录创建.lib_path_config文件，指定opencv, ceres库位置。格式如下：
+
+```text
+OpenCV_LIB_DIR=/home/xxx/work/lib/opencv43/
+Ceres_LIB_DIR=/home/xxx/work/lib/ceres-solver-2.0.0/
+```
+
 ## 运行
 
 ```cmake

@@ -21,22 +21,22 @@ class Task {
     }
   }
 
-  // /**
-  //  *
-  //  * @tparam T 任务的返回值
-  //  * @param task_name 任务名称
-  //  * @param task 任务函数
-  //  */
-  // template <typename T, typename... ArgTypes>
-  // bool do_task(const std::string &task_name, std::function<T(ArgTypes...)> &task) {
-  //   if (is_new_) {
-  //     is_new_ = false;
-  //     create(task_name, task);
-  //   }
-  //
-  //   return is_terminated(task_name);
-  // }
-  //
+   /**
+    *
+    * @tparam T 任务的返回值
+    * @param task_name 任务名称
+    * @param task 任务函数
+    */
+   template <typename T, typename... ArgTypes>
+   bool do_task(const std::string &task_name, std::function<T(ArgTypes...)> &task) {
+     if (is_new_) {
+       is_new_ = false;
+       create(task_name, task);
+     }
+
+     return is_terminated(task_name);
+   }
+
    /**
     *
     * @tparam T 任务的返回值

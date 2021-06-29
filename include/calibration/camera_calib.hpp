@@ -70,6 +70,8 @@ class CameraCalib : public BaseCalib {
   bool USE_APRIL_BOARD{false};
   // 是否使用斑点棋盘
   bool USE_BLOB_BOARD{true};
+  // 是否图像取反
+  bool USE_IMAGE_INVERSE{false};
   // AprilBoard标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
   // 标准棋盘格标定板对象

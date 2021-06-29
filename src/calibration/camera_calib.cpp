@@ -148,6 +148,14 @@ void CameraCalib::draw_ui() {
         image_imshow_ptr_->disable();
       }
     }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("WHITE-TO-BLACK", &USE_IMAGE_INVERSE)) {
+      if (USE_IMAGE_INVERSE) {
+        USE_IMAGE_INVERSE = true;
+      }
+    }
+
+
     if (cam_dev_ptr_->camera_model()) {
       // 闲置状态下才可以设置
       if (next_state_ == STATE_IDLE) {
@@ -179,7 +187,7 @@ void CameraCalib::draw_ui() {
     next_state_ = STATE_IDLE;
   }
   // 大于7帧数据就可以开始进行标定操作了
-  if (calib_valid_data_vec_.size() > 7) {
+  if (calib_valid_data_vec_.size() > 8) {
     ImGui::SameLine();
     // 开始执行标定
     if (ImGui::Button("CALIB & SAVE ")) {
@@ -323,7 +331,6 @@ bool CameraCalib::get_pose_and_points() {
   }
   //setp 1. 进行图像的灰度翻转，因为反光板是白色的
   //是否灰度翻转
-  bool USE_IMAGE_INVERSE =true;
   if(USE_IMAGE_INVERSE)
   {
     for (int row=0;row<img.rows;row++)

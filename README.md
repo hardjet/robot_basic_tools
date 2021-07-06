@@ -118,6 +118,7 @@ cmake \
 # 获取代码
 git clone https://github.com/hardjet/robot_basic_tools.git
 # 更新子模块
+git submodule sync
 git submodule init
 git submodule update
 

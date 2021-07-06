@@ -101,7 +101,6 @@ set(RDPARTY_SO_PATH ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME}/lib)
 message(STATUS "RDPARTY_SO_PATH: ${RDPARTY_SO_PATH}")
 
 # 设置依赖库地址
-# 设置依赖库地址
 set(OpenCV_LIB_DIR "" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
 set(Ceres_LIB_DIR "" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
 

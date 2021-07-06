@@ -8,8 +8,6 @@ find_package(Boost 1.58 REQUIRED
         COMPONENTS
         iostreams)
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
-set(OpenCV_LIB_DIR "/home/moi/include/opencv4.5/lib/" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
-message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
 
 # OpenCV
 find_package(OpenCV 4.0 QUIET

@@ -125,7 +125,7 @@ git submodule update
 # 如果opencv,ceres安装在系统默认位置
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -j4
 
-# 指定opencv, ceres库位置
+# 指定opencv, ceres库位置(请优先source当前工作空间)
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -DOpenCV_LIB_DIR="/path/to/opencv/lib/" -DCeres_LIB_DIR="/path/to/ceres/lib/" -j4
 ```
 

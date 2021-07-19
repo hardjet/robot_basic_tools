@@ -6,7 +6,7 @@
 工具界面
 ![工具界面](./doc/imgs/1.png)
 
-标定展示Cancel changes
+标定展示
 ![标定展示](./doc/imgs/2.png)
 
 ## 依赖说明
@@ -113,7 +113,7 @@ cmake \
 [ubuntu 18.04](http://wiki.ros.org/melodic/Installation/Ubuntu)安装参考
 
 ### robot basic tools
-
+&emsp;&emsp;robot basic tools工具需在新创建ROS工作空间中运行，请优先创建工作空间，并source当前空间。
 ```cmake
 # 获取代码
 git clone https://github.com/hardjet/robot_basic_tools.git

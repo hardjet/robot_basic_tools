@@ -23,6 +23,9 @@
 #include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/camera_models/Camera.h"
 
+#include "util/extrinsics_publisher.hpp"
+#include "util/draw_frame_selector.hpp"
+
 // ---- 两个相机标定状态
 // 空闲
 #define STATE_IDLE 0
@@ -320,6 +323,8 @@ bool TwoCamerasCalib::get_valid_pose() {
     std::lock_guard<std::mutex> lock(mtx_);
     for (int i = 0; i < 2; i++) {
       auto& cv_image_ptr = camera_insts_[i].cv_image_data_ptr;
+      camera_insts_[i].frame_id = cv_image_ptr->header.frame_id;
+      printf("----- TwoCamerasCalib::get_valid_pose() ..... frame id = %s\n", cv_image_ptr->header.frame_id.c_str());
       cur_images[i].reset(
           new const cv_bridge::CvImage(cv_image_ptr->header, cv_image_ptr->encoding, cv_image_ptr->image));
     }
@@ -674,7 +679,16 @@ bool TwoCamerasCalib::load_calib_data(const std::string& file_path) {
     convert_json_to_pts(d.object_points, data.value().at("object_points"));
     calib_valid_data_vec_.push_back(d);
   }
-
+  printf("----- TwoCamerasCalib::load_calib_data() ..... start reading frame\n");
+  for (const auto& data : js_whole["frame"].items()) {
+    if (std::strcmp(data.key().c_str(), "from_frame") == 0) {
+      std::cout << "from frame: " << data.value() << std::endl;
+      camera_insts_[1].frame_id = data.value();
+    } else {
+      std::cout << "to frame: " << data.value() << std::endl;
+      camera_insts_[0].frame_id = data.value();
+    }
+  }
   return true;
 }
 
@@ -706,6 +720,40 @@ static nlohmann::json convert_pts_to_json(const std::array<std::vector<cv::Point
   return json_objs_pts;
 }
 
+bool TwoCamerasCalib::save_extrinsics(const std::string& file_path){
+  if (transform_12_.empty()){
+    return false;
+  }
+
+  nlohmann::json js_file;
+  nlohmann::json js_data;
+  nlohmann::json js_frame;
+
+  js_data = {{"tx", transform_12_[0]},
+             {"ty", transform_12_[1]},
+             {"tz", transform_12_[2]},
+             {"roll", transform_12_[3]},
+             {"pitch", transform_12_[4]},
+             {"yaw", transform_12_[5]}};
+  js_frame = {{"from_frame", camera_insts_[1].frame_id},
+              {"to_frame", camera_insts_[0].frame_id}};
+
+  js_file["data"] = js_data;
+  js_file["frame"] = js_frame;
+  js_file["type"] = "two_cameras_extrinsics";
+
+  std::ofstream ofs(file_path, std::ios::out);
+  if (ofs.is_open()) {
+    std::cout << "save data to " << file_path.c_str() << std::endl;
+    ofs << std::setw(2) << js_file << std::endl;
+    ofs.close();
+    return true;
+  } else {
+    std::cout << "cannot create a file at " << file_path.c_str() << std::endl;
+    return false;
+  }
+}
+
 bool TwoCamerasCalib::save_calib_data(const std::string& file_path) {
   if (calib_valid_data_vec_.empty()) {
     return false;
@@ -726,8 +774,11 @@ bool TwoCamerasCalib::save_calib_data(const std::string& file_path) {
                          {"object_points", convert_pts_to_json(data.object_points)}};
     js_data.push_back(js);
   }
+  nlohmann::json js_frame = {{"from_frame", camera_insts_[1].frame_id},
+                             {"to_frame", camera_insts_[0].frame_id}};
 
   js_whole["data"] = js_data;
+  js_whole["frame"] = js_frame;
 
   // 保存文件 not std::ios::binary
   std::ofstream ofs(file_path, std::ios::out);
@@ -778,7 +829,8 @@ void TwoCamerasCalib::draw_ui_transform() {
   ImGui::Text("T_12:");
   ImGui::SameLine();
   ImGui::TextDisabled("the unit: m & deg");
-  ImGui::Text("set the transform from camera 2 to 1.");
+//  ImGui::Text("set the transform from camera %s to 1.", camera_insts_[1].camera_dev_ptr->sensor_name.c_str(), );
+  ImGui::Text("set the transform from camera %s to %s.", camera_insts_[1].camera_dev_ptr->sensor_name.c_str(), camera_insts_[0].camera_dev_ptr->sensor_name.c_str());
 
   // 变更后要更新矩阵
   bool is_changed = false;
@@ -824,15 +876,41 @@ void TwoCamerasCalib::draw_ui_transform() {
   ImGui::Separator();
 }
 
+void TwoCamerasCalib::pass_nh(const ros::NodeHandle& nh) {
+  ros_nh_ = nh;
+}
+
 void TwoCamerasCalib::draw_ui() {
   if (!b_show_window_) {
     return;
   }
+
   // 新建窗口
   ImGui::Begin("Two Cameras Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
-
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera 1", dev::CAMERA, camera_insts_[0].camera_dev_ptr);
+
+  ImGui::SameLine();
+  static int item_current_idx = 0;
+  const char* combo_preview_value = major_frames_list_[item_current_idx].c_str();
+  ImGui::Text("Select frame:");
+
+  ImGui::SameLine();
+  if (ImGui::BeginCombo("##selected frame 1", combo_preview_value, ImGuiComboFlags_None)) {
+    for (int n = 0; n < major_frames_list_.size(); n++) {
+      const bool is_selected = (item_current_idx == n);
+      if (ImGui::Selectable(major_frames_list_[n].c_str(), is_selected)) {
+        item_current_idx = n;
+      }
+      if (is_selected) {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  ImGui::SameLine();
+  ImGui::Text("True frame: %s\n", camera_insts_[0].frame_id.c_str());
+  ImGui::SameLine();
 
   if (camera_insts_[0].camera_dev_ptr) {
     // 从文件加载标定数据
@@ -885,7 +963,6 @@ void TwoCamerasCalib::draw_ui() {
           }
         }
       }
-
       // tips
       if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("save calib data to .json file");
@@ -895,11 +972,30 @@ void TwoCamerasCalib::draw_ui() {
 
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera 2", dev::CAMERA, camera_insts_[1].camera_dev_ptr);
+  ImGui::SameLine();
+  static int item_current_idx2 = 0;
+  const char* combo_preview_value2 = major_frames_list_[item_current_idx2].c_str();
+  ImGui::Text("Select frame:");
+  ImGui::SameLine();
+  if (ImGui::BeginCombo("##selected frame 2", combo_preview_value2, ImGuiComboFlags_None)) {
+    for (int nn = 0; nn < major_frames_list_.size(); nn++) {
+      const bool is_selected2 = (item_current_idx2 == nn);
+      if (ImGui::Selectable(major_frames_list_[nn].c_str(), is_selected2)) {
+        item_current_idx2 = nn;
+      }
+      if (is_selected2) {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  ImGui::SameLine();
+  ImGui::Text("True frame: %s\n", camera_insts_[1].frame_id.c_str());
+  ImGui::SameLine();
 
   // 设备就绪后才能标定
   if (camera_insts_[0].camera_dev_ptr && camera_insts_[1].camera_dev_ptr) {
     ImGui::SameLine();
-    // 选择是否显示图像
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &b_show_image_)) {
       if (b_show_image_) {
@@ -925,7 +1021,8 @@ void TwoCamerasCalib::draw_ui() {
     if (next_state_ == STATE_IDLE) {
       if (ImGui::Button("start")) {
         // 两个设备名称不能一样
-        if (camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) {
+        if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
+            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
           std::string msg = "two cameras are the same!";
           dev::show_pfd_info("two cameras calibration", msg);
         } else if (!camera_insts_[0].camera_dev_ptr->camera_model() ||
@@ -956,8 +1053,9 @@ void TwoCamerasCalib::draw_ui() {
       ImGui::SameLine();
       // 开始执行标定
       if (ImGui::Button("calib")) {
-        // 两个设备名称不能一样
-        if (camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) {
+        // 两个设备名称不能一样 && 给两个设备指定的frame不能一样
+        if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
+            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
           std::string msg = "two cameras are the same!";
           dev::show_pfd_info("two cameras calibration", msg);
         } else if (!camera_insts_[0].camera_dev_ptr->camera_model() ||
@@ -984,6 +1082,51 @@ void TwoCamerasCalib::draw_ui() {
         ImGui::SetTooltip("clear calib result.");
       }
     }
+
+    if (is_transform_valid_){
+      ImGui::SameLine();
+      if(ImGui::Button("save")) {
+        printf("----- TwoCamerasCalib::draw_ui() ..... saving...\n");
+
+        std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
+        std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
+        while (!dialog->ready()) {
+          usleep(1000);
+        }
+        auto file_path = dialog->result();
+        printf("----- TwoCamerasCalib::draw_ui() ..... file_path = %s\n", file_path.c_str());
+        printf("----- TwoCamerasCalib::draw_ui() ..... file_path.empty() = %d\n", file_path.empty());
+
+        if (!file_path.empty()) {
+          printf("----- TwoCamerasCalib::draw_ui() ..... file_path not empty\n");
+          if (!save_extrinsics(file_path)) {
+            printf("----- TwoCamerasCalib::draw_ui() ..... FAILED\n");
+            std::string msg = "save calib data to " + file_path + " failed!";
+            dev::show_pfd_info("save calib data", msg);
+          } else {
+            printf("----- TwoCamerasCalib::draw_ui() ..... SUCCESS\n");
+            std::string msg = "save calib data to " + file_path + " ok!";
+            dev::show_pfd_info("save calib data", msg);
+          }
+        }
+        if(ImGui::IsItemHovered()) {
+          ImGui::SetTooltip("click to save the extrinsics.");
+        }
+      }
+    }
+
+    if(is_transform_valid_) {
+      ImGui::SameLine();
+      if(ImGui::Button("update")) {
+        is_transform_valid_ = false;
+        printf("----- TwoCamerasCalib::draw_ui() ..... publishing service ...\n");
+        util::publish_extrinsics(ros_nh_, transform_12_, camera_insts_[0].frame_id, camera_insts_[1].frame_id,
+                                 major_frames_list_[item_current_idx], major_frames_list_[item_current_idx2]);
+      }
+      if(ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("click to send calib data service request.");
+      }
+    }
   }
 
   // 标定数据相关操作
@@ -991,7 +1134,8 @@ void TwoCamerasCalib::draw_ui() {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         // 两个设备名称不能一样
-        if (camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) {
+        if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
+            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
           std::string msg = "two cameras are the same!";
           dev::show_pfd_info("two cameras calibration", msg);
           b_show_calib_data_ = false;
@@ -1072,4 +1216,30 @@ void TwoCamerasCalib::draw_ui() {
     camera_insts_[1].img_show_dev_ptr->show_image(b_show_image_);
   }
 }
+
+void TwoCamerasCalib::pass_major_frames(const std::vector<std::string>& major_frames) {
+  if (!major_frames.empty()) {
+    major_frames_set_.erase("Empty... 1");
+    major_frames_set_.erase("Empty... 2");
+    for (auto iter = major_frames_list_.begin(); iter != major_frames_list_.end() ; ++iter) {
+      if (std::strcmp(iter->c_str(), "Empty... Please check /tf_static") == 0) {
+        major_frames_list_.erase(iter);
+        break;
+      }
+    }
+    for (auto& f : major_frames) {
+      std::pair<std::set<std::string>::iterator, bool> feedback = major_frames_set_.insert(f);
+      if (feedback.second) {
+        major_frames_list_.push_back(f);
+      }
+    }
+  } else {
+    std::pair<std::set<std::string>::iterator, bool> feedback = major_frames_set_.insert("Empty... Please check /tf_static");
+    if (feedback.second) {
+      major_frames_list_.emplace_back("Empty... 1");
+      major_frames_list_.emplace_back("Empty... 2");
+    }
+  }
+}
+
 }  // namespace calibration

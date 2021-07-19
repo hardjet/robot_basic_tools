@@ -89,9 +89,16 @@ endif ()
 # ----- ros相关 -----
 find_package(catkin REQUIRED COMPONENTS
         roscpp
+        rospy
         roslib
         message_filters
+        std_msgs
         sensor_msgs
+        geometry_msgs
+        message_generation
+        genmsg
+        tf
+        tf2
         )
 #message(STATUS "catkin_INCLUDE_DIRS: ${catkin_INCLUDE_DIRS}")
 #message(STATUS "catkin_LIBRARIES: ${catkin_LIBRARIES}")
@@ -187,6 +194,8 @@ message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
 #find_package(MRPT 2.2 COMPONENTS math)
 #message(STATUS "MRPT_VERSION: ${MRPT_VERSION}")
 #message(STATUS "MRPT_LIBRARIES: ${MRPT_LIBRARIES}")
+add_service_files(DIRECTORY srv FILES Extrinsic.srv)
+generate_messages(DEPENDENCIES geometry_msgs)
 
 # ----- catking config -----
 catkin_package(
@@ -198,6 +207,7 @@ catkin_package(
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
 add_library(imgui SHARED
         thirdparty/gl3w/gl3w.c
+        thirdparty/glad/glad.c
         thirdparty/imgui/imgui.cpp
         thirdparty/imgui/imgui_demo.cpp
         thirdparty/imgui/imgui_draw.cpp
@@ -206,15 +216,12 @@ add_library(imgui SHARED
         thirdparty/imgui/backends/imgui_impl_glfw.cpp
         thirdparty/imgui/backends/imgui_impl_opengl3.cpp
         )
-
 set_target_properties(imgui PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${RDPARTY_SO_PATH}
         )
-
 target_include_directories(imgui PUBLIC
-        $<BUILD_INTERFACE:thirdparty/gl3w;${GLM_INCLUDE_DIRS};thirdparty/imgui>
+        $<BUILD_INTERFACE:thirdparty/gl3w;${GLM_INCLUDE_DIRS};thirdparty/imgui;thirdparty/public>
         )
-
 target_link_libraries(imgui
         PUBLIC
         ${OPENGL_LIBRARIES}
@@ -238,15 +245,12 @@ add_library(guik SHARED
         src/guik/projection_control.cpp
         src/guik/imgui_application.cpp
         )
-
 set_target_properties(guik PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${RDPARTY_SO_PATH}
         )
-
 target_include_directories(guik PUBLIC
-        $<BUILD_INTERFACE:./include;${PCL_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:./include;${PCL_INCLUDE_DIRS};thirdparty/public>
         )
-
 target_link_libraries(guik
         PUBLIC
         imgui
@@ -264,15 +268,12 @@ add_library(algorithm SHARED
         src/algorithm/two_lasers_ceres.cpp
         src/algorithm/two_cameras_ceres.cpp
         )
-
 set_target_properties(algorithm PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${RDPARTY_SO_PATH}
         )
-
 target_include_directories(algorithm PUBLIC
         $<BUILD_INTERFACE:./include;${OpenCV_INCLUDE_DIRS};${catkin_INCLUDE_DIRS}>
         )
-
 target_link_libraries(algorithm
         PUBLIC
         ${OpenCV_LIBRARIES}
@@ -295,14 +296,18 @@ add_executable(${PROJECT_NAME}
         src/calibration/two_cameras_calib.cpp
         src/calibration/camera_calib.cpp
         src/util/image_loader.cpp
+        src/util/extrinsics_publisher.cpp
+        src/util/tf_tree.cpp
         src/robot_basic_tools.cpp
         )
-
+message("include = ${include}")
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${catkin_INCLUDE_DIRS}
         ${GLOG_INCLUDE_DIR}
         thirdparty/json
         thirdparty/portable-file-dialogs
+        thirdparty/public
+        ${CMAKE_CURRENT_SOURCE_DIR}
         )
 
 target_link_libraries(${PROJECT_NAME}
@@ -312,3 +317,10 @@ target_link_libraries(${PROJECT_NAME}
         algorithm
         glog
         )
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+
+#add_executable(test_code src/util/test.cpp )
+#target_include_directories(test_code PRIVATE ${catkin_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} )
+#target_link_libraries(test_code ${catkin_LIBRARIES} cv_bridge_rbt guik algorithm glog )
+#add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)

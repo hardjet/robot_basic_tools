@@ -70,6 +70,7 @@ void Sensor::draw_status() {
 }
 
 void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader) const{
+  printf("----- Sensor::draw_gl_coordinate_system() .... calling\n");
   Eigen::Isometry3f T = Eigen::Isometry3f::Identity();
   T.rotate(T_.block<3, 3>(0, 0));
   T.pretranslate(T_.block<3, 1>(0, 3));

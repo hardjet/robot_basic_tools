@@ -23,14 +23,16 @@ namespace guik {
  * @param data_directory
  * @param size
  */
-GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size)
-    : size(size), point_size(20.0f), min_z(-5.0f), max_z(20.0f), z_clipping(true) {
-  frame_buffer = std::make_unique<glk::FrameBuffer>(size);
+GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size) : size(size),            // 传入data path（.../src/robot_basic_tools/data） 和窗口大小
+                                                                                     point_size(20.0f),
+                                                                                     min_z(-5.0f), max_z(20.0f),
+                                                                                     z_clipping(true) {
+  frame_buffer = std::make_unique<glk::FrameBuffer>(size);                  // 初始化一个FrameBuffer，传入窗口的宽和高
   frame_buffer->add_color_buffer(GL_RGBA32I, GL_RGBA_INTEGER, GL_INT);
 
   shader = std::make_unique<glk::GLSLShader>();
   if (!shader->init(data_directory + "/shader/rainbow")) {
-    shader.reset();
+    shader.reset();                                                         // 释放shader所指的对象，重置shader的值
     return;
   }
 
@@ -70,11 +72,11 @@ void GLCanvas::set_size(const Eigen::Vector2i &fb_size) {
  * @brief
  *
  */
-void GLCanvas::bind(bool clear_buffers) const {
-  frame_buffer->bind();
+void GLCanvas::bind(bool clear_buffers) const {           // RobotBasicTools::draw_gl() 调用这个函数，clear_buffers默认值true，定义在头文件中
+  frame_buffer->bind();                                   // 帧缓冲是一个指向glk::FrameBuffer，的指针，构造时传入的参数是窗口的size
   glDisable(GL_SCISSOR_TEST);
   if (clear_buffers) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);   // void glClear(GLbitfield mask) - 清除颜色缓冲以及深度缓冲 (标志位可以用|组合)
   }
 
   GLint clear_color[] = {0, -1, 0, 0};
@@ -166,8 +168,8 @@ Eigen::Vector4i GLCanvas::pick_info(const Eigen::Vector2i &p, int window) const 
 
   std::sort(ps.begin(), ps.end(),
             [=](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) { return lhs.norm() < rhs.norm(); });
-  for (int i = 0; i < ps.size(); i++) {
-    Eigen::Vector2i p_ = p + ps[i];
+  for (const auto & i : ps) {
+    Eigen::Vector2i p_ = p + i;
     int index = ((size[1] - p[1]) * size[0] + p_[0]) * 4;
     Eigen::Vector4i info = Eigen::Map<Eigen::Vector4i>(&pixels[index]);
 
@@ -203,8 +205,8 @@ float GLCanvas::pick_depth(const Eigen::Vector2i &p, int window) const {
 
   std::sort(ps.begin(), ps.end(),
             [=](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) { return lhs.norm() < rhs.norm(); });
-  for (int i = 0; i < ps.size(); i++) {
-    Eigen::Vector2i p_ = p + ps[i];
+  for (const auto & i : ps) {
+    Eigen::Vector2i p_ = p + i;
     int index = ((size[1] - p[1]) * size[0] + p_[0]);
     float depth = pixels[index];
 
@@ -240,7 +242,7 @@ Eigen::Vector3f GLCanvas::unproject(const Eigen::Vector2i &p, float depth) const
 void GLCanvas::show_shader_setting() { show_window = true; }
 
 void GLCanvas::draw_ui() {
-  if (show_window) {
+  if (show_window) {                                                                      // 一直都是0，如果置为1，则会一直显示shader setting小窗口，不能被关闭
     ImGui::Begin("shader setting", &show_window, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::DragFloat("point_size", &point_size, 10.0f);
     ImGui::DragFloat("min_z", &min_z, 0.1f);
@@ -248,7 +250,6 @@ void GLCanvas::draw_ui() {
     ImGui::Checkbox("z_clipping", &z_clipping);
     ImGui::End();
   }
-
   projection_control->draw_ui();
 }
 

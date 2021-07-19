@@ -29,7 +29,7 @@ class GLSLShader {
   /**
    * @brief bind the shader
    */
-  void use() const { glUseProgram(shader_program); }
+  void use() const { glUseProgram(shader_program); }    // void glUseProgram(GLuint program) - 使用程序对象作为当前渲染状态的一部分，program提供程序句柄，该程序对象的可执行文件将用作当前渲染状态的一部分
 
   /** @brief find attribute variable location **/
   GLint attrib(const std::string& name);
@@ -66,6 +66,7 @@ class GLSLShader {
   void set_uniform(const std::string& name, const Eigen::Matrix4f& matrix) {
     glUniformMatrix4fv(uniform(name), 1, GL_FALSE, matrix.data());
   }
+  GLuint get_shader_program() const { return shader_program; }
 
  private:
   static GLuint read_shader_from_file(const std::string& filename, GLuint shader_type);

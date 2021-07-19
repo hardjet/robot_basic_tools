@@ -4,7 +4,10 @@
 #include <mutex>
 #include <array>
 #include <vector>
+#include <set>
 #include <boost/shared_ptr.hpp>
+#include <ros/ros.h>
+#include <tf2_ros/buffer.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "opencv2/core/types.hpp"
@@ -39,6 +42,10 @@ class TwoCamerasCalib : public BaseCalib {
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图
   void draw_ui() override;
+  /// 得到nodehandle
+  void pass_nh(const ros::NodeHandle& nh);
+  /// 得到所有的frames
+  void pass_major_frames(const std::vector<std::string>& major_frames);
 
  private:
   /// 更新数据
@@ -83,12 +90,17 @@ class TwoCamerasCalib : public BaseCalib {
   /// 保存标定数据到文件
   bool save_calib_data(const std::string& file_path);
 
+  /// 保存外参到文件
+  bool save_extrinsics(const std::string& file_path);
+
  private:
   // 相机数据结构
   struct CameraInstType {
     int id;
     // 是否有新图像数据
     bool is_new_data{false};
+    // 相机 frame id
+    std::string frame_id;
     // 相机设备对象
     std::shared_ptr<dev::Camera> camera_dev_ptr{nullptr};
     // 相机显示设备对象
@@ -154,5 +166,12 @@ class TwoCamerasCalib : public BaseCalib {
   double jitter_angle_{0.2};
   // 不同数据角度间隔 deg
   double between_angle_{1.0};
+
+  ros::NodeHandle ros_nh_;
+//  ros::Subscriber tf_static_sub_;
+
+  std::set<std::string> major_frames_set_;
+  std::vector<std::string> major_frames_list_;
+//  std::shared_ptr<tf2_ros::Buffer> tfBuffer_ = std::make_shared<tf2_ros::Buffer>(ros::Duration(30));
 };
 }  // namespace calibration

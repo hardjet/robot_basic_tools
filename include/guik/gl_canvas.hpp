@@ -5,6 +5,8 @@
 #include <string>
 #include <Eigen/Core>
 
+#include "glk/text_renderer.hpp"
+
 namespace glk {
 class GLSLShader;
 class FrameBuffer;

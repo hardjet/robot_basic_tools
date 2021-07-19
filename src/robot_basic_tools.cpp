@@ -39,41 +39,35 @@
 
 bool RobotBasicTools::init(const char *window_name, const char *imgui_config_path, const Eigen::Vector2i &size,
                            const char *glsl_version) {
-  if (!Application::init(window_name, imgui_config_path, size, glsl_version)) {
+  if (!Application::init(window_name, imgui_config_path, size, glsl_version)) {   // 转发所有参数，调用guik::Application::init() - 会用到glfw和imgui
     return false;
   }
 
-  b_show_imgui_demo_ = false;
+  b_show_imgui_demo_ = false;           // flag - 是否显示imgui demo，看起来是教程
 
   // 获取资源路径
-  std::string package_path = ros::package::getPath("robot_basic_tools");
-  dev::config_default_path = package_path + "/config";
-  dev::data_default_path = package_path + "/data";
+  std::string package_path = ros::package::getPath("robot_basic_tools");      // package的路径
+  dev::config_default_path = package_path + "/config";                        // config的路径
+  dev::data_default_path = package_path + "/data";                            // data的路径
+  printf("----- RobotBasicTools::init() ..... package_path = %s\n", package_path.c_str());
+  printf("----- RobotBasicTools::init() ..... config_default_path = %s\n", dev::config_default_path.c_str());
+  printf("----- RobotBasicTools::init() ..... data_default_path = %s\n", dev::data_default_path.c_str());
 
-  right_clicked_pos_.setZero();
-  cur_mouse_pos_.setZero();
+  right_clicked_pos_.setZero();                                               // 鼠标右击的位置置零
+  cur_mouse_pos_.setZero();                                                   // 当前鼠标的位置置零 （左上角是0，0）
   progress_ptr_ = std::make_unique<guik::ProgressModal>("progress modal");
-  // 创建为单实例对象
-  sensor_manager_ptr_ = util::Singleton<dev::SensorManager>::instance(nh_);
+  tf_tree_ptr_ = std::make_unique<util::TfTree>(nh_);                                                         // tf tree
+  text_renderer_ = std::make_shared<glk::TextRenderer>(dev::data_default_path, size);                         // 文字渲染
+  sensor_manager_ptr_ = util::Singleton<dev::SensorManager>::instance(nh_, text_renderer_);                   // sensor_manager_ptr_是一个全局单实例对象，将参数nh_作为可变个数的参数传递给SensorManager的构造函数
 
-  // 标定板
-  april_board_ptr_ = std::make_shared<dev::AprilBoard>(dev::data_default_path);
+  april_board_ptr_ = std::make_shared<dev::AprilBoard>(dev::data_default_path);                               // 标定板, 一个指向AprilBoard类的共享指针
+  cl_calib_ptr_ = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr_, april_board_ptr_);        // 单线激光与相机标定
+  tl_calib_ptr_ = std::make_unique<calibration::TwoLasersCalib>(sensor_manager_ptr_);                         // 两个单线激光标定
+  tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);      // 两个相机标定
+  tc_calib_ptr_->pass_nh(nh_);
+  cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_);         // 单目相机标定
 
-  // 单线激光与相机标定
-  cl_calib_ptr_ = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr_, april_board_ptr_);
-
-  // 两个单线激光标定
-  tl_calib_ptr_ = std::make_unique<calibration::TwoLasersCalib>(sensor_manager_ptr_);
-
-  // 两个单线激光标定
-  tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
-
-
-  // 单目相机标定
-  cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_);
-
-  // initialize the main OpenGL canvas
-  main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
+  main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());    // initialize the main OpenGL canvas, 初始化时传入rbt/data路径，和Application::framebuffer_size()函数的返回值 - 一个Eigen::Vector2i{width, height}
   if (!main_canvas_ptr_->ready()) {
     ros::shutdown();
     close();
@@ -141,10 +135,13 @@ void RobotBasicTools::draw_ui() {
   // ImGui::EndChild();
   // ImGui::End();
 
+  tc_calib_ptr_->pass_major_frames(tf_tree_ptr_->get_major_frames());
+
   // draw windows
   main_canvas_ptr_->draw_ui();
   sensor_manager_ptr_->draw_ui();
   april_board_ptr_->draw_ui();
+  tf_tree_ptr_->draw_ui();
   cl_calib_ptr_->draw_ui();
   tl_calib_ptr_->draw_ui();
   tc_calib_ptr_->draw_ui();
@@ -156,22 +153,18 @@ void RobotBasicTools::draw_ui() {
 
 void RobotBasicTools::draw_gl() {
   if (true) {
-    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);             // 用于启用各种功能，功能由参数决定，与glDisable相对应，GL_VERTEX_PROGRAM_POINT_SIZE参数使在Shader中可以访问glPointSize
     main_canvas_ptr_->bind();
 
     // draw coordinate system
-    // main_canvas_ptr_->shader->set_uniform("color_mode", 2);
-    // main_canvas_ptr_->shader->set_uniform(
-    //     "model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
-    // const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-    // coord.draw(*main_canvas_ptr_->shader);
+     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
+     main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
+     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
+     coord.draw(*main_canvas_ptr_->shader);
 
     // draw grid
     main_canvas_ptr_->shader->set_uniform("color_mode", 1);
-    main_canvas_ptr_->shader->set_uniform(
-        "model_matrix",
-        (Eigen::Translation3f(Eigen::Vector3f::UnitZ() * -0.02) * Eigen::Isometry3f::Identity()).matrix());
+    main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::Translation3f(Eigen::Vector3f::UnitZ() * -0.02) * Eigen::Isometry3f::Identity()).matrix());
     main_canvas_ptr_->shader->set_uniform("material_color", Eigen::Vector4f(0.8f, 0.8f, 0.8f, 0.5f));
     const auto &grid = glk::Primitives::instance()->primitive(glk::Primitives::GRID);
     grid.draw(*main_canvas_ptr_->shader);
@@ -207,14 +200,17 @@ void RobotBasicTools::main_menu() {
     if (ImGui::MenuItem("AprilTag setting")) {
       april_board_ptr_->show();
     }
+    ImGui::Separator();
 
+    if (ImGui::MenuItem("Show TF Tree")) {
+      tf_tree_ptr_->show();
+    }
     ImGui::Separator();
 
     if (ImGui::MenuItem("Quit")) {
       ros::shutdown();
       close();
     }
-
     ImGui::EndMenu();
   }
 
@@ -306,10 +302,10 @@ int main(int argc, char **argv) {
   std::cout << "Glog ON" << std::endl;
 #endif
 
-  ros::init(argc, argv, "robot_basic_tools");
-  ros::NodeHandle nh_("~");
+  ros::init(argc, argv, "robot_basic_tools");                     // 初始化节点
+  ros::NodeHandle nh_("~");                                       // 获得节点的句柄，命名空间为node namespace（这里没有）/robot_basic_tools/...
 
-  std::unique_ptr<guik::Application> app(new RobotBasicTools(nh_));
+  std::unique_ptr<guik::Application> app(new RobotBasicTools(nh_));   // 每个unique_ptr对象都是原始指针的唯一所有者
 
   std::string glsl_version = "#version 330";
   // auto path = ros::package::getPath("robot_basic_tools") + "/imgui.ini";

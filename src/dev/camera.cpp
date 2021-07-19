@@ -33,8 +33,17 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
 void Camera::draw_gl(glk::GLSLShader& shader) {
+  printf("----- Camera::draw_gl()..... calling\n");
+  std::cout << "T_:" << std::endl;
+  std::cout << T_(0, 0) << ", " << T_(0, 1) << ", " << T_(0, 2) << ", " << T_(0, 3) << std::endl;
+  std::cout << T_(1, 0) << ", " << T_(1, 1) << ", " << T_(1, 2) << ", " << T_(1, 3) << std::endl;
+  std::cout << T_(2, 0) << ", " << T_(2, 1) << ", " << T_(2, 2) << ", " << T_(2, 3) << std::endl;
+  std::cout << T_(3, 0) << ", " << T_(3, 1) << ", " << T_(3, 2) << ", " << T_(3, 3) << std::endl;
+
   // 画坐标轴
   draw_gl_coordinate_system(shader);
+
+  tr_->render_text("test", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
   if (ply_model_ptr_) {
     shader.set_uniform("color_mode", 1);

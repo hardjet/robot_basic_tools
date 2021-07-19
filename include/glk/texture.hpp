@@ -13,7 +13,7 @@ namespace glk {
  */
 class Texture {
  public:
-  Texture(const Eigen::Vector2i& size, GLuint internal_format, GLuint format, GLuint type)
+  Texture(const Eigen::Vector2i& size, GLuint internal_format, GLuint format, GLuint type)        // internal_format告诉OpenGL内部用什么格式存储和使用这个纹理数据 ， type是GL_RGBA的类型
       : width(size[0]), height(size[1]) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);

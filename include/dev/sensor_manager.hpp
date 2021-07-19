@@ -3,8 +3,10 @@
 #include <mutex>
 #include <unordered_map>
 #include <list>
+#include <utility>
 
 #include "dev/sensor.hpp"
+#include "glk/text_renderer.hpp"
 
 namespace dev {
 
@@ -16,7 +18,7 @@ class SensorManager {
  public:
   using Ptr = std::shared_ptr<SensorManager>;
 
-  explicit SensorManager(ros::NodeHandle& ros_nh) : nh_(ros_nh){};
+  explicit SensorManager(ros::NodeHandle& ros_nh, std::shared_ptr<glk::TextRenderer> p) : nh_(ros_nh), tr_(std::move(p)){};
 
   ~SensorManager();
 
@@ -56,6 +58,8 @@ class SensorManager {
 
   // 设备个数
   int sensor_num_{0};
+
+  std::shared_ptr<glk::TextRenderer> tr_;
 };
 
 }  // namespace dev

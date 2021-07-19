@@ -11,8 +11,7 @@
 
 namespace dev {
 AprilBoard::AprilBoard(std::string& data_path) {
-  board =
-      boost::make_shared<aslam::cameras::GridCalibrationTargetAprilgrid>(tag_rows_, tag_cols_, tag_size_, tag_spacing_);
+  board = boost::make_shared<aslam::cameras::GridCalibrationTargetAprilgrid>(tag_rows_, tag_cols_, tag_size_, tag_spacing_);    // 生成标定板对象
   // 加载图像
   if (!util::LoadTextureFromFile(data_path + "/imgs/april_board.png", texture_id_, img_width_, img_height_)) {
     texture_id_ = 0;
@@ -23,7 +22,6 @@ AprilBoard::AprilBoard(std::string& data_path) {
 
   board->points(april_points_);
   update_aprilboard_edges();
-
 }
 
 void AprilBoard::update_aprilboard_edges() {

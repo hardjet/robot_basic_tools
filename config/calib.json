@@ -1,0 +1,15 @@
+{
+  "data": {
+    "pitch": -17.99040412902832,
+    "roll": -6.946762561798096,
+    "tx": 0.1124219223856926,
+    "ty": -0.011084129102528095,
+    "tz": -0.022970931604504585,
+    "yaw": -5.115530490875244
+  },
+  "frame": {
+    "from_frame": "camera_left_rgb_optical_frame",
+    "to_frame": "camera_right_rgb_optical_frame"
+  },
+  "type": "two_cameras_extrinsics"
+}

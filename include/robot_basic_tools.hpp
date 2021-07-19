@@ -1,5 +1,6 @@
 #include <memory>
 
+#include "util/tf_tree.hpp"
 #include "guik/imgui_application.hpp"
 
 namespace dev {
@@ -100,6 +101,12 @@ class RobotBasicTools : public guik::Application {
 
   // 单目相机标定
   std::unique_ptr<calibration::CameraCalib> cam_calib_ptr_;
+
+  // tf树
+  std::unique_ptr<util::TfTree> tf_tree_ptr_;
+
+  // 文字渲染
+  std::shared_ptr<glk::TextRenderer> text_renderer_;
 
   // 热键标记(ALT)
   bool b_hotkey_alt_pressed_ = false;

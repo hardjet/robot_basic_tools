@@ -29,7 +29,7 @@ class Laser : public Sensor {
   void free() override;
 
   /// opengl渲染
-  void draw_gl(glk::GLSLShader& shader) override;
+  void draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) override;
   /// imgui绘图
   void draw_ui() override;
   /// 获取当前激光数据

@@ -36,7 +36,7 @@ class Camera : public Sensor {
   void free() override { free_model(); }
 
   /// opengl渲染
-  void draw_gl(glk::GLSLShader& shader) override;
+  void draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) override;
   /// imgui绘图
   void draw_ui() override;
 

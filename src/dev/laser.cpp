@@ -54,7 +54,7 @@ void Laser::free() {
   free_model();
 }
 
-void Laser::draw_gl(glk::GLSLShader& shader) {
+void Laser::draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
   if (!b_show_laser_) {
     return;
   }
@@ -63,7 +63,7 @@ void Laser::draw_gl(glk::GLSLShader& shader) {
   auto laser_data = data();
 
   // 画坐标轴
-  draw_gl_coordinate_system(shader);
+  draw_gl_coordinate_system(shader, canvas_ptr);
 
   // 如果有数据
   if (laser_data) {

@@ -79,7 +79,7 @@ class RobotBasicTools : public guik::Application {
   Eigen::Vector2i cur_mouse_pos_;
 
   // 主画布
-  std::unique_ptr<guik::GLCanvas> main_canvas_ptr_;
+  std::shared_ptr<guik::GLCanvas> main_canvas_ptr_;
 
   // 进度条
   std::unique_ptr<guik::ProgressModal> progress_ptr_;

@@ -35,12 +35,12 @@ GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &siz
     shader.reset();                                                         // 释放shader所指的对象，重置shader的值
     return;
   }
-
   shader->use();
 
   camera_control = std::make_unique<guik::ArcCameraControl>();
   projection_control = std::make_unique<guik::ProjectionControl>(size);
   texture_renderer = std::make_unique<glk::TextureRenderer>(data_directory);
+  text_renderer = std::make_unique<glk::TextRenderer>(data_directory, size);
 }
 
 /**
@@ -114,8 +114,13 @@ void GLCanvas::unbind() const {
  * @brief
  *
  */
-void GLCanvas::render_to_screen(int color_buffer_id) const {
+void GLCanvas::render_to_screen(int color_buffer_id) {
   texture_renderer->draw(frame_buffer->color(color_buffer_id).id());
+
+  for (const auto& param : text_renderer_params) {
+    text_renderer->render_text(param.text_, param.bl_x_, param.bl_y_, param.scale_, param.color_, size);
+  }
+  text_renderer_params.clear();
 }
 
 /**
@@ -254,5 +259,17 @@ void GLCanvas::draw_ui() {
 }
 
 void GLCanvas::show_projection_setting() const { projection_control->show(); }
+
+std::pair<Eigen::Matrix4f, Eigen::Matrix4f> GLCanvas::transformation_matrices() const {
+  return std::pair<Eigen::Matrix4f, Eigen::Matrix4f>{camera_control->view_matrix(), projection_control->projection_matrix()};
+}
+
+Eigen::Vector2i GLCanvas::window_size() const {
+  return size;
+}
+
+double GLCanvas::viewer_diatance() const {
+  return camera_control->access_distance();
+}
 
 }  // namespace guik

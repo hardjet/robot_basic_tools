@@ -27,6 +27,8 @@ class CameraControl {
 
   /** @brief camera view matrix */
   virtual Eigen::Matrix4f view_matrix() const = 0;
+
+  virtual double access_distance() const = 0;
 };
 
 /**
@@ -47,6 +49,7 @@ class ArcCameraControl : public CameraControl {
 
   Eigen::Quaternionf rotation() const;
   Eigen::Matrix4f view_matrix() const override;
+  double access_distance() const override;
 
  private:
   Eigen::Vector3f center;

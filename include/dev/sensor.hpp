@@ -7,6 +7,8 @@
 #include <Eigen/Core>
 
 #include "glk/drawble.hpp"
+#include "glk/text_renderer.hpp"
+#include "guik/gl_canvas.hpp"
 
 //  前向声明
 namespace glk {
@@ -48,6 +50,7 @@ class Sensor {
         sensor_type_str(dev_type_str[type]),
         nh_(ros_nh) {
     T_ = Eigen::Matrix4f::Identity();
+//    T_(0,3) = 1.0;
   }
 
   /**
@@ -65,7 +68,7 @@ class Sensor {
    * @brief opengl渲染
    * @param shader
    */
-  virtual void draw_gl(glk::GLSLShader& shader) = 0;
+  virtual void draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) = 0;
 
   /**
    * @brief imgui绘图
@@ -94,7 +97,7 @@ class Sensor {
   * 在空间中绘制传感器的坐标系，表征传感器的位置
   * @param shader
   */
-  void draw_gl_coordinate_system(glk::GLSLShader& shader) const;
+  void draw_gl_coordinate_system(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) const;
 
   /**
    * @brief 打开显示ui开关

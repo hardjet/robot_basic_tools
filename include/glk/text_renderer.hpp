@@ -38,15 +38,14 @@ class TextRenderer {
     }
     shader.use();
 
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<GLfloat>(window_size[0]), 0.0f, static_cast<GLfloat>(window_size[1]));
-//    glm::mat4 projection = glm::ortho(static_cast<GLfloat>(window_size[0]), 0.0f, static_cast<GLfloat>(window_size[1]), 0.0f);
+    projection = glm::ortho(0.0f, static_cast<GLfloat>(window_size[0]), 0.0f, static_cast<GLfloat>(window_size[1]));
     glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
     if (FT_Init_FreeType(&ft_lib)) {
       std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
       return;
     }
-    if (FT_New_Face(ft_lib, "/home/momo/workspace/rbt_ws/src/robot_basic_tools/data/times.ttf", 0, &ft_face)) {
+    if (FT_New_Face(ft_lib, (data_directory + "/UbuntuMono-R.ttf").c_str(), 0, &ft_face)) {
       std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
       return;
     } else {
@@ -92,8 +91,10 @@ class TextRenderer {
     glDeleteBuffers(1, &vbo);
   }
 
-  void render_text(const std::string& text, float x, float y, float scale, glm::vec3 color) {
+  void render_text(const std::string& text, float x, float y, float scale, glm::vec3 color, const Eigen::Vector2i& size) {
     shader.use();
+    glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"), 1, GL_FALSE,
+                       glm::value_ptr(glm::ortho(0.0f, static_cast<GLfloat>(size[0]), 0.0f, static_cast<GLfloat>(size[1]))));
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
@@ -102,6 +103,9 @@ class TextRenderer {
     glUniform3f(glGetUniformLocation(shader.get_shader_program(), "textColor"), color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(vao);
+
+    (scale < 0.1) ? (scale = 0.1) : scale;
+    (scale > 0.5) ? (scale = 0.5) : scale;
 
     std::string::const_iterator text_iter;
     for (text_iter = text.begin(); text_iter != text.end(); ++text_iter) {
@@ -134,6 +138,7 @@ class TextRenderer {
 
  private:
   std::map<GLchar, Character> Characters;
+  glm::mat4 projection;
   glk::GLSLShader shader;
   unsigned int texture;
 

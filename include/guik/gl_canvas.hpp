@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <set>
 #include <Eigen/Core>
 
 #include "glk/text_renderer.hpp"
@@ -19,6 +21,17 @@ class ProjectionControl;
 }  // namespace guik
 
 namespace guik {
+
+class Parameter {
+ public:
+  Parameter(std::string text, float x, float y, float scale, glm::vec3 color = glm::vec3(0.3, 0.3, 0.8)) : text_(std::move(text)), bl_x_(x), bl_y_(y),
+                                                                                                           scale_(scale), color_(color) {
+  }
+ public:
+  std::string text_;
+  float bl_x_, bl_y_, scale_;
+  glm::vec3 color_;
+};
 
 /**
  * @brief OpenGL canvas for imgui
@@ -37,7 +50,7 @@ class GLCanvas {
   void bind(bool clear_buffers = true) const;
   void unbind() const;
 
-  void render_to_screen(int color_buffer_id = 0) const;
+  void render_to_screen(int color_buffer_id = 0);
 
   Eigen::Vector4i pick_info(const Eigen::Vector2i& p, int window = 2) const;
   float pick_depth(const Eigen::Vector2i& p, int window = 2) const;
@@ -48,11 +61,17 @@ class GLCanvas {
   void draw_ui();
   void show_projection_setting() const;
 
+  std::pair<Eigen::Matrix4f, Eigen::Matrix4f> transformation_matrices() const;
+  Eigen::Vector2i window_size() const;
+  double viewer_diatance() const;
+
  public:
   Eigen::Vector2i size;
   std::unique_ptr<glk::GLSLShader> shader;
   std::unique_ptr<glk::FrameBuffer> frame_buffer;
   std::unique_ptr<glk::TextureRenderer> texture_renderer;
+  std::unique_ptr<glk::TextRenderer> text_renderer;
+  std::vector<Parameter> text_renderer_params;
 
   std::unique_ptr<guik::CameraControl> camera_control;
   std::unique_ptr<guik::ProjectionControl> projection_control;

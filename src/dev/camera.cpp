@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 
 #include "imgui.h"
 #include "portable-file-dialogs.h"
@@ -32,24 +33,13 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
-void Camera::draw_gl(glk::GLSLShader& shader) {
-  printf("----- Camera::draw_gl()..... calling\n");
-  std::cout << "T_:" << std::endl;
-  std::cout << T_(0, 0) << ", " << T_(0, 1) << ", " << T_(0, 2) << ", " << T_(0, 3) << std::endl;
-  std::cout << T_(1, 0) << ", " << T_(1, 1) << ", " << T_(1, 2) << ", " << T_(1, 3) << std::endl;
-  std::cout << T_(2, 0) << ", " << T_(2, 1) << ", " << T_(2, 2) << ", " << T_(2, 3) << std::endl;
-  std::cout << T_(3, 0) << ", " << T_(3, 1) << ", " << T_(3, 2) << ", " << T_(3, 3) << std::endl;
-
+void Camera::draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
+  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Camera::draw_gl() - test", 20.0f, 50.0f, 0.3f, glm::vec3(1, 0, 0)));
   // 画坐标轴
-  draw_gl_coordinate_system(shader);
-
-  tr_->render_text("test", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+  draw_gl_coordinate_system(shader, canvas_ptr);
 
   if (ply_model_ptr_) {
     shader.set_uniform("color_mode", 1);
-    // shader.set_uniform("model_matrix",
-    //                    (Eigen::Translation3f(Eigen::Vector3f{1.0, 1.0, 1.0}) *
-    //                    Eigen::Isometry3f::Identity()).matrix());
     shader.set_uniform("model_matrix", T_);
     shader.set_uniform("material_color", Eigen::Vector4f(data_color_[0], data_color_[1], data_color_[2], 1.0f));
     ply_model_ptr_->draw(shader);

@@ -7,6 +7,7 @@
 
 #include "dev/sensor.hpp"
 #include "glk/text_renderer.hpp"
+#include "guik/gl_canvas.hpp"
 
 namespace dev {
 
@@ -18,7 +19,7 @@ class SensorManager {
  public:
   using Ptr = std::shared_ptr<SensorManager>;
 
-  explicit SensorManager(ros::NodeHandle& ros_nh, std::shared_ptr<glk::TextRenderer> p) : nh_(ros_nh), tr_(std::move(p)){};
+  explicit SensorManager(ros::NodeHandle& ros_nh) : nh_(ros_nh){};
 
   ~SensorManager();
 
@@ -31,7 +32,7 @@ class SensorManager {
   /**
    * @brief opengl渲染
    */
-  void draw_gl(glk::GLSLShader& shader);
+  void draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr);
 
   /**
    * @brief 画ui
@@ -58,8 +59,6 @@ class SensorManager {
 
   // 设备个数
   int sensor_num_{0};
-
-  std::shared_ptr<glk::TextRenderer> tr_;
 };
 
 }  // namespace dev

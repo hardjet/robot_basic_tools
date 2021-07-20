@@ -56,9 +56,9 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   right_clicked_pos_.setZero();                                               // 鼠标右击的位置置零
   cur_mouse_pos_.setZero();                                                   // 当前鼠标的位置置零 （左上角是0，0）
   progress_ptr_ = std::make_unique<guik::ProgressModal>("progress modal");
-  tf_tree_ptr_ = std::make_unique<util::TfTree>(nh_);                                                         // tf tree
-  text_renderer_ = std::make_shared<glk::TextRenderer>(dev::data_default_path, size);                         // 文字渲染
-  sensor_manager_ptr_ = util::Singleton<dev::SensorManager>::instance(nh_, text_renderer_);                   // sensor_manager_ptr_是一个全局单实例对象，将参数nh_作为可变个数的参数传递给SensorManager的构造函数
+  tf_tree_ptr_ = std::make_unique<util::TfTree>(nh_);                                                           // tf tree
+//  text_renderer_ = std::make_shared<glk::TextRenderer>(dev::data_default_path, size);                         // 文字渲染
+  sensor_manager_ptr_ = util::Singleton<dev::SensorManager>::instance(nh_);                                     // sensor_manager_ptr_是一个全局单实例对象，将参数nh_作为可变个数的参数传递给SensorManager的构造函数
 
   april_board_ptr_ = std::make_shared<dev::AprilBoard>(dev::data_default_path);                               // 标定板, 一个指向AprilBoard类的共享指针
   cl_calib_ptr_ = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr_, april_board_ptr_);        // 单线激光与相机标定
@@ -67,7 +67,7 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   tc_calib_ptr_->pass_nh(nh_);
   cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_);         // 单目相机标定
 
-  main_canvas_ptr_ = std::make_unique<guik::GLCanvas>(dev::data_default_path, framebuffer_size());    // initialize the main OpenGL canvas, 初始化时传入rbt/data路径，和Application::framebuffer_size()函数的返回值 - 一个Eigen::Vector2i{width, height}
+  main_canvas_ptr_ = std::make_shared<guik::GLCanvas>(dev::data_default_path, framebuffer_size());    // initialize the main OpenGL canvas, 初始化时传入rbt/data路径，和Application::framebuffer_size()函数的返回值 - 一个Eigen::Vector2i{width, height}
   if (!main_canvas_ptr_->ready()) {
     ros::shutdown();
     close();
@@ -157,10 +157,10 @@ void RobotBasicTools::draw_gl() {
     main_canvas_ptr_->bind();
 
     // draw coordinate system
-     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
-     main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
-     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-     coord.draw(*main_canvas_ptr_->shader);
+//     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
+//     main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
+//     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
+//     coord.draw(*main_canvas_ptr_->shader);
 
     // draw grid
     main_canvas_ptr_->shader->set_uniform("color_mode", 1);
@@ -170,7 +170,7 @@ void RobotBasicTools::draw_gl() {
     grid.draw(*main_canvas_ptr_->shader);
 
     // let the windows draw something on the main canvas
-    sensor_manager_ptr_->draw_gl(*main_canvas_ptr_->shader);
+    sensor_manager_ptr_->draw_gl(*main_canvas_ptr_->shader, main_canvas_ptr_);
     april_board_ptr_->draw_gl(*main_canvas_ptr_->shader);
     cl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);
     tl_calib_ptr_->draw_gl(*main_canvas_ptr_->shader);

@@ -71,6 +71,7 @@ void Sensor::draw_status() {
 
 void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) const {
 
+  // 显示坐标轴名称
   std::pair<Eigen::Matrix4f, Eigen::Matrix4f> feedback = canvas_ptr->transformation_matrices();
   Eigen::Matrix4f view = feedback.first;
   Eigen::Matrix4f project = feedback.second;
@@ -83,9 +84,9 @@ void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader, const std::share
   float s = 0.35f - static_cast<float>(dist - 5.0f) * (0.35f / 5.0f);
   canvas_ptr->text_renderer_params.emplace_back(guik::Parameter(sensor_name, x, y, s, glm::vec3(1, 1, 1)));
 
-  printf("clipped = [%f, %f, %f, %f]\n", clipped(0), clipped(1), clipped(2), clipped(3));
-  printf("distance = %f, scale = %f\n", dist, s);
-  printf("x = %f, y = %f\n\n", x, y);
+//  printf("clipped = [%f, %f, %f, %f]\n", clipped(0), clipped(1), clipped(2), clipped(3));
+//  printf("distance = %f, scale = %f\n", dist, s);
+//  printf("x = %f, y = %f\n\n", x, y);
 
   Eigen::Isometry3f T = Eigen::Isometry3f::Identity();
   T.rotate(T_.block<3, 3>(0, 0));
@@ -102,31 +103,4 @@ void Sensor::draw_data_color_selector() {
   ImGui::ColorEdit3("##color", data_color_.data(), ImGuiColorEditFlags_NoInputs);
 }
 
-//  std::cout << "T : " << std::endl;
-//  std::cout << T(0, 0) << ", " << T(0, 1) << ", " << T(0, 2) << ", " << T(0, 3) << std::endl;
-//  std::cout << T(1, 0) << ", " << T(1, 1) << ", " << T(1, 2) << ", " << T(1, 3) << std::endl;
-//  std::cout << T(2, 0) << ", " << T(2, 1) << ", " << T(2, 2) << ", " << T(2, 3) << std::endl;
-//  std::cout << T(3, 0) << ", " << T(3, 1) << ", " << T(3, 2) << ", " << T(3, 3) << std::endl;
-
-
-//  Eigen::Matrix4f clipped = view * T_;
-//  glm::mat4 tmp = glm::make_mat4(clipped.data()) * glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f);
-//
-//  std::cout << "T_ : " << std::endl;
-//  std::cout << T_(0, 0) << ", " << T_(0, 1) << ", " << T_(0, 2) << ", " << T_(0, 3) << std::endl;
-//  std::cout << T_(1, 0) << ", " << T_(1, 1) << ", " << T_(1, 2) << ", " << T_(1, 3) << std::endl;
-//  std::cout << T_(2, 0) << ", " << T_(2, 1) << ", " << T_(2, 2) << ", " << T_(2, 3) << std::endl;
-//  std::cout << T_(3, 0) << ", " << T_(3, 1) << ", " << T_(3, 2) << ", " << T_(3, 3) << std::endl;
-//
-//  std::cout << "clipped : " << std::endl;
-//  std::cout << clipped(0, 0) << ", " << clipped(0, 1) << ", " << clipped(0, 2) << ", " << clipped(0, 3) << std::endl;
-//  std::cout << clipped(1, 0) << ", " << clipped(1, 1) << ", " << clipped(1, 2) << ", " << clipped(1, 3) << std::endl;
-//  std::cout << clipped(2, 0) << ", " << clipped(2, 1) << ", " << clipped(2, 2) << ", " << clipped(2, 3) << std::endl;
-//  std::cout << clipped(3, 0) << ", " << clipped(3, 1) << ", " << clipped(3, 2) << ", " << clipped(3, 3) << std::endl;
-//
-//  std::cout << "tmp : " << std::endl;
-//  std::cout << tmp[0][0] << ", " << tmp[0][1] << ", " << tmp[0][2] << ", " << tmp[0][3] << std::endl;
-//  std::cout << tmp[1][0] << ", " << tmp[1][1] << ", " << tmp[1][2] << ", " << tmp[1][3] << std::endl;
-//  std::cout << tmp[2][0] << ", " << tmp[2][1] << ", " << tmp[2][2] << ", " << tmp[2][3] << std::endl;
-//  std::cout << tmp[3][0] << ", " << tmp[3][1] << ", " << tmp[3][2] << ", " << tmp[3][3] << std::endl;
 }  // namespace dev

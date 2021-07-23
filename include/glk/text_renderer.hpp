@@ -17,10 +17,14 @@
 namespace glk {
 
 struct Character {
-  unsigned int TextureID;     // ID handle of the glyph texture
-  glm::ivec2   Size;          // Size of glyph
-  glm::ivec2   Bearing;       // Offset from baseline to left/top of glyph
-  unsigned int Advance;       // Horizontal offset to advance to next glyph
+  // 字形id
+  unsigned int TextureID;
+  // 字形size
+  glm::ivec2   Size;
+  // offset from baseline
+  glm::ivec2   Bearing;
+  // Horizontal offset to advance to next glyph
+  unsigned int Advance;
 };
 
 class TextRenderer {
@@ -49,11 +53,11 @@ class TextRenderer {
       std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
       return;
     } else {
-      FT_Set_Pixel_Sizes(ft_face, 0, 48);           // set size to load glyphs as
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);        // disable byte-alignment restriction
+      FT_Set_Pixel_Sizes(ft_face, 0, 48);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-      for (unsigned char c = 0; c < 128; c++) {                   // load first 128 characters of ASCII set
-        if (FT_Load_Char(ft_face, c, FT_LOAD_RENDER)) {           // Load character glyph
+      for (unsigned char c = 0; c < 128; c++) {
+        if (FT_Load_Char(ft_face, c, FT_LOAD_RENDER)) {
           std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
           continue;
         }
@@ -63,13 +67,14 @@ class TextRenderer {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
                      static_cast<int>(ft_face->glyph->bitmap.width), static_cast<int>(ft_face->glyph->bitmap.rows),
                      0, GL_RED, GL_UNSIGNED_BYTE, ft_face->glyph->bitmap.buffer);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);          // set texture options
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        Character character = {texture,                                               // now store character for later use
-                               glm::ivec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows),
+        Character character = {texture,
+                               glm::ivec2(ft_face->glyph->bitmap.width,ft_face->glyph->bitmap.rows),
                                glm::ivec2(ft_face->glyph->bitmap_left, ft_face->glyph->bitmap_top),
                                static_cast<unsigned int>(ft_face->glyph->advance.x)};
         Characters.insert(std::pair<char, Character>(c, character));
@@ -117,20 +122,21 @@ class TextRenderer {
       float w = static_cast<float>(current_ch.Size.x) * scale;
       float h = static_cast<float>(current_ch.Size.y) * scale;
 
-      float vertices[6][4] = {{ xpos,     ypos + h,   0.0f, 0.0f },         // update VBO for each character
+      // update VBO
+      float vertices[6][4] = {{ xpos,     ypos + h,   0.0f, 0.0f },
                               { xpos,     ypos,       0.0f, 1.0f },
                               { xpos + w, ypos,       1.0f, 1.0f },
                               { xpos,     ypos + h,   0.0f, 0.0f },
                               { xpos + w, ypos,       1.0f, 1.0f },
                               { xpos + w, ypos + h,   1.0f, 0.0f }};
 
-      glBindTexture(GL_TEXTURE_2D, current_ch.TextureID);               // render glyph texture over quad
-      glBindBuffer(GL_ARRAY_BUFFER, vbo);                               // update content of VBO memory
-      glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);  // be sure to use glBufferSubData and not glBufferData
+      glBindTexture(GL_TEXTURE_2D, current_ch.TextureID);
+      glBindBuffer(GL_ARRAY_BUFFER, vbo);
+      glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glDrawArrays(GL_TRIANGLES, 0, 6);                                 // render quad
+      glDrawArrays(GL_TRIANGLES, 0, 6);
 
-      x += static_cast<float>(current_ch.Advance >> 6) * scale;         // advance cursors for next glyph (note that advance is number of 1/64 pixels). bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
+      x += static_cast<float>(current_ch.Advance >> 6) * scale;
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

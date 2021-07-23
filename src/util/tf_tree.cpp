@@ -1,4 +1,5 @@
 #include "imgui.h"
+
 #include "util/tf_tree.hpp"
 
 namespace util {
@@ -108,6 +109,6 @@ void TfTree::print_frames() {
   }
 }
 
-}
+}   // namespace util
 
 

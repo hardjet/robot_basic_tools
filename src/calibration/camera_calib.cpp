@@ -44,6 +44,11 @@ CameraCalib::CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr
   image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
   task_ptr_ = std::make_shared<calibration::Task>();
+
+  cur_state_ptr_ = std::make_shared<StateIdle>();
+  cur_state_ptr_->set_context(this);
+  next_state_ptr_ = std::make_shared<StateIdle>();
+  next_state_ptr_->set_context(this);
 }
 void CameraCalib::draw_ui() {
   if (!b_show_window_) {
@@ -140,12 +145,17 @@ void CameraCalib::draw_ui() {
     }
     if (cam_dev_ptr_->camera_model()) {
       // 闲置状态下才可以设置
-      if (next_state_ == STATE_IDLE) {
+//      if (next_state_ == STATE_IDLE) {
+//        draw_calib_params();
+//      }
+      if (next_state_ptr_->id() == 0) {
         draw_calib_params();
       }
-      calibration();
+//      calibration();
+      new_calibration();
     }
-    if (next_state_ == STATE_IDLE) {
+//    if (next_state_ == STATE_IDLE) {
+    if (next_state_ptr_->id() == 0) {
       if (ImGui::Button("START")) {
         // 检测相机模型是否已经选择
         if (!cam_dev_ptr_->camera_model()) {
@@ -155,18 +165,23 @@ void CameraCalib::draw_ui() {
           b_show_calib_data_ = false;
           // 清空上次的标定数据
           calib_valid_data_vec_.clear();
-          next_state_ = STATE_START;
+//          next_state_ = STATE_START;
+          change_next_state(std::make_shared<StateStart>());
         }
       }
     } else {
       if (ImGui::Button("STOP")) {
-        next_state_ = STATE_IDLE;
+//        next_state_ = STATE_IDLE;
+        change_next_state(std::make_shared<StateIdle>());
       }
     }
   }
   // 标定状态只需要设定一次
-  if (cur_state_ == STATE_IN_CALIB) {
-    next_state_ = STATE_IDLE;
+//  if (cur_state_ == STATE_IN_CALIB) {
+//    next_state_ = STATE_IDLE;
+//  }
+  if (cur_state_ptr_->id() == 5) {
+    change_next_state(std::make_shared<StateIdle>());
   }
 
   // 大于7帧数据就可以开始进行标定操作了
@@ -174,12 +189,14 @@ void CameraCalib::draw_ui() {
     ImGui::SameLine();
     // 开始执行标定
     if (ImGui::Button("CALIB & SAVE ")) {
-      next_state_ = STATE_START_CALIB;
+//      next_state_ = STATE_START_CALIB;
+      change_next_state(std::make_shared<StateStartCalib>());
     }
   }
 
   // 标定数据相关操作
-  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+//  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+  if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         b_need_to_update_cd_ = true;
@@ -353,6 +370,83 @@ void CameraCalib::check_and_save() {
     printf("!!!!!!!!!!!!!tz: %f saved!\n", calib_valid_data_vec_.back().t_ac.z());
   }
 }
+
+void CameraCalib::change_current_state(std::shared_ptr<CalibrationState> new_state) {
+  cur_state_ptr_ = std::move(new_state);
+  cur_state_ptr_->set_context(this);
+}
+
+void CameraCalib::change_next_state(std::shared_ptr<CalibrationState> new_state) {
+  next_state_ptr_ = std::move(new_state);
+  next_state_ptr_->set_context(this);
+}
+
+bool CameraCalib::instrument_available() {
+  if (is_new_image_) {
+    is_new_image_ = false;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool CameraCalib::pose_valid() {
+  if (task_ptr_->do_task("get_pose_and_points", std::bind(&CameraCalib::get_pose_and_points, this))) {  // NOLINT
+    // 结束后需要读取结果
+    if (task_ptr_->result<bool>()) {
+      update_3d_show();
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+void CameraCalib::check_steady() {
+  if (calib_data_vec_.empty()) {
+    calib_data_vec_.push_back(calib_data_);
+  } else {
+    // 检查相机位姿是否一致
+    double dist = (calib_data_vec_.at(0).t_ac - calib_data_.t_ac).norm();
+    // 四元数的转角是原本的1/2
+    double theta = 2 * std::acos((calib_data_vec_.at(0).q_ac.inverse() * calib_data_.q_ac).w());
+    // std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
+    //  抖动小于1cm与0.8°
+    if (dist < 0.5 && theta < DEG2RAD_RBT(0.8)) {
+      calib_data_vec_.push_back(calib_data_);
+      // 足够稳定才保存
+      if (calib_data_vec_.size() > 3) {
+        check_and_save();
+      }
+    } else {
+      // 抖动大则重新开始检测
+      calib_data_vec_.clear();
+      calib_data_vec_.push_back(calib_data_);
+      std::cout << "moved!!!" << std::endl;
+    }
+  }
+}
+
+bool CameraCalib::do_calib() {
+  if (task_ptr_->do_task("calc", std::bind(&CameraCalib::calc, this))) {  // NOLINT
+    // 结束后需要读取结果
+    if (task_ptr_->result<bool>()) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+void CameraCalib::new_calibration() {
+  update_data();
+  cur_state_ptr_->calibration();
+}
+
 //核心相机矫正启动函数
 void CameraCalib::calibration() {
   update_data();

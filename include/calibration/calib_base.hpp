@@ -1,9 +1,16 @@
 #pragma once
 
+#include "imgui.h"
+
+#include "dev/camera.hpp"
+#include "dev/sensor.hpp"
+#include "dev/sensor_manager.hpp"
+#include "calibration/calibration_state.hpp"
+
 //  前向声明
 namespace glk {
 class GLSLShader;
-}
+}  // namespace glk
 
 namespace dev {
 class SensorManager;
@@ -93,6 +100,31 @@ class BaseCalib {
    */
   virtual void draw_ui() = 0;
 
+  /**
+   * @brief 更新当前标定状态
+   */
+  virtual void change_current_state(std::shared_ptr<CalibrationState> new_state) = 0;
+
+  /**
+   * @brief 更新下个标定状态
+   */
+  virtual void change_next_state(std::shared_ptr<CalibrationState> new_state) = 0;
+
+  /**
+   * @brief 被标定的设备是否都有新数据
+   */
+  virtual bool instrument_available() = 0;
+
+  virtual bool pose_valid() = 0;
+
+  virtual void check_steady() = 0;
+
+  virtual bool do_calib() = 0;
+
+  std::shared_ptr<CalibrationState> next_state() {
+    return next_state_ptr_;
+  }
+
  protected:
   // 是否显示ui窗口
   bool b_show_window_{false};
@@ -102,5 +134,9 @@ class BaseCalib {
   int cur_state_{0};
   // 标定流程状态 下个
   int next_state_{0};
+  // state reference to the current state of the context
+  std::shared_ptr<CalibrationState> cur_state_ptr_;
+  // state reference to the next state of the context
+  std::shared_ptr<CalibrationState> next_state_ptr_;
 };
 }  // namespace calibration

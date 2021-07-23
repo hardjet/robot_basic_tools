@@ -19,7 +19,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -Wall -Wno-sign-compare")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall -Wno-sign-compare")
 
-
 # ----- color defined -----
 if (NOT WIN32)
     string(ASCII 27 Esc)
@@ -295,6 +294,7 @@ add_executable(${PROJECT_NAME}
         src/calibration/two_lasers_calib.cpp
         src/calibration/two_cameras_calib.cpp
         src/calibration/camera_calib.cpp
+        src/calibration/calibration_state.cpp
         src/util/image_loader.cpp
         src/util/extrinsics_publisher.cpp
         src/util/tf_tree.cpp

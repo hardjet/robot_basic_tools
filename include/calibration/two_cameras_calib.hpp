@@ -56,6 +56,7 @@ class TwoCamerasCalib : public BaseCalib {
 
   /// 标定流程
   void calibration();
+  void new_calibration();
 
   /// 获取一对儿有效的相机位姿
   bool get_valid_pose();
@@ -93,13 +94,31 @@ class TwoCamerasCalib : public BaseCalib {
   /// 保存外参到文件
   bool save_extrinsics(const std::string& file_path);
 
+  /// 改变当前标定流程状态
+  void change_current_state(std::shared_ptr<CalibrationState> new_state) override;
+
+  /// 改变下一个标定流程状态
+  void change_next_state(std::shared_ptr<CalibrationState> new_state) override;
+
+  /// 判断两个相机是否都有新数据 - 进入STATE_START
+  bool instrument_available() override;
+
+  /// 获得有效的相机位姿
+  bool pose_valid() override;
+
+  /// 图像是否稳定
+  void check_steady() override;
+
+  /// 执行计算
+  bool do_calib() override;
+
  private:
   // 相机数据结构
   struct CameraInstType {
     int id;
     // 是否有新图像数据
     bool is_new_data{false};
-    // 相机 frame id
+    // 相机图像流的 frame id
     std::string frame_id;
     // 相机设备对象
     std::shared_ptr<dev::Camera> camera_dev_ptr{nullptr};
@@ -166,12 +185,11 @@ class TwoCamerasCalib : public BaseCalib {
   double jitter_angle_{0.2};
   // 不同数据角度间隔 deg
   double between_angle_{1.0};
-
+  // ros nodehandle
   ros::NodeHandle ros_nh_;
-//  ros::Subscriber tf_static_sub_;
-
+  // set用来储存/筛选major frame(base_link下的第一级)
   std::set<std::string> major_frames_set_;
+  // vector用来储存major frame(base_link下的第一级)
   std::vector<std::string> major_frames_list_;
-//  std::shared_ptr<tf2_ros::Buffer> tfBuffer_ = std::make_shared<tf2_ros::Buffer>(ros::Duration(30));
 };
 }  // namespace calibration

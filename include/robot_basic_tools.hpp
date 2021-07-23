@@ -105,9 +105,6 @@ class RobotBasicTools : public guik::Application {
   // tf树
   std::unique_ptr<util::TfTree> tf_tree_ptr_;
 
-  // 文字渲染
-  std::shared_ptr<glk::TextRenderer> text_renderer_;
-
   // 热键标记(ALT)
   bool b_hotkey_alt_pressed_ = false;
   // 选中的物体集合

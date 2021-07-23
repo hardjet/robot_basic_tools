@@ -38,6 +38,18 @@ class CamLaserCalib : public BaseCalib {
   /// imgui绘图
   void draw_ui() override;
 
+  void change_current_state(std::shared_ptr<CalibrationState> new_state) override;
+
+  void change_next_state(std::shared_ptr<CalibrationState> new_state) override;
+
+  bool instrument_available() override;
+
+  bool pose_valid() override;
+
+  void check_steady() override;
+
+  bool do_calib() override;
+
  private:
   /// 更新数据
   void update_data();
@@ -51,6 +63,7 @@ class CamLaserCalib : public BaseCalib {
   void draw_calib_params();
   /// 标定流程
   void calibration();
+  void new_calibration();
   /// 保证保存的帧角度不同
   void check_and_save();
   /// 更新相关的位姿

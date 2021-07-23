@@ -35,6 +35,18 @@ class TwoLasersCalib : public BaseCalib {
   void draw_gl(glk::GLSLShader& shader) override;
   /// imgui绘图
   void draw_ui() override;
+  /// 改变当前的标定流程状态
+  void change_current_state(std::shared_ptr<CalibrationState> new_state) override;
+  /// 改变下一个标定流程状态
+  void change_next_state(std::shared_ptr<CalibrationState> new_state) override;
+  /// 判断两个laser是否都有新数据 - 进入STATE_START
+  bool instrument_available() override;
+  /// 获得有效的相机位姿
+  bool pose_valid() override;
+  /// 图像是否稳定
+  void check_steady() override;
+  /// 执行计算
+  bool do_calib() override;
 
  private:
   /// 更新数据
@@ -42,6 +54,7 @@ class TwoLasersCalib : public BaseCalib {
 
   /// 标定流程
   void calibration();
+  void new_calibration();
 
   /// 获取一对儿有效的激光数据
   bool get_valid_lines();

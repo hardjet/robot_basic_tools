@@ -11,6 +11,7 @@
 
 #include "calib_base.hpp"
 #include "camera_model/calib/CameraCalibration.h"
+
 namespace cv_bridge {
 class CvImage;
 }
@@ -40,26 +41,40 @@ class CameraCalib : public BaseCalib {
   void draw_ui() override;
 
  private:
-  //图像旋转不连续检测
+  /// 图像旋转不连续检测
   bool get_pose_and_points();
-  //进行矫正的基本配置
+  /// 进行矫正的基本配置
   void calibration();
+  void new_calibration();
   void update_data();
   /// 保证保存的帧角度不同
   void check_and_save();
-  // opengl显示矫正数据
+  /// opengl显示矫正数据
   void draw_calib_data(glk::GLSLShader& shader);
   void update_3d_show();
-  //核心矫正算法
+  /// 核心矫正算法
   bool calc();
   /// 设置标定参数
   void draw_calib_params();
-  //显示出内参信息
+  /// 显示出内参信息
   void draw_ui_params();
-  //保存矫正过程中产生的数据
+  /// 保存矫正过程中产生的数据
   bool save_calib_data(const std::string& file_path);
-  //加载矫正过程中产生的数据
+  /// 加载矫正过程中产生的数据
   bool load_calib_data(const std::string& file_path);
+  /// 改变当前标定流程状态
+  void change_current_state(std::shared_ptr<CalibrationState> new_state) override;
+  /// 改变下一个标定流程状态
+  void change_next_state(std::shared_ptr<CalibrationState> new_state) override;
+  /// 相机是否有新数据
+  bool instrument_available() override;
+  /// 相机位姿
+  bool pose_valid() override;
+  /// 数据稳定检查
+  void check_steady() override;
+  /// 计算
+  bool do_calib() override;
+
  private:
   // 标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;

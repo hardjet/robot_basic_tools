@@ -13,7 +13,7 @@
 
 namespace guik {
 
-Application::Application() : window(nullptr) {}               // 构造函数，将GLFWwindow* widnow赋值为nullptr
+Application::Application() : window(nullptr) {}
 
 Application::~Application() {
   if (!window) {
@@ -32,7 +32,7 @@ Application::~Application() {
 std::unordered_map<GLFWwindow *, Application *> appmap;
 
 void fb_size_callback(GLFWwindow *window, int width, int height) {              // 窗口变化的回调函数，参数=glfw的窗口，一个宽度和高度
-  appmap[window]->framebuffer_size_callback(Eigen::Vector2i(width, height));    // appmap[widnow]返回一个Application*，调用这个指针的framebuffer_size_callback()函数
+  appmap[window]->framebuffer_size_callback(Eigen::Vector2i(width, height));
 }
 
 bool Application::init(const char *window_name, const char *imgui_config_path, const Eigen::Vector2i &size, const char *glsl_version) {
@@ -76,19 +76,20 @@ bool Application::init(const char *window_name, const char *imgui_config_path, c
 }
 
 void Application::run() {
-  while (!glfwWindowShouldClose(window)) {                        // 检查窗口是否需要关闭(因为希望这个程序可以一直运行，直到用户关闭窗口)
-    glfwPollEvents();                                             // 立即处理已经到达的事件
-    ImGui_ImplOpenGL3_NewFrame();                                 // 启动ImGui Frame框架
+  while (!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
+    ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    draw_ui();                                                    // 在里面调用了ImGui::ShowDemoWindow()
+    draw_ui();
 
     ImGui::Render();
 
     int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);       // Retrieves the size of the framebuffer of the specified window.
+    glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
+
     // 设置背景色
     glClearColor(82.0 / 255.0, 82.0 / 255.0, 82.0 / 255.0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -97,10 +98,8 @@ void Application::run() {
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
-
     usleep(5000);
   }
-
   // 释放资源
   free();
 }

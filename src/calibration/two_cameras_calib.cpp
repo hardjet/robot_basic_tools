@@ -59,6 +59,11 @@ TwoCamerasCalib::TwoCamerasCalib(std::shared_ptr<dev::SensorManager>& sensor_man
   task_ptr_ = std::make_shared<calibration::Task>();
   // 设置相对位姿初始值
   T_12_ = Eigen::Matrix4f::Identity();
+
+  cur_state_ptr_ = std::make_shared<StateIdle>();
+  cur_state_ptr_->set_context(this);
+  next_state_ptr_ = std::make_shared<StateIdle>();
+  next_state_ptr_->set_context(this);
 }
 
 void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
@@ -495,6 +500,86 @@ void TwoCamerasCalib::clear_calib_data_flag() {
   }
 }
 
+void TwoCamerasCalib::change_current_state(std::shared_ptr<CalibrationState> new_state) {
+  cur_state_ptr_ = std::move(new_state);
+  cur_state_ptr_->set_context(this);
+}
+
+void TwoCamerasCalib::change_next_state(std::shared_ptr<CalibrationState> new_state) {
+  next_state_ptr_ = std::move(new_state);
+  next_state_ptr_->set_context(this);
+}
+
+bool TwoCamerasCalib::instrument_available() {
+  if (camera_insts_[0].is_new_data && camera_insts_[1].is_new_data) {
+    camera_insts_[0].is_new_data = false;
+    camera_insts_[1].is_new_data = false;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool TwoCamerasCalib::pose_valid() {
+  if (task_ptr_->do_task("get_valid_pose", std::bind(&TwoCamerasCalib::get_valid_pose, this))) {  // NOLINT
+    if (task_ptr_->result<bool>()) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+void TwoCamerasCalib::check_steady() {
+  if (calib_data_vec_.empty()) {
+    calib_data_vec_.push_back(calib_data_);
+  } else {
+    // 检查相机位姿是否一致
+    double dist = (calib_data_vec_.at(0).t_ac[0] - calib_data_.t_ac[0]).norm();
+    // 四元数的转角是原本的1/2
+    double theta = 2 * std::acos((calib_data_vec_.at(0).q_ac[0].inverse() * calib_data_.q_ac[0]).w());
+    std::cout << "dist:" << dist << ", theta:" << RAD2DEG_RBT(theta) << std::endl;
+    // 抖动小于1cm与0.5°
+    if (dist < jitter_dist_ && theta < DEG2RAD_RBT(jitter_angle_)) {
+      calib_data_vec_.push_back(calib_data_);
+      // 足够稳定才保存
+      if (calib_data_vec_.size() > 3) {
+        check_and_save();
+      }
+    } else {
+      // 抖动大则重新开始检测
+      calib_data_vec_.clear();
+      calib_data_vec_.push_back(calib_data_);
+      std::cout << "moved!!!" << std::endl;
+    }
+  }
+}
+
+bool TwoCamerasCalib::do_calib() {
+  if (task_ptr_->do_task("calc", std::bind(&TwoCamerasCalib::calc, this))) {  // NOLINT
+    // 结束后需要读取结果
+    if (task_ptr_->result<bool>()) {
+      // 将计算结果更新到相机2
+      update_related_pose();
+      update_ui_transform();
+      is_transform_valid_ = true;
+      clear_calib_data_flag();
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+void TwoCamerasCalib::new_calibration() {
+  update();
+  cur_state_ptr_->calibration();
+}
+
 void TwoCamerasCalib::calibration() {
   // 首先获取最新的数据
   update();
@@ -679,7 +764,7 @@ bool TwoCamerasCalib::load_calib_data(const std::string& file_path) {
     convert_json_to_pts(d.object_points, data.value().at("object_points"));
     calib_valid_data_vec_.push_back(d);
   }
-  printf("----- TwoCamerasCalib::load_calib_data() ..... start reading frame\n");
+
   for (const auto& data : js_whole["frame"].items()) {
     if (std::strcmp(data.key().c_str(), "from_frame") == 0) {
       std::cout << "from frame: " << data.value() << std::endl;
@@ -890,11 +975,11 @@ void TwoCamerasCalib::draw_ui() {
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera 1", dev::CAMERA, camera_insts_[0].camera_dev_ptr);
 
+  // 下拉菜单选择第一个相机的base frame
   ImGui::SameLine();
   static int item_current_idx = 0;
   const char* combo_preview_value = major_frames_list_[item_current_idx].c_str();
   ImGui::Text("Select frame:");
-
   ImGui::SameLine();
   if (ImGui::BeginCombo("##selected frame 1", combo_preview_value, ImGuiComboFlags_None)) {
     for (int n = 0; n < major_frames_list_.size(); n++) {
@@ -908,6 +993,8 @@ void TwoCamerasCalib::draw_ui() {
     }
     ImGui::EndCombo();
   }
+
+  // 显示第一个相机图像流的true frame
   ImGui::SameLine();
   ImGui::Text("True frame: %s\n", camera_insts_[0].frame_id.c_str());
   ImGui::SameLine();
@@ -972,6 +1059,8 @@ void TwoCamerasCalib::draw_ui() {
 
   // 相机选择
   draw_sensor_selector<dev::Camera>("camera 2", dev::CAMERA, camera_insts_[1].camera_dev_ptr);
+
+  // 下拉菜单选择第二个相机的base frame
   ImGui::SameLine();
   static int item_current_idx2 = 0;
   const char* combo_preview_value2 = major_frames_list_[item_current_idx2].c_str();
@@ -989,6 +1078,8 @@ void TwoCamerasCalib::draw_ui() {
     }
     ImGui::EndCombo();
   }
+
+  // 显示第二个相机的true frame
   ImGui::SameLine();
   ImGui::Text("True frame: %s\n", camera_insts_[1].frame_id.c_str());
   ImGui::SameLine();
@@ -1008,7 +1099,10 @@ void TwoCamerasCalib::draw_ui() {
     }
 
     // 闲置状态下才可以设置
-    if (next_state_ == STATE_IDLE) {
+//    if (next_state_ == STATE_IDLE) {
+//      draw_calib_params();
+//    }
+    if (next_state_ptr_->id() == 0) {
       draw_calib_params();
     }
 
@@ -1016,11 +1110,13 @@ void TwoCamerasCalib::draw_ui() {
     draw_ui_transform();
 
     // 标定逻辑
-    calibration();
+//    calibration();
+    new_calibration();
 
-    if (next_state_ == STATE_IDLE) {
+//    if (next_state_ == STATE_IDLE) {
+    if (next_state_ptr_->id() == 0) {
       if (ImGui::Button("start")) {
-        // 两个设备名称不能一样
+        // 两个设备名称不能一样，两个被选择的base frame不能一样
         if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
             std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
           std::string msg = "two cameras are the same!";
@@ -1034,18 +1130,23 @@ void TwoCamerasCalib::draw_ui() {
           b_show_calib_data_ = false;
           // 清空上次的标定数据
           // calib_valid_data_vec_.clear();
-          next_state_ = STATE_START;
+//          next_state_ = STATE_START;
+          change_next_state(std::make_shared<StateStart>());
         }
       }
     } else {
       if (ImGui::Button("stop")) {
-        next_state_ = STATE_IDLE;
+//        next_state_ = STATE_IDLE;
+        change_next_state(std::make_shared<StateIdle>());
       }
     }
 
     // 标定状态只需要设定一次
-    if (cur_state_ == STATE_IN_CALIB) {
-      next_state_ = STATE_IDLE;
+//    if (cur_state_ == STATE_IN_CALIB) {
+//      next_state_ = STATE_IDLE;
+//    }
+    if (cur_state_ptr_->id() == 5) {
+      change_next_state(std::make_shared<StateIdle>());
     }
 
     // 有一帧数据就可以开始进行标定操作了
@@ -1053,7 +1154,7 @@ void TwoCamerasCalib::draw_ui() {
       ImGui::SameLine();
       // 开始执行标定
       if (ImGui::Button("calib")) {
-        // 两个设备名称不能一样 && 给两个设备指定的frame不能一样
+        // 两个设备名称不能一样 ，两个被选择的base frame不能一样
         if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
             std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
           std::string msg = "two cameras are the same!";
@@ -1064,7 +1165,8 @@ void TwoCamerasCalib::draw_ui() {
           std::string msg = "please set camera model first!";
           dev::show_pfd_info("info", msg);
         } else {
-          next_state_ = STATE_START_CALIB;
+//          next_state_ = STATE_START_CALIB;
+          change_next_state(std::make_shared<StateStartCalib>());
         }
       }
     }
@@ -1086,19 +1188,13 @@ void TwoCamerasCalib::draw_ui() {
     if (is_transform_valid_){
       ImGui::SameLine();
       if(ImGui::Button("save")) {
-        printf("----- TwoCamerasCalib::draw_ui() ..... saving...\n");
-
         std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
         std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
         while (!dialog->ready()) {
           usleep(1000);
         }
         auto file_path = dialog->result();
-        printf("----- TwoCamerasCalib::draw_ui() ..... file_path = %s\n", file_path.c_str());
-        printf("----- TwoCamerasCalib::draw_ui() ..... file_path.empty() = %d\n", file_path.empty());
-
         if (!file_path.empty()) {
-          printf("----- TwoCamerasCalib::draw_ui() ..... file_path not empty\n");
           if (!save_extrinsics(file_path)) {
             printf("----- TwoCamerasCalib::draw_ui() ..... FAILED\n");
             std::string msg = "save calib data to " + file_path + " failed!";
@@ -1119,7 +1215,6 @@ void TwoCamerasCalib::draw_ui() {
       ImGui::SameLine();
       if(ImGui::Button("update")) {
         is_transform_valid_ = false;
-        printf("----- TwoCamerasCalib::draw_ui() ..... publishing service ...\n");
         util::publish_extrinsics(ros_nh_, transform_12_, camera_insts_[0].frame_id, camera_insts_[1].frame_id,
                                  major_frames_list_[item_current_idx], major_frames_list_[item_current_idx2]);
       }
@@ -1130,7 +1225,8 @@ void TwoCamerasCalib::draw_ui() {
   }
 
   // 标定数据相关操作
-  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+//  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+  if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         // 两个设备名称不能一样
@@ -1218,7 +1314,9 @@ void TwoCamerasCalib::draw_ui() {
 }
 
 void TwoCamerasCalib::pass_major_frames(const std::vector<std::string>& major_frames) {
+  // 如果传入的frame列表不为空
   if (!major_frames.empty()) {
+    // 则可以把前面占位的"Empty..."都去掉
     major_frames_set_.erase("Empty... 1");
     major_frames_set_.erase("Empty... 2");
     for (auto iter = major_frames_list_.begin(); iter != major_frames_list_.end() ; ++iter) {
@@ -1227,13 +1325,17 @@ void TwoCamerasCalib::pass_major_frames(const std::vector<std::string>& major_fr
         break;
       }
     }
+    // 遍历传入的frame
     for (auto& f : major_frames) {
+      // 尝试放入set容器
       std::pair<std::set<std::string>::iterator, bool> feedback = major_frames_set_.insert(f);
+      // 如果可以被放进set，则说明是前面没有过的frame，应该被添加到vector
       if (feedback.second) {
         major_frames_list_.push_back(f);
       }
     }
   } else {
+    // 如果传入的frame是空的，就放入"Empty..."占位
     std::pair<std::set<std::string>::iterator, bool> feedback = major_frames_set_.insert("Empty... Please check /tf_static");
     if (feedback.second) {
       major_frames_list_.emplace_back("Empty... 1");

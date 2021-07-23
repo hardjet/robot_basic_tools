@@ -109,11 +109,11 @@ void SensorManager::draw_ui() {
   // static int selected = -1;
   // int select_cnt = 0;
   // 遍历设备 显示
-  for (auto &sensors : sensors_map) {                                                                 // 遍历sensors_map中的每一种设备 - sensors就是一种设备的list
+  for (auto &sensors : sensors_map) {
     // 显示设备类型的名称
-    auto header_name = sensors.second.front()->sensor_type_str;                                       // sensor type
-    if (ImGui::CollapsingHeader(header_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {               // 可以折叠的header
-      for (auto &sensor : sensors.second) {                                                           // 遍历当前设备类型的list里面的每一个设备
+    auto header_name = sensors.second.front()->sensor_type_str;
+    if (ImGui::CollapsingHeader(header_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+      for (auto &sensor : sensors.second) {
         // 高亮有问题 禁用
         // if (ImGui::Selectable("", selected == select_cnt)) {
         //   selected = select_cnt;

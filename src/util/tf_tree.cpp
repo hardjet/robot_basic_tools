@@ -5,13 +5,13 @@
 namespace util {
 
 TfTree::TfTree(const ros::NodeHandle& nh) : ros_nh_(nh) {
-  printf("----- TfTree::TfTree() ..... calling constructor\n");
+//  printf("----- TfTree::TfTree() ..... calling constructor\n");
   tf_static_sub_ = ros_nh_.subscribe("/tf_static", 1, &TfTree::tf_static_callback, this);
 //  tf_sub_ = ros_nh_.subscribe("/tf", 1, &TfTree::tf_callback, this);
 }
 
 void TfTree::tf_static_callback(const tf2_msgs::TFMessage& msg) {
-  printf("----- TfTree::tf_static_callback() ..... calling\n");
+//  printf("----- TfTree::tf_static_callback() ..... calling\n");
 
 //  std::cout << "size : " << msg.transforms.size() << std::endl;
 //  std::cout << msg << std::endl;
@@ -47,7 +47,7 @@ void TfTree::tf_static_callback(const tf2_msgs::TFMessage& msg) {
 //}
 
 void TfTree::show() {
-  printf("----- TfTree::show() ..... calling\n");
+//  printf("----- TfTree::show() ..... calling\n");
   b_show_window_ = true;
 }
 

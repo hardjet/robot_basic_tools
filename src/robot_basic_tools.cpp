@@ -80,10 +80,8 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
 
   // 两个相机标定
   tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
-<<<<<<< HEAD
   tc_calib_ptr_->pass_nh(nh_);
-=======
->>>>>>> f884a7ca89c5d42142c86adcb7361d43e09d1663
+
 
   // 单目相机标定
   cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_,chess_board_ptr_,blob_board_ptr_);
@@ -163,12 +161,9 @@ void RobotBasicTools::draw_ui() {
   main_canvas_ptr_->draw_ui();
   sensor_manager_ptr_->draw_ui();
   april_board_ptr_->draw_ui();
-<<<<<<< HEAD
   tf_tree_ptr_->draw_ui();
-=======
   chess_board_ptr_->draw_ui();
   blob_board_ptr_->draw_ui();
->>>>>>> f884a7ca89c5d42142c86adcb7361d43e09d1663
   cl_calib_ptr_->draw_ui();
   tl_calib_ptr_->draw_ui();
   tc_calib_ptr_->draw_ui();
@@ -229,18 +224,19 @@ void RobotBasicTools::main_menu() {
     if (ImGui::MenuItem("AprilTag setting")) {
       april_board_ptr_->show();
     }
-<<<<<<< HEAD
     ImGui::Separator();
 
     if (ImGui::MenuItem("Show TF Tree")) {
       tf_tree_ptr_->show();
-=======
+    }
+    ImGui::Separator();
+
     if (ImGui::MenuItem("ChessBoard setting")) {
       chess_board_ptr_->show();
     }
+    ImGui::Separator();
     if (ImGui::MenuItem("BlobBoard setting")) {
       blob_board_ptr_->show();
->>>>>>> f884a7ca89c5d42142c86adcb7361d43e09d1663
     }
     ImGui::Separator();
 

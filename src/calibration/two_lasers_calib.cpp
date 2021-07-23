@@ -559,8 +559,6 @@ bool TwoLasersCalib::pose_valid() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 
@@ -598,8 +596,6 @@ bool TwoLasersCalib::do_calib() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 

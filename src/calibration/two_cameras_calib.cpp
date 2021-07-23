@@ -527,8 +527,6 @@ bool TwoCamerasCalib::pose_valid() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 
@@ -570,8 +568,6 @@ bool TwoCamerasCalib::do_calib() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 

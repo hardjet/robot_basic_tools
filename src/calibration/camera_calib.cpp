@@ -502,8 +502,6 @@ bool CameraCalib::pose_valid() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 
@@ -540,8 +538,6 @@ bool CameraCalib::do_calib() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 

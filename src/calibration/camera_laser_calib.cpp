@@ -511,8 +511,6 @@ bool CamLaserCalib::pose_valid() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 
@@ -550,8 +548,6 @@ bool CamLaserCalib::do_calib() {
     } else {
       return false;
     }
-  } else {
-    return false;
   }
 }
 

@@ -34,7 +34,7 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
 void Camera::draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
-  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Camera::draw_gl() - test", 20.0f, 50.0f, 0.3f, glm::vec3(1, 0, 0)));
+//  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Camera::draw_gl() - test", 20.0f, 50.0f, 0.3f, glm::vec3(1, 0, 0)));
   // 画坐标轴
   draw_gl_coordinate_system(shader, canvas_ptr);
 

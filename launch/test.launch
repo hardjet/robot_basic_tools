@@ -1,4 +1,0 @@
-<launch>
-    <node pkg="robot_basic_tools" type="test_code" name="test_code" output="screen">
-    </node>
-</launch>

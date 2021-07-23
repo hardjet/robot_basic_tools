@@ -6,7 +6,7 @@
 工具界面
 ![工具界面](./doc/imgs/1.png)
 
-标定展示Cancel changes
+标定展示
 ![标定展示](./doc/imgs/2.png)
 
 ## 依赖说明
@@ -113,19 +113,27 @@ cmake \
 [ubuntu 18.04](http://wiki.ros.org/melodic/Installation/Ubuntu)安装参考
 
 ### robot basic tools
-
+&emsp;&emsp;robot basic tools工具需在新创建ROS工作空间中运行，请优先创建工作空间，并source当前空间。
 ```cmake
 # 获取代码
 git clone https://github.com/hardjet/robot_basic_tools.git
 # 更新子模块
+git submodule sync
 git submodule init
 git submodule update
 
 # 如果opencv,ceres安装在系统默认位置
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -j4
 
-# 指定opencv, ceres库位置
+# 指定opencv, ceres库位置(请优先source当前工作空间)
 catkin_make -DCATKIN_WHITELIST_PACKAGES="robot_basic_tools" -DOpenCV_LIB_DIR="/path/to/opencv/lib/" -DCeres_LIB_DIR="/path/to/ceres/lib/" -j4
+```
+
+可以在源码根目录创建.lib_path_config文件，指定opencv, ceres库位置。格式如下：
+
+```text
+OpenCV_LIB_DIR=/home/xxx/work/lib/opencv43/
+Ceres_LIB_DIR=/home/xxx/work/lib/ceres-solver-2.0.0/
 ```
 
 ## 运行
@@ -141,4 +149,3 @@ roslaunch robot_basic_tools sim.launch
 ## License
 
 本工具遵照 GPLv3 license。
-

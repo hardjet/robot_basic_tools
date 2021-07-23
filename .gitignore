@@ -7,6 +7,7 @@ data/calib_data/
 gitstats/
 include/version_info.h
 doc/*.png
+.lib_path_config
 
 # Prerequisites
 *.d

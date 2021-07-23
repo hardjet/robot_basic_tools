@@ -9,6 +9,8 @@
 #include "glk/primitives/primitives.hpp"
 
 #include "dev/april_board.hpp"
+#include "dev/chess_board.hpp"
+#include "dev/blob_board.hpp"
 #include "dev/sensor_manager.hpp"
 #include "dev/image_show.hpp"
 #include "dev/camera.hpp"
@@ -18,16 +20,18 @@
 #include "calibration/task_back_ground.hpp"
 #include "calibration/camera_calib.hpp"
 
-#include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include "camera_model/camera_models/Camera.h"
-
 #include "camera_model/camera_models/CameraFactory.h"
-// ---- 相机-单线激光标定状态
+#include "camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
+#include "camera_model/chessboard/Chessboard.h"
+
+#include <opencv2/calib3d.hpp>
+// ---- 相机标定状态
 // 空闲
 #define STATE_IDLE 0
 // 启动
 #define STATE_START 1
-// 获取相机位姿和落在标定板上的激光点
+// 获取相机位姿
 #define STATE_GET_POSE_AND_PTS 2
 // 检查数据稳定性,连续5帧姿态没有大的变化，取中间帧作为候选
 #define STATE_CHECK_STEADY 3
@@ -38,8 +42,14 @@
 
 namespace calibration {
 CameraCalib::CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-                         std::shared_ptr<dev::AprilBoard>& april_board_ptr)
-    : BaseCalib(sensor_manager_ptr), april_board_ptr_(april_board_ptr) {
+                         std::shared_ptr<dev::AprilBoard>& april_board_ptr,
+                         std::shared_ptr<dev::chessboard>& chess_board_ptr,
+                         std::shared_ptr<dev::blob_board>& blob_board_ptr)
+    : BaseCalib(sensor_manager_ptr),
+      april_board_ptr_(april_board_ptr),
+      chess_board_ptr_(chess_board_ptr),
+      blob_board_ptr_(blob_board_ptr)
+{
   // 图像显示
   image_imshow_ptr_ = std::make_shared<dev::ImageShow>();
   // 后台任务
@@ -143,6 +153,14 @@ void CameraCalib::draw_ui() {
         image_imshow_ptr_->disable();
       }
     }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("WHITE-TO-BLACK", &USE_IMAGE_INVERSE)) {
+      if (USE_IMAGE_INVERSE) {
+        USE_IMAGE_INVERSE = true;
+      }
+    }
+
+
     if (cam_dev_ptr_->camera_model()) {
       // 闲置状态下才可以设置
 //      if (next_state_ == STATE_IDLE) {
@@ -183,9 +201,8 @@ void CameraCalib::draw_ui() {
   if (cur_state_ptr_->id() == 5) {
     change_next_state(std::make_shared<StateIdle>());
   }
-
   // 大于7帧数据就可以开始进行标定操作了
-  if (calib_valid_data_vec_.size() > 7) {
+  if (calib_valid_data_vec_.size() > 8) {
     ImGui::SameLine();
     // 开始执行标定
     if (ImGui::Button("CALIB & SAVE ")) {
@@ -193,15 +210,22 @@ void CameraCalib::draw_ui() {
       change_next_state(std::make_shared<StateStartCalib>());
     }
   }
-
   // 标定数据相关操作
 //  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
   if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         b_need_to_update_cd_ = true;
-        // 显示AprilBoard
-        april_board_ptr_->show_3d();
+        // 显示棋盘格
+        if (USE_APRIL_BOARD) {
+          april_board_ptr_->show_3d();
+        }else if(USE_BLOB_BOARD)
+        {
+          blob_board_ptr_->show_3d();
+        }
+        else {
+          chess_board_ptr_->show_3d();
+        }
       }
     }
     if (ImGui::IsItemHovered()) {
@@ -211,7 +235,6 @@ void CameraCalib::draw_ui() {
         ImGui::SetTooltip("click to show calib data");
       }
     }
-
     float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
     ImGui::PushButtonRepeat(true);
     ImGui::SameLine(0.0f, spacing);
@@ -269,9 +292,9 @@ void CameraCalib::draw_gl(glk::GLSLShader& shader) {
 }
 /// 设置标定参数
 void CameraCalib::draw_calib_params() {
-  ImGui::Separator();
-  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
-  ImGui::Text("camera type:%s", camera_type[cam_dev_ptr_->camera_model()->modelType()]);
+  //  ImGui::Separator();
+  //  const char* camera_type[] = {"KANNALA_BRANDT", "MEI", "PINHOLE"};
+  //  ImGui::Text("camera type:%s", camera_type[cam_dev_ptr_->camera_model()->modelType()]);
   draw_ui_params();
 }
 //更新3D图像点信息
@@ -323,19 +346,99 @@ bool CameraCalib::get_pose_and_points() {
   } else {
     img_show = cur_image->image.clone();
   }
+  //setp 1. 进行图像的灰度翻转，因为反光板是白色的
+  //是否灰度翻转
+  if(USE_IMAGE_INVERSE)
+  {
+    for (int row=0;row<img.rows;row++)
+    {
+      for (int col=0;col<img.cols;col++)
+      {
+        int px_value = img.at<uchar>(row,col);
+        img.at<uchar>(row, col) = 255 - px_value;
+      }
+    }
+  }
+  // SETP 2. 清空所有的角点缓存
   //通过图像得到april board中角点的位置和图像点
   objectPoints.clear();
   imagePoints.clear();
-  if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
+  bool result = false;
+  // SETP 3. 根据标定板类型选择合适的标定板
+  //判断是不是用Aprilboard标定板
+  if (USE_APRIL_BOARD) {
+    // 利用A标定板查找对应点
+    if (april_board_ptr_->board->computeObservation(img, img_show, objectPoints, imagePoints)) {
+      result = true;  // 找到
+    } else {
+      result = false;  // 未找到
+    }
+  } else if(USE_BLOB_BOARD) //进入圆形标定板检测
+  {
+    cv::Size boardSize(blob_board_ptr_->get_board_size().height,
+                       blob_board_ptr_->get_board_size().width);
+    //    标定预处理，包括斑点器生成和图像预处理
+    //    threshold(img, img, 80, 255, cv::THRESH_OTSU);
+    //    cv::Canny(img, img, 80, 220);
+    //    cv::Mat kernel = getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3), cv::Point(-1, -1));
+    //    morphologyEx(img, img, cv::MORPH_TOPHAT, kernel);
+    //    cv::SimpleBlobDetector::Params params;
+    //    params.minArea = 2;
+    //    params.maxArea = 4000;
+    //    params.minCircularity = 0.2;
+    //    params.maxCircularity = 1.0;
+    //    params.filterByArea = true;
+    //    cv::Ptr<cv::SimpleBlobDetector> sbd = cv::SimpleBlobDetector::create(params);
+    //1.检测斑点检测板是不是存在
+    if(cv::findCirclesGrid(img,boardSize,imagePoints))
+    //if(cv::findCirclesGrid(img,boardSize,imagePoints,cv::CALIB_CB_SYMMETRIC_GRID,sbd))
+    {
+      //2.检测到棋盘后,二值化后找边缘
+      threshold(img, img, 80, 255, cv::THRESH_OTSU);
+      std::vector<std::vector<cv::Point2i>> small_patch_contours;
+      std::vector<cv::Vec4i> small_patch_hierarchy;
+      cv::findContours(img, small_patch_contours, small_patch_hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+      //3.通过drawContours找所有边缘，并将边缘以外的区域置0
+      double m_tag_size =blob_board_ptr_->get_tag_size_();
+      cv::Mat roi(img.size(),CV_8U,cv::Scalar(0));
+      cv::drawContours(roi,small_patch_contours,-1,cv::Scalar(255),-1);
+      imagePoints.clear();
+      //4.再次进行标定板检测
+      if(cv::findCirclesGrid(roi,boardSize,imagePoints))
+      {
+          //5.根据找到的图像点生成世界点
+          result = true;
+          objectPoints.clear();
+          for (int i = 0; i < boardSize.height; ++i) {
+            for (int j = 0; j < boardSize.width; ++j) {
+              objectPoints.emplace_back(i * m_tag_size, j * m_tag_size, 0.0);
+            }
+          }
+          //6.将其转换到可现实图像
+          cv::cvtColor(roi, img_show, cv::COLOR_GRAY2RGB);
+          cv::drawChessboardCorners(img_show,boardSize,imagePoints,true);
+      }else{result = false;}
+    }else{result = false;}
+  }
+  else//使用标准的棋盘格检测角点
+  {
+    if (chess_board_ptr_->board->findCorners(img, objectPoints, imagePoints, true)) {
+      // 判断是不是找到特征点
+      result = true;  // 找到
+    } else {
+      result = false;  // 未找到
+    }
+  }
+  if (result) {
     //每一张图像进入后都要进行外参计算
-    auto pi_cam = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE,
-                                                                        "pi_camera",
-                                                                          cam_dev_ptr_->camera_model()->imageSize());
-    std::vector<std::vector<cv::Point3f> > all_objectPoints;
-    std::vector<std::vector<cv::Point2f> > all_imagePoints;
+    auto pi_cam = camera_model::CameraFactory::instance()->generateCamera(
+        camera_model::Camera::ModelType::PINHOLE, "pi_camera", cam_dev_ptr_->camera_model()->imageSize());
+    std::vector<std::vector<cv::Point3f>> all_objectPoints;
+    std::vector<std::vector<cv::Point2f>> all_imagePoints;
     all_objectPoints.push_back(objectPoints);
     all_imagePoints.push_back(imagePoints);
-    pi_cam->setInitIntrinsics(all_objectPoints,all_imagePoints);
+    pi_cam->setInitIntrinsics(all_objectPoints, all_imagePoints);
     pi_cam->estimateExtrinsics(objectPoints, imagePoints, T_ac, img_show);
     calib_data_.timestamp = cur_image->header.stamp.toSec();
     calib_data_.t_ac = T_ac.block(0, 3, 3, 1);
@@ -349,7 +452,7 @@ bool CameraCalib::get_pose_and_points() {
     show_cam_cv_img_ptr_.reset(new const cv_bridge::CvImage(cur_image->header, cur_image->encoding, img_show));
     return true;
   } else {
-    return false;
+    return false;  //直接退出
   }
 }
 //检查缓存的点云数据并进行保存
@@ -518,17 +621,31 @@ void CameraCalib::calibration() {
 //核心矫正算法函数
 bool CameraCalib::calc() {
   cv::Size boardSize{0, 0};
-  boardSize.width = (int)april_board_ptr_->board->cols();
-  boardSize.height = (int)april_board_ptr_->board->rows();
+  float tag_size{0.0};
+  if (USE_APRIL_BOARD) {
+    //获取标定板的大小
+    boardSize.width = (int)april_board_ptr_->board->cols();
+    boardSize.height = (int)april_board_ptr_->board->rows();
+    tag_size = (float)april_board_ptr_->board->get_tagsize() * 100;
+  } else if(USE_BLOB_BOARD)
+  {
+    boardSize.width =blob_board_ptr_->get_board_size().width;
+    boardSize.height =blob_board_ptr_->get_board_size().height;
+    tag_size =(float ) blob_board_ptr_->get_tag_size_()*100;  //转换成厘米
+  }
+  else{
+    boardSize.width = chess_board_ptr_->board->rows();
+    boardSize.height = chess_board_ptr_->board->cols();
+    tag_size = (float)chess_board_ptr_->board->get_tagsize() * 100;
+  }
   //类初始化
-  camera_model::CameraCalibration cam_cal_(
-      cam_dev_ptr_->camera_model()->modelType(), cam_dev_ptr_->camera_model()->cameraName(),
-      cam_dev_ptr_->camera_model()->imageSize(), boardSize, (float)april_board_ptr_->board->get_tagsize()*100);
+  camera_model::CameraCalibration cam_cal_(cam_dev_ptr_->camera_model()->modelType(),
+                                           cam_dev_ptr_->camera_model()->cameraName(),
+                                           cam_dev_ptr_->camera_model()->imageSize(), boardSize, tag_size);
   //显示标定板加载信息
-  std::cout <<"boardSize.width:  "<<boardSize.width<<std::endl;
-  std::cout <<"boardSize.height:  "<<boardSize.height<<std::endl;
-  std::cout <<"tagsize:  "<<april_board_ptr_->board->get_tagsize()*100
-           <<std::endl;
+  std::cout << "boardSize.width:" << boardSize.width << std::endl;
+  std::cout << "boardSize.height:" << boardSize.height << std::endl;
+  std::cout << "tag_size:" << tag_size << "mm" << std::endl;
   //对相机的缓存点进行初始化
   cam_cal_.clear();
   //从所有数据中加载特征信息
@@ -549,7 +666,7 @@ bool CameraCalib::calc() {
   inst_params_ =inst_param_temp;
   //更新相机参数
   cam_dev_ptr_->update_params();
-  // 相机坐标系到 april board 坐标系的变换
+  // 更新相机坐标系到 april board 坐标系的变换
   Eigen::Matrix4d T_ac;
   for (auto& data : calib_valid_data_vec_) {
     cam_dev_ptr_->camera_model()->estimateExtrinsics(data.objectPoints, data.imagePoints, T_ac, data.pic_show);
@@ -558,6 +675,7 @@ bool CameraCalib::calc() {
     Eigen::Quaterniond q_ac(R_ac);
     data.q_ac = q_ac;
   }
+  std::cout<<"End of camera calibration！"<<std::endl;
   return true;
 }
 void CameraCalib::draw_ui_params() {
@@ -570,7 +688,6 @@ void CameraCalib::draw_ui_params() {
   ImGui::Text("height:%d", cam_dev_ptr_->camera_model()->imageHeight());
   ImGui::Separator();
   ImGui::Text("params:");
-
   // 设定宽度
   ImGui::PushItemWidth(80);
   switch (cam_dev_ptr_->camera_model()->modelType()) {
@@ -628,6 +745,32 @@ void CameraCalib::draw_ui_params() {
       ImGui::SameLine();
       ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
       break;
+    case camera_model::Camera::ModelType::PINHOLE_FULL:
+      // 新行
+      ImGui::DragScalar("k1", ImGuiDataType_Double, &inst_params_[0], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k2", ImGuiDataType_Double, &inst_params_[1], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k3", ImGuiDataType_Double, &inst_params_[2], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k4", ImGuiDataType_Double, &inst_params_[3], 0.001, nullptr, nullptr, "%.6f");
+      // 新行
+      ImGui::DragScalar("k5", ImGuiDataType_Double, &inst_params_[4], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("k6", ImGuiDataType_Double, &inst_params_[5], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p1", ImGuiDataType_Double, &inst_params_[6], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("p2", ImGuiDataType_Double, &inst_params_[7], 1.0, &const_0, nullptr, "%.2f");
+      // 新行
+      ImGui::DragScalar("fx", ImGuiDataType_Double, &inst_params_[8], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("fy", ImGuiDataType_Double, &inst_params_[9], 0.001, nullptr, nullptr, "%.6f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cx", ImGuiDataType_Double, &inst_params_[10], 1.0, &const_0, nullptr, "%.2f");
+      ImGui::SameLine();
+      ImGui::DragScalar("cy", ImGuiDataType_Double, &inst_params_[11], 1.0, &const_0, nullptr, "%.2f");
+      break;
     default:
       break;
   }
@@ -659,9 +802,15 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
   Eigen::Matrix4f T_wc1 = cam_dev_ptr_->get_sensor_pose();
   Eigen::Matrix4f T_wa = T_wc1 * T_c1a;
   // 设置位姿
-  april_board_ptr_->set_pose(T_wa);
-  if (cur_calib_data.b_need_calc)
+  if (USE_APRIL_BOARD) {
+    april_board_ptr_->set_pose(T_wa);
+  }else if(USE_BLOB_BOARD)
   {
+    blob_board_ptr_->set_pose(T_wa);
+  }else {
+    chess_board_ptr_->set_pose(T_wa);
+  }
+  if (cur_calib_data.b_need_calc) {
     cur_calib_data.b_need_calc = false;
     // 1. 选取标定板上三个不在一条线的点(标定板坐标系下)
     std::vector<Eigen::Vector3d> pts_on_april_board(3);
@@ -675,7 +824,6 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
     t_ca = -R_ca * cur_calib_data.t_ac;
     // 将标定板上三个不在一条线的点变换到相机坐标系下
     std::vector<Eigen::Vector3d> pts_on_april_board_in_cam;
-    // std::cout << "pts_on_april_board_in_cam:" << std::endl;
     for (const auto& p : pts_on_april_board) {
       pts_on_april_board_in_cam.emplace_back(R_ca * p + t_ca);
     }
@@ -689,11 +837,16 @@ void CameraCalib::draw_calib_data(glk::GLSLShader& shader) {
       Eigen::Vector3d p_in_space;
       cam_dev_ptr_->camera_model()->liftProjective(Eigen::Vector2d{p.x, p.y}, p_in_space);
       Eigen::Vector3d p_on_board;
+      Eigen::Vector3d p_in_space_temp;
       // 计算交点
       bool res = algorithm::plane_line_intersect_point(plane_params.head(3), pts_on_april_board_in_cam[1],
                                                        p_in_space, p_in_space, p_on_board);
       if (res)
       {
+        Eigen::Vector3d pts_on_board_temp;
+        pts_on_board_temp[0] =p_on_board[1];
+        pts_on_board_temp[1] =p_on_board[0];
+        pts_on_board_temp[2] =p_on_board[2];
         cur_calib_data.pts_on_board.emplace_back(p_on_board);
       }
     }

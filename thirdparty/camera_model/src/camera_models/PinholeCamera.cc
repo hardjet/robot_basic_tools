@@ -105,7 +105,6 @@ bool PinholeCamera::Parameters::readFromYamlFile(const std::string& filename) {
 
 void PinholeCamera::Parameters::writeToYamlFile(const std::string& filename) const {
   cv::FileStorage fs(filename, cv::FileStorage::WRITE);
-
   fs << "model_type"
      << "PINHOLE";
   fs << "camera_name" << m_cameraName;

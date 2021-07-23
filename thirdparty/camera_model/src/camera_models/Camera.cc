@@ -88,6 +88,7 @@ cv::Mat& Camera::mask() { return m_mask; }
 
 const cv::Mat& Camera::mask() const { return m_mask; }
 
+
 void Camera::estimateExtrinsics(const std::vector<cv::Point3f>& objectPoints,
                                 const std::vector<cv::Point2f>& imagePoints, cv::Mat& rvec, cv::Mat& tvec) const {
   unsigned int size_point = imagePoints.size();

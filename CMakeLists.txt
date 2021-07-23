@@ -107,12 +107,34 @@ set(RDPARTY_SO_PATH ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME}/lib)
 message(STATUS "RDPARTY_SO_PATH: ${RDPARTY_SO_PATH}")
 
 # 设置依赖库地址
-#set(OpenCV_LIB_DIR "/home/anson/work/lib/opencv43/lib/cmake/opencv4/" CACHE STRING "The directory containing a CMake configuration file for OpenCV." FORCE)
-set(OpenCV_LIB_DIR "/home/anson/work/lib/" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
-message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
+set(OpenCV_LIB_DIR "" CACHE STRING "The directory containing a CMake configuration file for OpenCV.")
+set(Ceres_LIB_DIR "" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
 
-#set(Ceres_LIB_DIR "/home/anson/work/lib/ceres-solver-2.0.0/lib/cmake/Ceres/" CACHE STRING "The Path for CMake to find Ceres library")
-set(Ceres_LIB_DIR "/home/anson/work/lib/" CACHE STRING "The directory containing a CMake configuration file for Ceres.")
+# 尝试从本地加载库位置
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.lib_path_config)
+    message(STATUS "using local lib_path_config")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/.lib_path_config" var_lib_path_config)
+    string(REGEX MATCH "OpenCV_LIB_DIR=([\\/A-Za-z0-9_.-]*)" _ ${var_lib_path_config})
+    if (CMAKE_MATCH_COUNT)
+        message(STATUS "find OpenCV_LIB_DIR!! MATCHED: ${CMAKE_MATCH_1}")
+        set(OpenCV_LIB_DIR ${CMAKE_MATCH_1})
+    else ()
+        message(STATUS "!!! OpenCV_LIB_DIR not defined !!!")
+    endif ()
+
+    string(REGEX MATCH "Ceres_LIB_DIR=([\\/A-Za-z0-9_.-]*)" _ ${var_lib_path_config})
+    if (CMAKE_MATCH_COUNT)
+        message(STATUS "find Ceres_LIB_DIR!! MATCHED: ${CMAKE_MATCH_1}")
+        set(Ceres_LIB_DIR ${CMAKE_MATCH_1})
+    else ()
+        message(STATUS "!!! Ceres_LIB_DIR not defined !!!")
+    endif ()
+
+else ()
+    message(STATUS ".lib_path_config file not found, using default config")
+endif ()
+
+message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
 message(STATUS "Ceres_LIB_DIR: ${Ceres_LIB_DIR}")
 
 # ----- Build thirdparty -----
@@ -161,14 +183,14 @@ message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
 #        thread)
 
 # OpenCV
-find_package(OpenCV 4.3 QUIET
+find_package(OpenCV 4.0 QUIET
         COMPONENTS
         core
         imgproc
         highgui
         )
 if (NOT OpenCV_FOUND)
-    find_package(OpenCV 4.3 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
+    find_package(OpenCV 4.0 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
             COMPONENTS
             core
             imgproc
@@ -289,6 +311,8 @@ add_executable(${PROJECT_NAME}
         src/dev/sensor_manager.cpp
         src/dev/image_show.cpp
         src/dev/april_board.cpp
+        src/dev/chess_board.cpp
+        src/dev/blob_board.cpp
         src/dev/util.cpp
         src/calibration/camera_laser_calib.cpp
         src/calibration/two_lasers_calib.cpp

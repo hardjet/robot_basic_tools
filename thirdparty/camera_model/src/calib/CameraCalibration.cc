@@ -70,8 +70,11 @@ bool CameraCalibration::calibrate() {
   tvecs.assign(m_scenePoints.size(), cv::Mat());
 
   // STEP 1: Estimate intrinsics
-  // m_camera->setInitIntrinsics( m_scenePoints, m_imagePoints );
+
+  m_camera->setInitIntrinsics( m_scenePoints, m_imagePoints );
+
   m_camera->estimateIntrinsics(m_boardSize, m_scenePoints, m_imagePoints);
+
   std::cout << "[" << m_camera->cameraName() << "] "
             << "# INFO: "
             << "Initialization intrinsic parameters" << std::endl

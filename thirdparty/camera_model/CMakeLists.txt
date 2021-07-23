@@ -12,7 +12,8 @@ find_package(Boost REQUIRED COMPONENTS
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 # OpenCV
-find_package(OpenCV 4.3 QUIET
+
+find_package(OpenCV 4.0 QUIET
         COMPONENTS
         core
         imgproc
@@ -20,7 +21,7 @@ find_package(OpenCV 4.3 QUIET
         highgui
         )
 if (NOT OpenCV_FOUND)
-    find_package(OpenCV 4.3 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
+    find_package(OpenCV 4.0 PATHS ${OpenCV_LIB_DIR} NO_DEFAULT_PATH REQUIRED
             COMPONENTS
             core
             imgproc

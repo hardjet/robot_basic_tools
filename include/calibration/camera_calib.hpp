@@ -22,6 +22,8 @@ class PointCloudBuffer;
 
 namespace dev {
 class AprilBoard;
+class chessboard;
+class blob_board;
 class Camera;
 class ImageShow;
 }  // namespace dev
@@ -34,7 +36,9 @@ class CameraCalib : public BaseCalib {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-              std::shared_ptr<dev::AprilBoard>& april_board_ptr);
+              std::shared_ptr<dev::AprilBoard>& april_board_ptr,
+              std::shared_ptr<dev::chessboard>& chess_board_ptr,
+              std::shared_ptr<dev::blob_board>& blob_board_ptr);
   // opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
   // im gui绘图
@@ -76,8 +80,20 @@ class CameraCalib : public BaseCalib {
   bool do_calib() override;
 
  private:
-  // 标定板对象
+  // 是否使用标准棋盘
+  bool USE_APRIL_BOARD{false};
+  // 是否使用斑点棋盘
+  bool USE_BLOB_BOARD{true};
+  // 是否图像取反
+  bool USE_IMAGE_INVERSE{false};
+  // AprilBoard标定板对象
   std::shared_ptr<dev::AprilBoard> april_board_ptr_;
+  // 标准棋盘格标定板对象
+  std::shared_ptr<dev::chessboard> chess_board_ptr_;
+
+  // 标准圆斑标定板对象
+  std::shared_ptr<dev::blob_board> blob_board_ptr_;
+
   // 图像显示对象
   std::shared_ptr<dev::ImageShow> image_imshow_ptr_{nullptr};
   // 标定数据中点云数据显示所用
@@ -100,7 +116,6 @@ class CameraCalib : public BaseCalib {
   std::vector<double> inst_params_;
   // 标定数据
   struct CalibData {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
     // 相机坐标系到世界坐标系的变换(这里的世界坐标系实际上是标定板的坐标系)
     Eigen::Quaterniond q_ac;
@@ -115,13 +130,13 @@ class CameraCalib : public BaseCalib {
     std::vector<cv::Point3f> objectPoints;
     //需要显示的图像
     cv::Mat pic_show;
-
   };
   // 资源锁
   std::mutex mtx_;
   // 任务对象
   std::shared_ptr<Task> task_ptr_{nullptr};
   std::shared_ptr<dev::Camera> cam_dev_ptr_{nullptr};
+
   // 当前计算出的标定数据
   CalibData calib_data_;
   // 候选标定数据

@@ -763,10 +763,8 @@ bool TwoCamerasCalib::load_calib_data(const std::string& file_path) {
 
   for (const auto& data : js_whole["frame"].items()) {
     if (std::strcmp(data.key().c_str(), "from_frame") == 0) {
-      std::cout << "from frame: " << data.value() << std::endl;
       camera_insts_[1].frame_id = data.value();
     } else {
-      std::cout << "to frame: " << data.value() << std::endl;
       camera_insts_[0].frame_id = data.value();
     }
   }
@@ -968,14 +966,13 @@ void TwoCamerasCalib::draw_ui() {
 
   // 新建窗口
   ImGui::Begin("Two Cameras Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
-  // 相机选择
-  draw_sensor_selector<dev::Camera>("camera 1", dev::CAMERA, camera_insts_[0].camera_dev_ptr);
 
-  // 下拉菜单选择第一个相机的base frame
-  ImGui::SameLine();
+  // 相机选择 - 相机 1
+  draw_sensor_selector<dev::Camera>("camera 1  ", dev::CAMERA, camera_insts_[0].camera_dev_ptr);
+  // 下拉菜单选择相机1的base frame
   static int item_current_idx = 0;
   const char* combo_preview_value = major_frames_list_[item_current_idx].c_str();
-  ImGui::Text("Select frame:");
+  ImGui::Text("base frame:");
   ImGui::SameLine();
   if (ImGui::BeginCombo("##selected frame 1", combo_preview_value, ImGuiComboFlags_None)) {
     for (int n = 0; n < major_frames_list_.size(); n++) {
@@ -989,15 +986,36 @@ void TwoCamerasCalib::draw_ui() {
     }
     ImGui::EndCombo();
   }
-
   // 显示第一个相机图像流的true frame
-  ImGui::SameLine();
-  ImGui::Text("True frame: %s\n", camera_insts_[0].frame_id.c_str());
-  ImGui::SameLine();
+  ImGui::Text("true frame: %s\n", camera_insts_[0].frame_id.c_str());
 
+  ImGui::Separator();
+
+  // 相机选择 - 相机 2
+  draw_sensor_selector<dev::Camera>("camera 2  ", dev::CAMERA, camera_insts_[1].camera_dev_ptr);
+  // 下拉菜单选择第二个相机的base frame
+  static int item_current_idx2 = 0;
+  const char* combo_preview_value2 = major_frames_list_[item_current_idx2].c_str();
+  ImGui::Text("base frame:");
+  ImGui::SameLine();
+  if (ImGui::BeginCombo("##selected frame 2", combo_preview_value2, ImGuiComboFlags_None)) {
+    for (int nn = 0; nn < major_frames_list_.size(); nn++) {
+      const bool is_selected2 = (item_current_idx2 == nn);
+      if (ImGui::Selectable(major_frames_list_[nn].c_str(), is_selected2)) {
+        item_current_idx2 = nn;
+      }
+      if (is_selected2) {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  // 显示第二个相机的true frame
+  ImGui::Text("true frame: %s\n", camera_insts_[1].frame_id.c_str());
+
+  // 显示读取参数按钮 R
   if (camera_insts_[0].camera_dev_ptr) {
     // 从文件加载标定数据
-    ImGui::SameLine();
     if (ImGui::Button("R")) {
       // 选择加载文件路径
       std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
@@ -1005,7 +1023,6 @@ void TwoCamerasCalib::draw_ui() {
       while (!dialog->ready()) {
         usleep(1000);
       }
-
       auto file_paths = dialog->result();
       if (!file_paths.empty()) {
         // 从文件读数据
@@ -1053,35 +1070,10 @@ void TwoCamerasCalib::draw_ui() {
     }
   }
 
-  // 相机选择
-  draw_sensor_selector<dev::Camera>("camera 2", dev::CAMERA, camera_insts_[1].camera_dev_ptr);
-
-  // 下拉菜单选择第二个相机的base frame
-  ImGui::SameLine();
-  static int item_current_idx2 = 0;
-  const char* combo_preview_value2 = major_frames_list_[item_current_idx2].c_str();
-  ImGui::Text("Select frame:");
-  ImGui::SameLine();
-  if (ImGui::BeginCombo("##selected frame 2", combo_preview_value2, ImGuiComboFlags_None)) {
-    for (int nn = 0; nn < major_frames_list_.size(); nn++) {
-      const bool is_selected2 = (item_current_idx2 == nn);
-      if (ImGui::Selectable(major_frames_list_[nn].c_str(), is_selected2)) {
-        item_current_idx2 = nn;
-      }
-      if (is_selected2) {
-        ImGui::SetItemDefaultFocus();
-      }
-    }
-    ImGui::EndCombo();
-  }
-
-  // 显示第二个相机的true frame
-  ImGui::SameLine();
-  ImGui::Text("True frame: %s\n", camera_insts_[1].frame_id.c_str());
-  ImGui::SameLine();
-
   // 设备就绪后才能标定
   if (camera_insts_[0].camera_dev_ptr && camera_insts_[1].camera_dev_ptr) {
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(200, 5));
     ImGui::SameLine();
     // 选择是否显示图像
     if (ImGui::Checkbox("show image", &b_show_image_)) {

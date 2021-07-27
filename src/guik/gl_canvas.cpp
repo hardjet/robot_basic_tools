@@ -25,7 +25,8 @@ namespace guik {
  */
 GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size) : size(size),
                                                                                      point_size(20.0f),
-                                                                                     min_z(-5.0f), max_z(20.0f),
+                                                                                     min_z(-5.0f),
+                                                                                     max_z(20.0f),
                                                                                      z_clipping(true) {
   frame_buffer = std::make_unique<glk::FrameBuffer>(size);
   frame_buffer->add_color_buffer(GL_RGBA32I, GL_RGBA_INTEGER, GL_INT);
@@ -117,10 +118,12 @@ void GLCanvas::unbind() const {
 void GLCanvas::render_to_screen(int color_buffer_id) {
   texture_renderer->draw(frame_buffer->color(color_buffer_id).id());
 
-  for (const auto& param : text_renderer_params) {
-    text_renderer->render_text(param.text_, param.bl_x_, param.bl_y_, param.scale_, param.color_, size);
+  if (!text_renderer_params.empty()) {
+    for (const auto& param : text_renderer_params) {
+      text_renderer->render_text(param.text_, param.bl_x_, param.bl_y_, param.scale_, param.color_, size);
+    }
+    text_renderer_params.clear();
   }
-  text_renderer_params.clear();
 }
 
 /**

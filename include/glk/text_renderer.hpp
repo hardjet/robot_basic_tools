@@ -30,13 +30,6 @@ struct Character {
 class TextRenderer {
  public:
   TextRenderer(const std::string& data_directory, const Eigen::Matrix<int, 2, 1>& window_size) {
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
-
     if (!shader.init(data_directory + "/shader/font")) {
       return;
     }
@@ -61,7 +54,7 @@ class TextRenderer {
           std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
           continue;
         }
-
+        GLuint texture;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
@@ -77,18 +70,22 @@ class TextRenderer {
                                glm::ivec2(ft_face->glyph->bitmap.width,ft_face->glyph->bitmap.rows),
                                glm::ivec2(ft_face->glyph->bitmap_left, ft_face->glyph->bitmap_top),
                                static_cast<unsigned int>(ft_face->glyph->advance.x)};
-        Characters.insert(std::pair<char, Character>(c, character));
+        Characters.insert(std::pair<GLchar, Character>(c, character));
       }
       glBindTexture(GL_TEXTURE_2D, 0);
     }
     FT_Done_Face(ft_face);
     FT_Done_FreeType(ft_lib);
 
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
     glBindVertexArray(vao);
-    glEnableVertexAttribArray(0);
-
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
   }
 
   ~TextRenderer() {
@@ -97,17 +94,18 @@ class TextRenderer {
   }
 
   void render_text(const std::string& text, float x, float y, float scale, glm::vec3 color, const Eigen::Vector2i& size) {
-    shader.use();
-    glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"), 1, GL_FALSE,
-                       glm::value_ptr(glm::ortho(0.0f, static_cast<GLfloat>(size[0]), 0.0f, static_cast<GLfloat>(size[1]))));
-
-    glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    shader.use();
     glUniform3f(glGetUniformLocation(shader.get_shader_program(), "textColor"), color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(vao);
+
+    glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"),
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(glm::ortho(0.0f, static_cast<GLfloat>(size[0]), 0.0f, static_cast<GLfloat>(size[1]))));
 
     (scale < 0.1) ? (scale = 0.1) : scale;
     (scale > 0.5) ? (scale = 0.5) : scale;
@@ -140,13 +138,14 @@ class TextRenderer {
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDisable(GL_BLEND);
   }
 
  private:
   std::map<GLchar, Character> Characters;
   glm::mat4 projection;
   glk::GLSLShader shader;
-  unsigned int texture;
 
   GLuint vao{};
   GLuint vbo{};

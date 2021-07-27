@@ -11,6 +11,7 @@
 namespace dev {
 
 Laser::Laser(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, ros_nh, SENSOR_TYPE::LASER) {
+  printf("----- Laser::Laser() ..... name = %s\n", name.c_str());
   sensor_topic_list_.resize(1);
 
   // 设置深度点云数据接收
@@ -55,6 +56,7 @@ void Laser::free() {
 }
 
 void Laser::draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
+//  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Laser::draw_gl() - test", 20.0f, 50.0f, 0.3f, glm::vec3(1, 0, 0)));
   if (!b_show_laser_) {
     return;
   }

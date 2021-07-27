@@ -51,8 +51,8 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   dev::config_default_path = package_path + "/config";
   dev::data_default_path = package_path + "/data";
 
-  right_clicked_pos_.setZero();                                               // 鼠标右击的位置置零
-  cur_mouse_pos_.setZero();                                                   // 当前鼠标的位置置零 （左上角是0，0）
+  right_clicked_pos_.setZero();
+  cur_mouse_pos_.setZero();
 
   progress_ptr_ = std::make_unique<guik::ProgressModal>("progress modal");
 

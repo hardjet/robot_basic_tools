@@ -37,7 +37,7 @@ class Laser : public Sensor {
 
  private:
   // 是否显示激光
-  bool b_show_laser_{false};
+  bool b_show_laser_{true};
   // ros topic 使能
   bool b_enable_topic_{false};
   // 点云数据

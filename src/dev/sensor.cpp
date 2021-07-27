@@ -70,7 +70,7 @@ void Sensor::draw_status() {
 }
 
 void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) const {
-
+//  printf("----- Sensor::draw_gl_coordinate_system() ..... sensor_name = %s\n", sensor_name.c_str());
   // 显示坐标轴名称
   std::pair<Eigen::Matrix4f, Eigen::Matrix4f> feedback = canvas_ptr->transformation_matrices();
   Eigen::Matrix4f view = feedback.first;

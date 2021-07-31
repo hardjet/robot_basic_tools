@@ -182,12 +182,12 @@ void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
 
   draw_calib_data(shader);
 
-//  if (next_state_ != STATE_START || !laser_insts_[0].laser_lines_drawable_ptr) {
-//    return;
-//  }
-  if (next_state_ptr_->id() != 1 || !laser_insts_[0].laser_lines_drawable_ptr) {
+  if (next_state_ != STATE_START || !laser_insts_[0].laser_lines_drawable_ptr) {
     return;
   }
+//  if (next_state_ptr_->id() != 1 || !laser_insts_[0].laser_lines_drawable_ptr) {
+//    return;
+//  }
 
 
   shader.set_uniform("color_mode", 2);
@@ -919,22 +919,22 @@ void TwoLasersCalib::draw_ui() {
     }
 
     // 闲置状态下才可以设置
-//    if (next_state_ == STATE_IDLE) {
-//      draw_calib_params();
-//    }
-    if (next_state_ptr_->id() == 0) {
+    if (next_state_ == STATE_IDLE) {
       draw_calib_params();
     }
+//    if (next_state_ptr_->id() == 0) {
+//      draw_calib_params();
+//    }
 
     // 设置变换矩阵参数
     draw_ui_transform();
 
     // 标定逻辑
-//    calibration();
-    new_calibration();
+    calibration();
+//    new_calibration();
 
-    if (next_state_ptr_->id() == 0) {
-//    if (next_state_ == STATE_IDLE) {
+//    if (next_state_ptr_->id() == 0) {
+    if (next_state_ == STATE_IDLE) {
       if (ImGui::Button("start")) {
         b_show_calib_data_ = false;
         // 两个设备名称不能一样
@@ -944,32 +944,32 @@ void TwoLasersCalib::draw_ui() {
         } else {
           // 清空上次的标定数据
           // calib_valid_data_vec_.clear();
-//          next_state_ = STATE_START;
-          change_next_state(std::make_shared<StateStart>());
+          next_state_ = STATE_START;
+//          change_next_state(std::make_shared<StateStart>());
         }
       }
     } else {
       if (ImGui::Button("stop")) {
-//        next_state_ = STATE_IDLE;
-        change_next_state(std::make_shared<StateIdle>());
+        next_state_ = STATE_IDLE;
+//        change_next_state(std::make_shared<StateIdle>());
       }
     }
 
     // 标定状态只需要设定一次
-//    if (cur_state_ == STATE_IN_CALIB) {
-//      next_state_ = STATE_IDLE;
-//    }
-    if (cur_state_ptr_->id() == 5) {
-      change_next_state(std::make_shared<StateIdle>());
+    if (cur_state_ == STATE_IN_CALIB) {
+      next_state_ = STATE_IDLE;
     }
+//    if (cur_state_ptr_->id() == 5) {
+//      change_next_state(std::make_shared<StateIdle>());
+//    }
 
     // 大于3帧数据就可以开始进行标定操作了
     if (calib_valid_data_vec_.size() > 3) {
       ImGui::SameLine();
       // 开始执行标定
       if (ImGui::Button("calib")) {
-//        next_state_ = STATE_START_CALIB;
-        change_next_state(std::make_shared<StateStartCalib>());
+        next_state_ = STATE_START_CALIB;
+//        change_next_state(std::make_shared<StateStartCalib>());
       }
       ImGui::SameLine();
       ImGui::Checkbox("fix_tz", &is_tx_fixed_);
@@ -981,8 +981,8 @@ void TwoLasersCalib::draw_ui() {
   }
 
   // 标定数据相关操作
-  if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
-//  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+//  if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
+  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         b_need_to_update_cd_ = true;

@@ -24,7 +24,7 @@ namespace guik {
  * @param size
  */
 GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size) : size(size),
-                                                                                     point_size(20.0f),
+                                                                                     point_size(40.0f),
                                                                                      min_z(-5.0f),
                                                                                      max_z(20.0f),
                                                                                      z_clipping(true) {

@@ -22,8 +22,18 @@ LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_rang
   scan2points(scan);
 }
 
+LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit, int inlier_limit)
+    : max_range_(max_range), angle_range_(DEG2RAD_RBT(angle_range)), thd_points_(point_limit), thd_inliers_(inlier_limit) {
+  points_.resize(0);
+  outlier_points_.resize(0);
+  img_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));
+  // 转换点
+  scan2points(scan);
+}
+
 void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
   size_t n_pts = scan_in.ranges.size();
+  printf("----- LineDetector::scan2points() ..... n_pts = %zu\n", n_pts);
 
   double angle = scan_in.angle_min;
   double x, y;
@@ -90,10 +100,11 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
 
   cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
 
-  // std::cout << "valid pts num: " << xs.size() << std::endl;
+//  std::cout << "valid pts num: " << xs.size() << std::endl;
 
   // 点数过少
-  if (xs.size() < 100) {
+  if (xs.size() < thd_points_) {
+    printf("----- LineDetector::find_two_lines() ..... not enough points for xs and ys, returning false\n");
     return false;
   }
 
@@ -106,11 +117,10 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
   Eigen::Map<Eigen::VectorXd> x_e(xs.data(), xs.size());
   Eigen::Map<Eigen::VectorXd> y_e(ys.data(), ys.size());
 
-  // std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
-
+//  std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
   double thd = 0.05;
-  algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, 50);
-  // std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
+  algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, thd_inliers_);
+//  std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
 
   // 检测到两条直线认为有效
   if (detectedLines.size() != 2) {

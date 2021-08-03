@@ -5,8 +5,11 @@
 #include <array>
 #include <Eigen/Core>
 
+#include <ros/ros.h>
+#include <tf/transform_datatypes.h>
 #include <sensor_msgs/LaserScan.h>
 
+#include "util/tf_tree.hpp"
 #include "calib_base.hpp"
 
 namespace cv_bridge {
@@ -29,7 +32,9 @@ class Task;
 class TwoLasersCalib : public BaseCalib {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  explicit TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr);
+  explicit TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
+                          std::shared_ptr<util::TfTree>& tr_ptr,
+                          const ros::NodeHandle& nh);
 
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;
@@ -47,6 +52,9 @@ class TwoLasersCalib : public BaseCalib {
   void check_steady() override;
   /// 执行计算
   bool do_calib() override;
+  /// 从/tf的参数中计算默认的变换矩阵
+  void autofill_default_transform(const std::string& laser_1_topic, const std::string& laser_2_topic,
+                                  const std::vector<geometry_msgs::TransformStamped>& transforms);
 
  private:
   /// 更新数据
@@ -65,6 +73,9 @@ class TwoLasersCalib : public BaseCalib {
   /// 在3d中显示标定数据
   void draw_calib_data(glk::GLSLShader& shader);
 
+  /// 在3d中显示max range和angle range
+  void draw_range_and_angle(glk::GLSLShader& shader);
+
   /// 保证保存的帧角度不同
   void check_and_save();
 
@@ -82,6 +93,9 @@ class TwoLasersCalib : public BaseCalib {
 
   /// 更新激光2位姿
   void update_laser2_pose();
+
+  /// 更新激光2到激光1的变换矩阵
+  void update_T12();
 
   /// 从文件加载标定数据
   bool load_calib_data(const std::string& file_path);
@@ -135,22 +149,35 @@ class TwoLasersCalib : public BaseCalib {
     std::shared_ptr<glk::SimpleLines> laser_lines_drawable_ptr{nullptr};
   };
 
+  struct RangeAngleShow {
+    std::shared_ptr<glk::SimpleLines> edge_ptr{nullptr};
+    std::shared_ptr<glk::SimpleLines> arc_ptr{nullptr};
+  };
+
   // 是否显示图像
   bool b_show_image_{false};
   // 是否显示就绪的标定数据
   bool b_show_calib_data_{false};
   // 是否需要更新显示的标定数据
   bool b_need_to_update_cd_{false};
+  // 是否进行激光2到激光1默认变换矩阵参数自动填充
+  bool b_autofill_transform_12_{false};
+  // 是否对max range和angle range做图像展示
+  bool b_show_range_and_angle_{false};
   // 是否固定tx值
   bool is_tx_fixed_{false};
   // 控件使用，保存激光2到激光1变换相关的值 [tx, ty, tz, roll, pitch, yaw]
   std::array<float, 6> transform_12_{};
+  // 保存激光2到激光1从/tf参数中计算出的默认变换值 [tx, ty, tz, roll, pitch, yaw]
+  std::array<float, 6> transform_12_prev_{};
   // 激光2到激光1的变换矩阵
   Eigen::Matrix4f T_12_;
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
   // 标定数据显示
   std::array<CalibDataShow, 2> calib_show_data_;
+  // max range & angle range display
+  std::array<RangeAngleShow, 2> range_angle_data_;
   // 资源锁
   std::mutex mtx_;
   // 任务对象
@@ -169,5 +196,13 @@ class TwoLasersCalib : public BaseCalib {
   double angle_range_{180.0};
   // 不同数据角度间隔 deg
   double between_angle_{1.0};
+  // line fitting threshold point
+  int min_points_{100};
+  // ransac min inliers
+  int min_inliers_{50};
+  // TfTree
+  std::shared_ptr<util::TfTree> tree_;
+  // ros nodehandle
+  ros::NodeHandle ros_nh_;
 };
 }  // namespace calibration

@@ -23,6 +23,8 @@
 #include "algorithm/two_lasers_ceres.h"
 #include "algorithm/util.h"
 
+#include "util/extrinsics_publisher.hpp"
+
 // ---- 相机-单线激光标定状态
 // 空闲
 #define STATE_IDLE 0
@@ -39,8 +41,9 @@
 
 namespace calibration {
 
-TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr)
-    : BaseCalib(sensor_manager_ptr) {
+TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
+                               std::shared_ptr<util::TfTree>& tr_ptr, const ros::NodeHandle& nh)
+    : BaseCalib(sensor_manager_ptr), tree_(tr_ptr), ros_nh_(nh) {
   // 初始化显示设备
   for (auto& laser_inst : laser_insts_) {
     laser_inst.img_show_dev_ptr = std::make_shared<dev::ImageShow>();
@@ -175,20 +178,96 @@ void TwoLasersCalib::draw_calib_data(glk::GLSLShader& shader) {
   draw_pt(model_matrix, calib_show_data_[1].mid_pt_on_lines[1], Eigen::Vector4f(255.f, 0.f, 255.f, 1.0f));
 }
 
+void TwoLasersCalib::draw_range_and_angle(glk::GLSLShader& shader) {
+  if (!b_show_range_and_angle_) {
+    return;
+  }
+  //  printf("----- TwoLasersCalib::draw_range_and_angle() ..... max_range = %f, angle_range = %f\n", max_range_,
+  //  angle_range_);
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> laser_1_vertices(4);
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> laser_1_arc_points(
+      static_cast<long>(angle_range_) * 2);
+  Eigen::Matrix4f laser_1_pose_matrix = laser_insts_[0].laser_dev_ptr->get_sensor_pose();
+  Eigen::Vector3f laser_1_origin(laser_1_pose_matrix.block<3, 1>(0, 3));
+  //  printf("Laser 1 origin: [%f, %f, %f]\n", laser_1_origin.x(), laser_1_origin.y(), laser_1_origin.z());
+
+  Eigen::Vector3f laser_1_left, laser_1_right;
+  laser_1_left.x() = static_cast<float>(laser_1_origin.x()) +
+                     static_cast<float>(max_range_) * cos(static_cast<float>(DEG2RAD_RBT(angle_range_)) / 2);
+  laser_1_left.y() = static_cast<float>(laser_1_origin.y()) -
+                     static_cast<float>(max_range_) * sin(static_cast<float>(DEG2RAD_RBT(angle_range_)) / 2);
+  laser_1_left.z() = static_cast<float>(laser_1_origin.z());
+  //  printf("Laser 1 left: [%f, %f, %f]\n", laser_1_left.x(), laser_1_left.y(), laser_1_left.z());
+
+  laser_1_right.x() = static_cast<float>(laser_1_origin.x()) +
+                      static_cast<float>(max_range_) * cos(static_cast<float>(DEG2RAD_RBT(angle_range_)) / 2);
+  laser_1_right.y() = static_cast<float>(laser_1_origin.y()) +
+                      static_cast<float>(max_range_) * sin(static_cast<float>(DEG2RAD_RBT(angle_range_)) / 2);
+  laser_1_right.z() = static_cast<float>(laser_1_origin.z());
+  //  printf("Laser 1 right: [%f, %f, %f]\n", laser_1_right.x(), laser_1_right.y(), laser_1_right.z());
+
+  laser_1_vertices.at(0) = laser_1_origin;
+  laser_1_vertices.at(1) = laser_1_left;
+  laser_1_vertices.at(2) = laser_1_origin;
+  laser_1_vertices.at(3) = laser_1_right;
+
+  Eigen::Vector3f arc_left_prev = laser_1_origin;
+  Eigen::Vector3f arc_right_prev = laser_1_origin;
+  Eigen::Vector3f arc_left_cur, arc_right_cur;
+  arc_left_prev.x() = static_cast<float>(max_range_);
+  arc_right_prev.x() = static_cast<float>(max_range_);
+  for (int i = 0; i < static_cast<int>(angle_range_ / 2); ++i) {
+    arc_left_cur.x() = static_cast<float>(laser_1_origin.x()) +
+                       static_cast<float>(max_range_) * cos(static_cast<float>(DEG2RAD_RBT(i)));
+    arc_left_cur.y() = static_cast<float>(laser_1_origin.y()) -
+                       static_cast<float>(max_range_) * sin(static_cast<float>(DEG2RAD_RBT(i)));
+    arc_left_cur.z() = static_cast<float>(laser_1_origin.z());
+    laser_1_arc_points.at(i * 4 + 0) = arc_left_prev;
+    laser_1_arc_points.at(i * 4 + 1) = arc_left_cur;
+
+    arc_right_cur.x() = static_cast<float>(laser_1_origin.x()) +
+                        static_cast<float>(max_range_) * cos(static_cast<float>(DEG2RAD_RBT(i)));
+    arc_right_cur.y() = static_cast<float>(laser_1_origin.y()) +
+                        static_cast<float>(max_range_) * sin(static_cast<float>(DEG2RAD_RBT(i)));
+    arc_right_cur.z() = static_cast<float>(laser_1_origin.z());
+    laser_1_arc_points.at(i * 4 + 2) = arc_right_prev;
+    laser_1_arc_points.at(i * 4 + 3) = arc_right_cur;
+
+    arc_left_prev = arc_left_cur;
+    arc_right_prev = arc_right_cur;
+  }
+
+  range_angle_data_[0].edge_ptr.reset(new glk::SimpleLines(laser_1_vertices));
+  range_angle_data_[0].arc_ptr.reset(new glk::SimpleLines(laser_1_arc_points));
+  Eigen::Matrix4f model_matrix = Eigen::Matrix4f::Identity();
+  shader.set_uniform("model_matrix", model_matrix);
+  shader.set_uniform("color_mode", 2);
+  range_angle_data_[0].edge_ptr->draw(shader);
+  range_angle_data_[0].arc_ptr->draw(shader);
+
+  range_angle_data_[1].edge_ptr.reset(new glk::SimpleLines(laser_1_vertices));
+  range_angle_data_[1].arc_ptr.reset(new glk::SimpleLines(laser_1_arc_points));
+  model_matrix = T_12_;
+  shader.set_uniform("model_matrix", model_matrix);
+  shader.set_uniform("color_mode", 2);
+  range_angle_data_[1].edge_ptr->draw(shader);
+  range_angle_data_[1].arc_ptr->draw(shader);
+}
+
 void TwoLasersCalib::draw_gl(glk::GLSLShader& shader) {
   if (!b_show_window_) {
     return;
   }
 
   draw_calib_data(shader);
+  draw_range_and_angle(shader);
 
   if (next_state_ != STATE_START || !laser_insts_[0].laser_lines_drawable_ptr) {
     return;
   }
-//  if (next_state_ptr_->id() != 1 || !laser_insts_[0].laser_lines_drawable_ptr) {
-//    return;
-//  }
-
+  //  if (next_state_ptr_->id() != 1 || !laser_insts_[0].laser_lines_drawable_ptr) {
+  //    return;
+  //  }
 
   shader.set_uniform("color_mode", 2);
 
@@ -341,7 +420,8 @@ bool TwoLasersCalib::get_valid_lines() {
   for (auto& laser_inst : laser_insts_) {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
-    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_);
+    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_, min_points_,
+                                          min_inliers_);
     if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
@@ -355,7 +435,7 @@ bool TwoLasersCalib::get_valid_lines() {
       cv::putText(laser_img_show, "FITTING -", cv::Point2f(10, 45), cv::FONT_HERSHEY_SIMPLEX, 0.3,
                   cv::Scalar(0, 0, 150));
 
-      // 保存图象数据
+      // 保存图像数据
       laser_inst.img_ptr.reset(new const cv_bridge::CvImage(laser_inst.calib_data_ptr->header, "rgb8", laser_img_show));
     } else {
       res = false;
@@ -755,7 +835,6 @@ void TwoLasersCalib::update_ui_transform() {
 }
 
 void TwoLasersCalib::draw_ui_transform() {
-  ImGui::Separator();
   ImGui::Text("T_12:");
   ImGui::SameLine();
   ImGui::TextDisabled("the unit: m & deg");
@@ -792,32 +871,49 @@ void TwoLasersCalib::draw_ui_transform() {
   ImGui::PopItemWidth();
   // 更新变换矩阵
   if (is_changed) {
-    Eigen::Quaterniond q_12 = algorithm::ypr2quat(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]),
-                                                  DEG2RAD_RBT(transform_12_[3]));
-    Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
-    // 更新变换矩阵
-    T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
-    T_12_.block<3, 1>(0, 3) = t_12;
-    // std::cout << "T12:\n" << T_12_ << std::endl;
-
+    update_T12();
     update_laser2_pose();
   }
 
   ImGui::Separator();
 }
 
+void TwoLasersCalib::update_T12() {
+  Eigen::Quaterniond q_12 =
+      algorithm::ypr2quat(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(transform_12_[4]), DEG2RAD_RBT(transform_12_[3]));
+  Eigen::Vector3f t_12{transform_12_[0], transform_12_[1], transform_12_[2]};
+  // 更新变换矩阵
+  T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
+  T_12_.block<3, 1>(0, 3) = t_12;
+}
+
 void TwoLasersCalib::draw_calib_params() {
   const double min_v = 0.;
   ImGui::Separator();
-  ImGui::Text("calibration params:");
+  if (ImGui::Checkbox("calibration params:", &b_show_range_and_angle_)) {
+    if (b_show_range_and_angle_) {
+      printf("Ticked - should display range and angle in 3d!\n");
+    } else {
+      printf("Unticked - 3d range and angle disapper!\n");
+    }
+  }
+  if (ImGui::IsItemHovered()) {
+    if (b_show_range_and_angle_) {
+      ImGui::SetTooltip("click to hide max range and angle range");
+    } else {
+      ImGui::SetTooltip("click to show max range and angle range");
+    }
+  }
 
   // 设定宽度
   ImGui::PushItemWidth(80);
-  ImGui::DragScalar("max range(m)", ImGuiDataType_Double, &max_range_, 0.1, &min_v, nullptr, "%.2f");
+
+  ImGui::DragScalar("max range(m)      ", ImGuiDataType_Double, &max_range_, 0.1, &min_v, nullptr, "%.2f");
   // tips
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("set max range for detecting lines.");
   }
+
   ImGui::SameLine();
   ImGui::DragScalar("angle range(deg)", ImGuiDataType_Double, &angle_range_, 1.0, &min_v, nullptr, "%.1f");
   // tips
@@ -832,6 +928,78 @@ void TwoLasersCalib::draw_calib_params() {
   }
 
   ImGui::PopItemWidth();
+
+  ImGui::PushItemWidth(80);
+
+  ImGui::Separator();
+  ImGui::Text("line fitting params: ");
+
+  ImGui::DragScalar("min points(pts)   ", ImGuiDataType_S32, &min_points_, 1.0, &min_v, nullptr, "%d");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set minimum point threshold used for ransac line fitting");
+  }
+
+  ImGui::SameLine();
+  ImGui::DragScalar("min inliers(pts)", ImGuiDataType_S32, &min_inliers_, 1.0, &min_v, nullptr, "%d");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set minimum inliers used for ransac line fitting");
+  }
+
+  ImGui::PopItemWidth();
+}
+
+void TwoLasersCalib::autofill_default_transform(const std::string& laser_1_topic, const std::string& laser_2_topic,
+                                                const std::vector<geometry_msgs::TransformStamped>& transforms) {
+  printf("----- TwoLasersCalib::autofill_default_transform() ..... laser_1_topic = %s\n", laser_1_topic.c_str());
+  printf("----- TwoLasersCalib::autofill_default_transform() ..... laser_2_topic = %s\n", laser_2_topic.c_str());
+
+  bool found_laser_1 = false;
+  bool found_laser_2 = false;
+  tf::StampedTransform laser_1_to_baselink;
+  tf::StampedTransform laser_2_to_baselink;
+  for (auto& item : transforms) {
+    if (std::strcmp(item.header.frame_id.c_str(), "base_link") == 0 &&
+        std::strcmp(item.child_frame_id.c_str(), laser_1_topic.c_str()) == 0) {
+      printf("----- TwoLasersCalib::autofill_default_transform() ..... Found laser 1 to baselink!\n");
+      found_laser_1 = true;
+      tf::transformStampedMsgToTF(item, laser_1_to_baselink);
+    }
+    if (std::strcmp(item.header.frame_id.c_str(), "base_link") == 0 &&
+        std::strcmp(item.child_frame_id.c_str(), laser_2_topic.c_str()) == 0) {
+      printf("----- TwoLasersCalib::autofill_default_transform() ..... Found laser 2 to baselink!\n");
+      found_laser_2 = true;
+      tf::transformStampedMsgToTF(item, laser_2_to_baselink);
+    }
+    if (found_laser_1 && found_laser_2) {
+      break;
+    }
+  }
+  printf("Laser 1 translation: [%f, %f, %f]\n", laser_1_to_baselink.getOrigin().x(),
+         laser_1_to_baselink.getOrigin().y(), laser_1_to_baselink.getOrigin().z());
+  printf("Laser 2 translation: [%f, %f, %f]\n", laser_2_to_baselink.getOrigin().x(),
+         laser_2_to_baselink.getOrigin().y(), laser_2_to_baselink.getOrigin().z());
+  printf("Laser 1 rotation: [%f, %f, %f, %f]\n", laser_1_to_baselink.getRotation().getX(),
+         laser_1_to_baselink.getRotation().getY(), laser_1_to_baselink.getRotation().getZ(),
+         laser_1_to_baselink.getRotation().getW());
+  printf("Laser 2 rotation: [%f, %f, %f, %f]\n", laser_2_to_baselink.getRotation().getX(),
+         laser_2_to_baselink.getRotation().getY(), laser_2_to_baselink.getRotation().getZ(),
+         laser_2_to_baselink.getRotation().getW());
+
+  transform_12_[0] = static_cast<float>(laser_2_to_baselink.getOrigin().x() - laser_1_to_baselink.getOrigin().x());
+  transform_12_[1] = static_cast<float>(laser_2_to_baselink.getOrigin().y() - laser_1_to_baselink.getOrigin().y());
+  transform_12_[2] = static_cast<float>(laser_2_to_baselink.getOrigin().z() - laser_1_to_baselink.getOrigin().z());
+
+  double laser_1_roll, laser_1_pitch, laser_1_yaw;
+  tf::Matrix3x3(laser_1_to_baselink.getRotation()).getRPY(laser_1_roll, laser_1_pitch, laser_1_yaw);
+  double laser_2_roll, laser_2_pitch, laser_2_yaw;
+  tf::Matrix3x3(laser_2_to_baselink.getRotation()).getRPY(laser_2_roll, laser_2_pitch, laser_2_yaw);
+
+  printf("Laser 1 rotation rpy: [%f, %f, %f]\n", laser_1_roll, laser_1_pitch, laser_1_yaw);
+  printf("Laser 2 rotation rpy: [%f, %f, %f]\n", laser_2_roll, laser_2_pitch, laser_2_yaw);
+
+  transform_12_[3] = static_cast<float>(RAD2DEG_RBT(laser_2_roll) - RAD2DEG_RBT(laser_1_roll));
+  transform_12_[4] = static_cast<float>(RAD2DEG_RBT(laser_2_pitch) - RAD2DEG_RBT(laser_1_pitch));
+  transform_12_[5] = static_cast<float>(RAD2DEG_RBT(laser_2_yaw) - RAD2DEG_RBT(laser_1_yaw));
 }
 
 void TwoLasersCalib::draw_ui() {
@@ -841,11 +1009,54 @@ void TwoLasersCalib::draw_ui() {
   // 新建窗口
   ImGui::Begin("Two Lasers Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
-  // 激光选择
+  // major frames for user to choose base frame of each laser
+  std::vector<std::string> frames = tree_->get_tf_major_frames();
+
+  // 激光选择 - 1
   draw_sensor_selector<dev::Laser>("laser 1", dev::LASER, laser_insts_[0].laser_dev_ptr);
 
-  // 从文件加载标定数据
+  // 下拉菜单选择激光1的base frame
+  static int item_current_idx = 0;
+  const char* combo_preview_value = frames[item_current_idx].c_str();
+  ImGui::Text("base tf:");
   ImGui::SameLine();
+  if (ImGui::BeginCombo("##selected frame 1", combo_preview_value, ImGuiComboFlags_None)) {
+    for (int n = 0; n < frames.size(); n++) {
+      const bool is_selected = (item_current_idx == n);
+      if (ImGui::Selectable(frames[n].c_str(), is_selected)) {
+        item_current_idx = n;
+      }
+      if (is_selected) {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  ImGui::Separator();
+
+  // 激光选择 - 2
+  draw_sensor_selector<dev::Laser>("laser 2", dev::LASER, laser_insts_[1].laser_dev_ptr);
+
+  // 下拉菜单选择激光2的base frame
+  static int item_current_idx2 = 0;
+  const char* combo_preview_value2 = frames[item_current_idx2].c_str();
+  ImGui::Text("base tf:");
+  ImGui::SameLine();
+  if (ImGui::BeginCombo("##selected frame 2", combo_preview_value2, ImGuiComboFlags_None)) {
+    for (int nn = 0; nn < frames.size(); nn++) {
+      const bool is_selected2 = (item_current_idx2 == nn);
+      if (ImGui::Selectable(frames[nn].c_str(), is_selected2)) {
+        item_current_idx2 = nn;
+      }
+      if (is_selected2) {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  ImGui::Separator();
+
+  // 从文件加载标定数据
   if (ImGui::Button("R")) {
     // 选择加载文件路径
     std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
@@ -901,9 +1112,6 @@ void TwoLasersCalib::draw_ui() {
     }
   }
 
-  // 激光选择
-  draw_sensor_selector<dev::Laser>("laser 2", dev::LASER, laser_insts_[1].laser_dev_ptr);
-
   // 设备就绪后才能标定
   if (laser_insts_[0].laser_dev_ptr && laser_insts_[1].laser_dev_ptr) {
     ImGui::SameLine();
@@ -922,18 +1130,34 @@ void TwoLasersCalib::draw_ui() {
     if (next_state_ == STATE_IDLE) {
       draw_calib_params();
     }
-//    if (next_state_ptr_->id() == 0) {
-//      draw_calib_params();
-//    }
+    //    if (next_state_ptr_->id() == 0) {
+    //      draw_calib_params();
+    //    }
+
+    // 勾选 - 从/tf中的参数计算出default的变换矩阵参数
+    ImGui::Separator();
+    if (ImGui::Checkbox("autofill from /tf", &b_autofill_transform_12_)) {
+      if (b_autofill_transform_12_) {
+        transform_12_prev_ = transform_12_;
+        autofill_default_transform(frames[item_current_idx], frames[item_current_idx2], tree_->get_tf_transforms());
+      } else {
+        transform_12_ = transform_12_prev_;
+      }
+      update_T12();
+      update_laser2_pose();
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("tick to use extrinsic computed from /tf as initial values for calibration");
+    }
 
     // 设置变换矩阵参数
     draw_ui_transform();
 
     // 标定逻辑
     calibration();
-//    new_calibration();
+    //    new_calibration();
 
-//    if (next_state_ptr_->id() == 0) {
+    //    if (next_state_ptr_->id() == 0) {
     if (next_state_ == STATE_IDLE) {
       if (ImGui::Button("start")) {
         b_show_calib_data_ = false;
@@ -945,13 +1169,13 @@ void TwoLasersCalib::draw_ui() {
           // 清空上次的标定数据
           // calib_valid_data_vec_.clear();
           next_state_ = STATE_START;
-//          change_next_state(std::make_shared<StateStart>());
+          //          change_next_state(std::make_shared<StateStart>());
         }
       }
     } else {
       if (ImGui::Button("stop")) {
         next_state_ = STATE_IDLE;
-//        change_next_state(std::make_shared<StateIdle>());
+        //        change_next_state(std::make_shared<StateIdle>());
       }
     }
 
@@ -959,9 +1183,9 @@ void TwoLasersCalib::draw_ui() {
     if (cur_state_ == STATE_IN_CALIB) {
       next_state_ = STATE_IDLE;
     }
-//    if (cur_state_ptr_->id() == 5) {
-//      change_next_state(std::make_shared<StateIdle>());
-//    }
+    //    if (cur_state_ptr_->id() == 5) {
+    //      change_next_state(std::make_shared<StateIdle>());
+    //    }
 
     // 大于3帧数据就可以开始进行标定操作了
     if (calib_valid_data_vec_.size() > 3) {
@@ -969,7 +1193,7 @@ void TwoLasersCalib::draw_ui() {
       // 开始执行标定
       if (ImGui::Button("calib")) {
         next_state_ = STATE_START_CALIB;
-//        change_next_state(std::make_shared<StateStartCalib>());
+        //        change_next_state(std::make_shared<StateStartCalib>());
       }
       ImGui::SameLine();
       ImGui::Checkbox("fix_tz", &is_tx_fixed_);
@@ -981,7 +1205,7 @@ void TwoLasersCalib::draw_ui() {
   }
 
   // 标定数据相关操作
-//  if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
+  //  if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
   if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
@@ -993,6 +1217,17 @@ void TwoLasersCalib::draw_ui() {
         ImGui::SetTooltip("click to not show calib data");
       } else {
         ImGui::SetTooltip("click to show calib data");
+      }
+    }
+
+    if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+      ImGui::SameLine();
+      if (ImGui::Button("update")) {
+        util::publish_extrinsics(ros_nh_, transform_12_, frames[item_current_idx], frames[item_current_idx2],
+                                 frames[item_current_idx], frames[item_current_idx2]);
+      }
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("click to send calib data service request.");
       }
     }
 

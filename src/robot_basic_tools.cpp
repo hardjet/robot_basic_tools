@@ -57,7 +57,7 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   progress_ptr_ = std::make_unique<guik::ProgressModal>("progress modal");
 
   // tf tree
-  tf_tree_ptr_ = std::make_unique<util::TfTree>(nh_);
+  tf_tree_ptr_ = std::make_shared<util::TfTree>(nh_);
 
   // sensor_manager
   sensor_manager_ptr_ = util::Singleton<dev::SensorManager>::instance(nh_);
@@ -71,22 +71,21 @@ bool RobotBasicTools::init(const char *window_name, const char *imgui_config_pat
   // 标准棋盘格标定板
   blob_board_ptr_ = std::make_shared<dev::blob_board>(dev::data_default_path);
 
-
   // 单线激光与相机标定
   cl_calib_ptr_ = std::make_unique<calibration::CamLaserCalib>(sensor_manager_ptr_, april_board_ptr_);
 
   // 两个单线激光标定
-  tl_calib_ptr_ = std::make_unique<calibration::TwoLasersCalib>(sensor_manager_ptr_);
+  tl_calib_ptr_ = std::make_unique<calibration::TwoLasersCalib>(sensor_manager_ptr_, tf_tree_ptr_, nh_);
 
   // 两个相机标定
   tc_calib_ptr_ = std::make_unique<calibration::TwoCamerasCalib>(sensor_manager_ptr_, april_board_ptr_);
   tc_calib_ptr_->pass_nh(nh_);
 
-
   // 单目相机标定
-  cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_,chess_board_ptr_,blob_board_ptr_);
+  cam_calib_ptr_ = std::make_unique<calibration::CameraCalib>(sensor_manager_ptr_, april_board_ptr_, chess_board_ptr_,
+                                                              blob_board_ptr_);
 
-  // initialize the main OpenGL canvas, 初始化时传入rbt/data路径，和Application::framebuffer_size()函数的返回值 - 一个Eigen::Vector2i{width, height}
+  // initialize the main OpenGL canvas
   main_canvas_ptr_ = std::make_shared<guik::GLCanvas>(dev::data_default_path, framebuffer_size());
   if (!main_canvas_ptr_->ready()) {
     ros::shutdown();
@@ -178,15 +177,18 @@ void RobotBasicTools::draw_gl() {
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     main_canvas_ptr_->bind();
 
-//     draw coordinate system
-//     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
-//     main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::UniformScaling<float>(0.2f) * Eigen::Isometry3f::Identity()).matrix());
-//     const auto &coord = glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
-//     coord.draw(*main_canvas_ptr_->shader);
+    //     draw coordinate system
+    //     main_canvas_ptr_->shader->set_uniform("color_mode", 2);
+    //     main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::UniformScaling<float>(0.2f) *
+    //     Eigen::Isometry3f::Identity()).matrix()); const auto &coord =
+    //     glk::Primitives::instance()->primitive(glk::Primitives::COORDINATE_SYSTEM);
+    //     coord.draw(*main_canvas_ptr_->shader);
 
     // draw grid
     main_canvas_ptr_->shader->set_uniform("color_mode", 1);
-    main_canvas_ptr_->shader->set_uniform("model_matrix", (Eigen::Translation3f(Eigen::Vector3f::UnitZ() * -0.02) * Eigen::Isometry3f::Identity()).matrix());
+    main_canvas_ptr_->shader->set_uniform(
+        "model_matrix",
+        (Eigen::Translation3f(Eigen::Vector3f::UnitZ() * -0.02) * Eigen::Isometry3f::Identity()).matrix());
     main_canvas_ptr_->shader->set_uniform("material_color", Eigen::Vector4f(0.8f, 0.8f, 0.8f, 0.5f));
     const auto &grid = glk::Primitives::instance()->primitive(glk::Primitives::GRID);
     grid.draw(*main_canvas_ptr_->shader);
@@ -275,7 +277,7 @@ void RobotBasicTools::main_menu() {
       tc_calib_ptr_->show();
     }
 
-     if (ImGui::MenuItem("monocular camera")) {
+    if (ImGui::MenuItem("monocular camera")) {
       cam_calib_ptr_->show();
     }
     ImGui::EndMenu();

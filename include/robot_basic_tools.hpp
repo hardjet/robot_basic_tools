@@ -110,7 +110,7 @@ class RobotBasicTools : public guik::Application {
   std::unique_ptr<calibration::CameraCalib> cam_calib_ptr_;
 
   // tf树
-  std::unique_ptr<util::TfTree> tf_tree_ptr_;
+  std::shared_ptr<util::TfTree> tf_tree_ptr_;
 
   // 热键标记(ALT)
   bool b_hotkey_alt_pressed_ = false;

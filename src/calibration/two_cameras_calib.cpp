@@ -24,7 +24,6 @@
 #include "camera_model/camera_models/Camera.h"
 
 #include "util/extrinsics_publisher.hpp"
-#include "util/draw_frame_selector.hpp"
 
 // ---- 两个相机标定状态
 // 空闲
@@ -189,8 +188,8 @@ void TwoCamerasCalib::draw_calib_data(glk::GLSLShader& shader) {
           // Eigen::Vector3d t_c1a = -R_ca * cur_calib_data.t_ac[0];
           Eigen::Matrix4f T_21 = T_12_.inverse();
           Eigen::Matrix4f T_c2a = T_21 * T_c1a;
-          R_ca = T_c2a.block<3,3>(0,0).cast<double>();
-          t_ca = T_c2a.block<3,1>(0,3).cast<double>();
+          R_ca = T_c2a.block<3, 3>(0, 0).cast<double>();
+          t_ca = T_c2a.block<3, 1>(0, 3).cast<double>();
         }
         // std::cout << "R_ca: \n" << R_ca << std::endl;
         // std::cout << "t_ca: \n" << t_ca.transpose() << std::endl;
@@ -799,8 +798,8 @@ static nlohmann::json convert_pts_to_json(const std::array<std::vector<cv::Point
   return json_objs_pts;
 }
 
-bool TwoCamerasCalib::save_extrinsics(const std::string& file_path){
-  if (transform_12_.empty()){
+bool TwoCamerasCalib::save_extrinsics(const std::string& file_path) {
+  if (transform_12_.empty()) {
     return false;
   }
 
@@ -808,14 +807,9 @@ bool TwoCamerasCalib::save_extrinsics(const std::string& file_path){
   nlohmann::json js_data;
   nlohmann::json js_frame;
 
-  js_data = {{"tx", transform_12_[0]},
-             {"ty", transform_12_[1]},
-             {"tz", transform_12_[2]},
-             {"roll", transform_12_[3]},
-             {"pitch", transform_12_[4]},
-             {"yaw", transform_12_[5]}};
-  js_frame = {{"from_frame", camera_insts_[1].frame_id},
-              {"to_frame", camera_insts_[0].frame_id}};
+  js_data = {{"tx", transform_12_[0]},   {"ty", transform_12_[1]},    {"tz", transform_12_[2]},
+             {"roll", transform_12_[3]}, {"pitch", transform_12_[4]}, {"yaw", transform_12_[5]}};
+  js_frame = {{"from_frame", camera_insts_[1].frame_id}, {"to_frame", camera_insts_[0].frame_id}};
 
   js_file["data"] = js_data;
   js_file["frame"] = js_frame;
@@ -853,8 +847,7 @@ bool TwoCamerasCalib::save_calib_data(const std::string& file_path) {
                          {"object_points", convert_pts_to_json(data.object_points)}};
     js_data.push_back(js);
   }
-  nlohmann::json js_frame = {{"from_frame", camera_insts_[1].frame_id},
-                             {"to_frame", camera_insts_[0].frame_id}};
+  nlohmann::json js_frame = {{"from_frame", camera_insts_[1].frame_id}, {"to_frame", camera_insts_[0].frame_id}};
 
   js_whole["data"] = js_data;
   js_whole["frame"] = js_frame;
@@ -908,8 +901,9 @@ void TwoCamerasCalib::draw_ui_transform() {
   ImGui::Text("T_12:");
   ImGui::SameLine();
   ImGui::TextDisabled("the unit: m & deg");
-//  ImGui::Text("set the transform from camera %s to 1.", camera_insts_[1].camera_dev_ptr->sensor_name.c_str(), );
-  ImGui::Text("set the transform from camera %s to %s.", camera_insts_[1].camera_dev_ptr->sensor_name.c_str(), camera_insts_[0].camera_dev_ptr->sensor_name.c_str());
+  //  ImGui::Text("set the transform from camera %s to 1.", camera_insts_[1].camera_dev_ptr->sensor_name.c_str(), );
+  ImGui::Text("set the transform from camera %s to %s.", camera_insts_[1].camera_dev_ptr->sensor_name.c_str(),
+              camera_insts_[0].camera_dev_ptr->sensor_name.c_str());
 
   // 变更后要更新矩阵
   bool is_changed = false;
@@ -955,9 +949,7 @@ void TwoCamerasCalib::draw_ui_transform() {
   ImGui::Separator();
 }
 
-void TwoCamerasCalib::pass_nh(const ros::NodeHandle& nh) {
-  ros_nh_ = nh;
-}
+void TwoCamerasCalib::pass_nh(const ros::NodeHandle& nh) { ros_nh_ = nh; }
 
 void TwoCamerasCalib::draw_ui() {
   if (!b_show_window_) {
@@ -1087,9 +1079,9 @@ void TwoCamerasCalib::draw_ui() {
     }
 
     // 闲置状态下才可以设置
-//    if (next_state_ == STATE_IDLE) {
-//      draw_calib_params();
-//    }
+    //    if (next_state_ == STATE_IDLE) {
+    //      draw_calib_params();
+    //    }
     if (next_state_ptr_->id() == 0) {
       draw_calib_params();
     }
@@ -1098,15 +1090,16 @@ void TwoCamerasCalib::draw_ui() {
     draw_ui_transform();
 
     // 标定逻辑
-//    calibration();
+    //    calibration();
     new_calibration();
 
-//    if (next_state_ == STATE_IDLE) {
+    //    if (next_state_ == STATE_IDLE) {
     if (next_state_ptr_->id() == 0) {
       if (ImGui::Button("start")) {
         // 两个设备名称不能一样，两个被选择的base frame不能一样
         if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
-            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
+            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) ==
+                0) {
           std::string msg = "two cameras are the same!";
           dev::show_pfd_info("two cameras calibration", msg);
         } else if (!camera_insts_[0].camera_dev_ptr->camera_model() ||
@@ -1118,21 +1111,21 @@ void TwoCamerasCalib::draw_ui() {
           b_show_calib_data_ = false;
           // 清空上次的标定数据
           // calib_valid_data_vec_.clear();
-//          next_state_ = STATE_START;
+          //          next_state_ = STATE_START;
           change_next_state(std::make_shared<StateStart>());
         }
       }
     } else {
       if (ImGui::Button("stop")) {
-//        next_state_ = STATE_IDLE;
+        //        next_state_ = STATE_IDLE;
         change_next_state(std::make_shared<StateIdle>());
       }
     }
 
     // 标定状态只需要设定一次
-//    if (cur_state_ == STATE_IN_CALIB) {
-//      next_state_ = STATE_IDLE;
-//    }
+    //    if (cur_state_ == STATE_IN_CALIB) {
+    //      next_state_ = STATE_IDLE;
+    //    }
     if (cur_state_ptr_->id() == 5) {
       change_next_state(std::make_shared<StateIdle>());
     }
@@ -1144,7 +1137,8 @@ void TwoCamerasCalib::draw_ui() {
       if (ImGui::Button("calib")) {
         // 两个设备名称不能一样 ，两个被选择的base frame不能一样
         if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
-            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
+            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) ==
+                0) {
           std::string msg = "two cameras are the same!";
           dev::show_pfd_info("two cameras calibration", msg);
         } else if (!camera_insts_[0].camera_dev_ptr->camera_model() ||
@@ -1153,7 +1147,7 @@ void TwoCamerasCalib::draw_ui() {
           std::string msg = "please set camera model first!";
           dev::show_pfd_info("info", msg);
         } else {
-//          next_state_ = STATE_START_CALIB;
+          //          next_state_ = STATE_START_CALIB;
           change_next_state(std::make_shared<StateStartCalib>());
         }
       }
@@ -1173,9 +1167,9 @@ void TwoCamerasCalib::draw_ui() {
       }
     }
 
-    if (is_transform_valid_){
+    if (is_transform_valid_) {
       ImGui::SameLine();
-      if(ImGui::Button("save")) {
+      if (ImGui::Button("save")) {
         std::vector<std::string> filters = {"calib data file (.json)", "*.json"};
         std::unique_ptr<pfd::save_file> dialog(new pfd::save_file("choose file", dev::data_default_path, filters));
         while (!dialog->ready()) {
@@ -1193,33 +1187,34 @@ void TwoCamerasCalib::draw_ui() {
             dev::show_pfd_info("save calib data", msg);
           }
         }
-        if(ImGui::IsItemHovered()) {
+        if (ImGui::IsItemHovered()) {
           ImGui::SetTooltip("click to save the extrinsics.");
         }
       }
     }
 
-    if(is_transform_valid_) {
+    if (is_transform_valid_) {
       ImGui::SameLine();
-      if(ImGui::Button("update")) {
+      if (ImGui::Button("update")) {
         is_transform_valid_ = false;
         util::publish_extrinsics(ros_nh_, transform_12_, camera_insts_[0].frame_id, camera_insts_[1].frame_id,
                                  major_frames_list_[item_current_idx], major_frames_list_[item_current_idx2]);
       }
-      if(ImGui::IsItemHovered()) {
+      if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("click to send calib data service request.");
       }
     }
   }
 
   // 标定数据相关操作
-//  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+  //  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
   if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {
         // 两个设备名称不能一样
         if ((camera_insts_[0].camera_dev_ptr->sensor_id == camera_insts_[1].camera_dev_ptr->sensor_id) ||
-            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) == 0) {
+            std::strcmp(major_frames_list_[item_current_idx].c_str(), major_frames_list_[item_current_idx2].c_str()) ==
+                0) {
           std::string msg = "two cameras are the same!";
           dev::show_pfd_info("two cameras calibration", msg);
           b_show_calib_data_ = false;
@@ -1307,7 +1302,7 @@ void TwoCamerasCalib::pass_major_frames(const std::vector<std::string>& major_fr
     // 则可以把前面占位的"Empty..."都去掉
     major_frames_set_.erase("Empty... 1");
     major_frames_set_.erase("Empty... 2");
-    for (auto iter = major_frames_list_.begin(); iter != major_frames_list_.end() ; ++iter) {
+    for (auto iter = major_frames_list_.begin(); iter != major_frames_list_.end(); ++iter) {
       if (std::strcmp(iter->c_str(), "Empty... Please check /tf_static") == 0) {
         major_frames_list_.erase(iter);
         break;
@@ -1324,7 +1319,8 @@ void TwoCamerasCalib::pass_major_frames(const std::vector<std::string>& major_fr
     }
   } else {
     // 如果传入的frame是空的，就放入"Empty..."占位
-    std::pair<std::set<std::string>::iterator, bool> feedback = major_frames_set_.insert("Empty... Please check /tf_static");
+    std::pair<std::set<std::string>::iterator, bool> feedback =
+        major_frames_set_.insert("Empty... Please check /tf_static");
     if (feedback.second) {
       major_frames_list_.emplace_back("Empty... 1");
       major_frames_list_.emplace_back("Empty... 2");

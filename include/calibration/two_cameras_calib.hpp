@@ -128,7 +128,6 @@ class TwoCamerasCalib : public BaseCalib {
     boost::shared_ptr<const cv_bridge::CvImage> cv_image_data_ptr{nullptr};
     // 显示图像使用
     boost::shared_ptr<const cv_bridge::CvImage> show_cv_image_ptr{nullptr};
-
     /// 更新显示控件
     void update();
   };

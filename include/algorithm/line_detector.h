@@ -12,6 +12,7 @@ class LineDetector {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
+  LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit, int inlier_limit);
 
   /**
   * 使用ransac找直线点
@@ -57,6 +58,10 @@ class LineDetector {
   double angle_max_{0.};
   // 角增量
   double angle_inc_{0.};
+  // xs和ys的最小个数
+  int thd_points_;
+  // ransac inliers的最小个数
+  int thd_inliers_;
 
   // 以图像的方式显示
   std::shared_ptr<cv::Mat> img_ptr_;

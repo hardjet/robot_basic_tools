@@ -55,7 +55,6 @@ void Laser::free() {
 }
 
 void Laser::draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
-//  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Laser::draw_gl() - test", 20.0f, 50.0f, 0.3f, glm::vec3(1, 0, 0)));
   if (!b_show_laser_) {
     return;
   }
@@ -98,7 +97,12 @@ void Laser::check_online_status() {
   // 获取深度点云最新数据
   auto laser_data_ptr = laser_data_ptr_->data();
   if (laser_data_ptr) {
-    if (ros::Time::now().sec - laser_data_ptr->header.stamp.sec < 5) {
+//    std::cout << "unsigned int: " << ros::Time::now().sec - laser_data_ptr->header.stamp.sec << std::endl;
+//    std::cout << "         int: " << static_cast<int>(ros::Time::now().sec) - static_cast<int>(laser_data_ptr->header.stamp.sec) << std::endl;
+//    std::cout << "ros::Time::now().sec: " << ros::Time::now().sec << std::endl;
+//    std::cout << "laser_data_ptr->header.stamp.sec: " << laser_data_ptr->header.stamp.sec << std::endl;
+    if (ros::Time::now().sec - laser_data_ptr->header.stamp.sec < 2) {
+      printf("difference < 2!");
       online = true;
     }
   }
@@ -126,9 +130,13 @@ void Laser::draw_ui_topic_name() {
       }
     } else {
       // 暂停接收
+      printf("----- Laser::draw_ui_topic_name() ..... b_enable_topic = %d, unsubscribing\n", b_enable_topic_);
       laser_data_ptr_->unsubscribe();
+      is_online_ = false;
     }
   }
+//  printf("----- Laser::draw_ui_topic_name() ..... b_enable_topic_ = %d\n", b_enable_topic_);
+//  printf("----- Laser::draw_ui_topic_name() ..... is_online_ = %d\n", is_online_);
   // 提示设备状态
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("pick to enable laser receive");

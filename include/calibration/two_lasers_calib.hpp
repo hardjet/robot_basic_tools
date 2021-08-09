@@ -156,6 +156,8 @@ class TwoLasersCalib : public BaseCalib {
 
   // 是否显示图像
   bool b_show_image_{false};
+  // 是否显示正交视角图像
+  bool b_show_ortho_{false};
   // 是否显示就绪的标定数据
   bool b_show_calib_data_{false};
   // 是否需要更新显示的标定数据
@@ -197,9 +199,18 @@ class TwoLasersCalib : public BaseCalib {
   // 不同数据角度间隔 deg
   double between_angle_{1.0};
   // line fitting threshold point
-  int min_points_{100};
+  int min_points_laser_1_{100};
+  int min_points_laser_2_{100};
   // ransac min inliers
-  int min_inliers_{50};
+  int min_inliers_laser_1_{50};
+  int min_inliers_laser_2_{50};
+  // inliers threshold distance
+  double thd_laser_1_{0.05};
+  double thd_laser_2_{0.05};
+  // 正交图像
+  std::shared_ptr<dev::ImageShow> ortho_show_dev_ptr_{nullptr};
+  // 显示激光使用的image
+  boost::shared_ptr<const cv_bridge::CvImage> ortho_img_ptr{nullptr};
   // TfTree
   std::shared_ptr<util::TfTree> tree_;
   // ros nodehandle

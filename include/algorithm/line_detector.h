@@ -12,7 +12,9 @@ class LineDetector {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
-  LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit, int inlier_limit);
+  LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range,
+               int point_limit, int inlier_limit, double thd_dist, bool neglect,
+               Eigen::Matrix<double, 3, 3>  r, Eigen::Vector3d  t);
 
   /**
   * 使用ransac找直线点
@@ -31,25 +33,28 @@ class LineDetector {
 
   /// 找两条直线(ransac + fitting)
   bool find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
-                      cv::Mat& img) const;
+                      cv::Mat& img, cv::Mat& ortho, int inst_id) const;
 
  private:
   /// 将LaserScan转换为点云
   void scan2points(const sensor_msgs::LaserScan& scan_in);
+  void scan2points_with_neglection(const sensor_msgs::LaserScan& scan_in);
 
  private:
   // 图像显示的宽度
   const int img_w_ = 320;
   // 图像显示焦距
-  const double img_focal_ = 450;
+  const double img_focal_ = 600;
   // 拍照高度
-  const double img_z_ = 4.0;
+  const double img_z_ = 5.0;
   // 直线搜索范围 单位m
   double max_range_;
   // 角度范围[-angle_range_, +angle_range_] 单位deg
   double angle_range_;
   // laserscan转换为点云，在有效区域
   std::vector<Eigen::Vector3d> points_;
+  // laserscan转换为点云，在有效区域，外参转换后
+  std::vector<Eigen::Vector3d> points_projected_;
   // laserscan转换为点云，有效区域外
   std::vector<Eigen::Vector3d> outlier_points_;
   // 最小角度
@@ -62,8 +67,16 @@ class LineDetector {
   int thd_points_;
   // ransac inliers的最小个数
   int thd_inliers_;
+  // inliers distance
+  double thd_dist_;
 
   // 以图像的方式显示
   std::shared_ptr<cv::Mat> img_ptr_;
+  // 以图像的方式显示两个设备的点
+  std::shared_ptr<cv::Mat> ortho_ptr_;
+  // 外参 - 旋转
+  Eigen::Matrix3d rotation_;
+  // 外参 - 位移
+  Eigen::Vector3d translation_;
 };
 }  // namespace algorithm

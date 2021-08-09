@@ -1,5 +1,6 @@
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/imgproc.hpp>
+#include <utility>
 
 #include "algorithm/util.h"
 #include "algorithm/line_detector.h"
@@ -22,13 +23,49 @@ LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_rang
   scan2points(scan);
 }
 
-LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit, int inlier_limit)
-    : max_range_(max_range), angle_range_(DEG2RAD_RBT(angle_range)), thd_points_(point_limit), thd_inliers_(inlier_limit) {
+LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit, int inlier_limit, double thd_dist, bool neglect,
+                           Eigen::Matrix<double, 3, 3>  r, Eigen::Vector3d t)
+    : max_range_(max_range), angle_range_(DEG2RAD_RBT(angle_range)),
+      thd_points_(point_limit), thd_inliers_(inlier_limit), thd_dist_(thd_dist),
+      rotation_(std::move(r)), translation_(std::move(t)) {
   points_.resize(0);
   outlier_points_.resize(0);
   img_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));
+  ortho_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));
   // 转换点
   scan2points(scan);
+
+//  if (neglect) {
+//    scan2points_with_neglection(scan);
+//  } else{
+//    scan2points(scan);
+//  }
+}
+
+void LineDetector::scan2points_with_neglection(const sensor_msgs::LaserScan& scan_in) {
+  size_t n_pts = scan_in.ranges.size();
+  printf("----- LineDetector::scan2points_with_neglection() ..... n_pts = %zu\n", n_pts);
+
+  double angle = scan_in.angle_min;
+  double x, y;
+  for (size_t i = 0; i < n_pts; ++i) {
+    if (i < 5 || i > (n_pts - 5) ) {
+      printf("neglecting i = %zu\n", i);
+      angle += scan_in.angle_increment;
+      continue;
+    } else {
+      x = scan_in.ranges[i] * cos(angle);
+      y = scan_in.ranges[i] * sin(angle);
+      // 范围内的点
+      if (angle > -angle_range_ && angle < angle_range_ && scan_in.ranges[i] < max_range_) {
+        points_.emplace_back(x, y, 0);
+      } else {
+        outlier_points_.emplace_back(x, y, 0);
+      }
+      // 角增量
+      angle += scan_in.angle_increment;
+    }
+  }
 }
 
 void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
@@ -40,9 +77,14 @@ void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
   for (size_t i = 0; i < n_pts; ++i) {
     x = scan_in.ranges[i] * cos(angle);
     y = scan_in.ranges[i] * sin(angle);
+    Eigen::Vector3d current_point = Eigen::Vector3d{x, y, 0};
+    Eigen::Vector3d current_point_projected = rotation_ * current_point + translation_;
+    printf("current_point: [%f, %f, %f]\n", current_point.x(), current_point.y(), current_point.z());
+    printf("current_point_projected: [%f, %f, %f]\n", current_point_projected.x(), current_point_projected.y(), current_point_projected.z());
     // 范围内的点
     if (angle > -angle_range_ && angle < angle_range_ && scan_in.ranges[i] < max_range_) {
       points_.emplace_back(x, y, 0);
+      points_projected_.push_back(current_point_projected);
     } else {
       outlier_points_.emplace_back(x, y, 0);
     }
@@ -52,9 +94,13 @@ void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
-                                  std::array<Eigen::Vector2d, 2>& lines_min_max, cv::Mat& img) const {
+bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
+                                  cv::Mat& img, cv::Mat& ortho, int inst_id) const {
   img = img_ptr_->clone();
+  if (inst_id == 0) {
+    ortho = ortho_ptr_->clone();
+  }
+
   // 直线点集合
   std::vector<std::vector<Eigen::Vector3d>> two_lines_pts(2);
 
@@ -65,6 +111,8 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
   std::vector<std::pair<size_t, Eigen::Vector3d>> detectedLines;
   // 时间统计
   // mrpt::system::CTicTac tictac;
+  // 点序号
+  int point_index = 0;
 
   // 先显示所有点
   // 范围内的点
@@ -72,6 +120,10 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
     int col = (int)(pt.x() / img_z_ * img_focal_ + img_w_ / 2);
     // -Y/Z 加了一个负号, 是为了抵消针孔投影时的倒影效果
     int row = (int)(-pt.y() / img_z_ * img_focal_ + img_w_ / 2);
+
+    int col_projected = (int)(points_projected_[point_index].x() / img_z_ * img_focal_ + img_w_ / 2);
+    int row_projected = (int)(-points_projected_[point_index].y() / img_z_ * img_focal_ + img_w_ / 2);
+    point_index++;
 
     // 添加数据 不能有0数据
     if (fabs(pt.x()) > 1e-3 && fabs(pt.y()) > 1e-3) {
@@ -82,8 +134,14 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
 
     if (col > img_w_ - 1 || col < 0 || row > img_w_ - 1 || row < 0) continue;
 
-    cv::Vec3b color_value(0, 255, 0);
-    img.at<cv::Vec3b>(row, col) = color_value;
+    cv::Vec3b color_green(0, 255, 0);
+    cv::Vec3b color_blue(200, 0, 0);
+    img.at<cv::Vec3b>(row, col) = color_green;
+    if (inst_id == 0) {
+      ortho.at<cv::Vec3b>(row, col) = color_green;
+    } else {
+      ortho.at<cv::Vec3b>(row_projected, col_projected) = color_blue;
+    }
   }
 
   // ---- 画坐标
@@ -94,15 +152,19 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
   int x_axis_col = (int)(0.2 / img_z_ * img_focal_ + img_w_ / 2);
   int x_axis_row = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
   cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{x_axis_col, x_axis_row}, cv::Scalar(255, 0, 0), 4);
+  cv::line(ortho, cv::Point{orig_col, orig_row}, cv::Point{x_axis_col, x_axis_row}, cv::Scalar(255, 0, 0), 4);
 
   int y_axis_col = (int)(0. / img_z_ * img_focal_ + img_w_ / 2);
   int y_axis_row = (int)(-0.2 / img_z_ * img_focal_ + img_w_ / 2);
 
   cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
+  cv::line(ortho, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
 
 //  std::cout << "valid pts num: " << xs.size() << std::endl;
 
   // 点数过少
+  printf("----- LineDetector::find_two_lines() ..... xs.size() = %zu\n", xs.size());
+  printf("----- LineDetector::find_two_lines() ..... ys.size() = %zu\n", ys.size());
   if (xs.size() < thd_points_) {
     printf("----- LineDetector::find_two_lines() ..... not enough points for xs and ys, returning false\n");
     return false;
@@ -118,11 +180,14 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
   Eigen::Map<Eigen::VectorXd> y_e(ys.data(), ys.size());
 
 //  std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
-  double thd = 0.05;
+//  double thd = 0.05;
+  double thd = thd_dist_;
+  printf("----- LineDetector::find_two_lines() ..... thd = %f\n", thd_dist_);
   algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, thd_inliers_);
 //  std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
 
   // 检测到两条直线认为有效
+  printf("----- LineDetector::find_two_lines() ..... detectedLines.size() = %zu\n", detectedLines.size());
   if (detectedLines.size() != 2) {
     std::cout << "detected lines num != 2. " << detectedLines.size() << std::endl;
     return false;

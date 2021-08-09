@@ -44,6 +44,9 @@ namespace calibration {
 TwoLasersCalib::TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
                                std::shared_ptr<util::TfTree>& tr_ptr, const ros::NodeHandle& nh)
     : BaseCalib(sensor_manager_ptr), tree_(tr_ptr), ros_nh_(nh) {
+  // 初始化正交图像显示
+  ortho_show_dev_ptr_ = std::make_shared<dev::ImageShow>();
+
   // 初始化显示设备
   for (auto& laser_inst : laser_insts_) {
     laser_inst.img_show_dev_ptr = std::make_shared<dev::ImageShow>();
@@ -309,6 +312,7 @@ void TwoLasersCalib::update_3d_show() {
     std::cout << "need_to_swap!!!!" << std::endl;
   }
 
+  ortho_show_dev_ptr_->update_image(ortho_img_ptr);
   for (auto& laser_inst : laser_insts_) {
     // 更新显示图象
     laser_inst.img_show_dev_ptr->update_image(laser_inst.img_ptr);
@@ -416,13 +420,31 @@ bool TwoLasersCalib::get_valid_lines() {
 
   // 检测结果
   bool res = true;
+  // 序号
+  int count = 0;
+  // 显示两个设备的点云
+  cv::Mat ortho_img_show;
   // 检测激光中的直线
   for (auto& laser_inst : laser_insts_) {
     auto start_time = ros::WallTime::now();
     cv::Mat laser_img_show;
-    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_, min_points_,
-                                          min_inliers_);
-    if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show)) {
+    int param_1 = min_points_laser_1_;
+    int param_2 = min_inliers_laser_1_;
+    double param_3 = thd_laser_1_;
+    bool param_4 = false;
+    Eigen::Matrix<double, 3, 3> param_5 = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d param_6 = Eigen::Vector3d{0, 0, 0};
+    if (count != 0) {
+      param_1 = min_points_laser_2_;
+      param_2 = min_inliers_laser_2_;
+      param_3 = thd_laser_2_;
+      param_4 = true;
+      param_5 = T_12_.block<3, 3>(0, 0).cast<double>();
+      param_6 = T_12_.block<3, 1>(0, 3).cast<double>();
+    }
+    printf("----- TwoLasersCalib::get_valid_lines() ..... LineDetector[count = %d] [%d, %d, %f, %d]\n", count, param_1, param_2, param_3, param_4);
+    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_, param_1, param_2, param_3, param_4, param_5, param_6);
+    if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show, ortho_img_show, count)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -440,8 +462,9 @@ bool TwoLasersCalib::get_valid_lines() {
     } else {
       res = false;
     }
+    count++;
   }
-
+  ortho_img_ptr.reset(new const cv_bridge::CvImage(laser_insts_[0].calib_data_ptr->header, "rgb8", ortho_img_show));
   return res;
 }
 
@@ -929,23 +952,6 @@ void TwoLasersCalib::draw_calib_params() {
 
   ImGui::PopItemWidth();
 
-  ImGui::PushItemWidth(80);
-
-  ImGui::Separator();
-  ImGui::Text("line fitting params: ");
-
-  ImGui::DragScalar("min points(pts)   ", ImGuiDataType_S32, &min_points_, 1.0, &min_v, nullptr, "%d");
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("set minimum point threshold used for ransac line fitting");
-  }
-
-  ImGui::SameLine();
-  ImGui::DragScalar("min inliers(pts)", ImGuiDataType_S32, &min_inliers_, 1.0, &min_v, nullptr, "%d");
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("set minimum inliers used for ransac line fitting");
-  }
-
-  ImGui::PopItemWidth();
 }
 
 void TwoLasersCalib::autofill_default_transform(const std::string& laser_1_topic, const std::string& laser_2_topic,
@@ -1006,6 +1012,9 @@ void TwoLasersCalib::draw_ui() {
   if (!b_show_window_) {
     return;
   }
+
+  const double min_v = 0.;
+
   // 新建窗口
   ImGui::Begin("Two Lasers Calibration", &b_show_window_, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -1032,6 +1041,22 @@ void TwoLasersCalib::draw_ui() {
     }
     ImGui::EndCombo();
   }
+  ImGui::PushItemWidth(60);
+  ImGui::DragScalar("laser 1 min points(pts)   ", ImGuiDataType_S32, &min_points_laser_1_, 1.0, &min_v, nullptr, "%d");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set minimum point threshold used for ransac line fitting for laser 1");
+  }
+
+  ImGui::DragScalar("laser 1 min inliers(pts)", ImGuiDataType_S32, &min_inliers_laser_1_, 1.0, &min_v, nullptr, "%d");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set minimum inliers used for ransac line fitting for laser 1");
+  }
+
+  ImGui::DragScalar("laser 1 inliers thd(m)", ImGuiDataType_Double, &thd_laser_1_, 1.0, &min_v, nullptr, "%.2f");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("inliers distance threshold for laser 1");
+  }
+  ImGui::PopItemWidth();
   ImGui::Separator();
 
   // 激光选择 - 2
@@ -1054,6 +1079,22 @@ void TwoLasersCalib::draw_ui() {
     }
     ImGui::EndCombo();
   }
+  ImGui::PushItemWidth(60);
+  ImGui::DragScalar("laser 2 min points(pts)   ", ImGuiDataType_S32, &min_points_laser_2_, 1.0, &min_v, nullptr, "%d");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set minimum point threshold used for ransac line fitting for laser 2");
+  }
+
+  ImGui::DragScalar("laser 2 min inliers(pts)", ImGuiDataType_S32, &min_inliers_laser_2_, 1.0, &min_v, nullptr, "%d");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("set minimum inliers used for ransac line fitting for laser 2");
+  }
+
+  ImGui::DragScalar("laser 2 inliers thd(m)", ImGuiDataType_Double, &thd_laser_2_, 1.0, &min_v, nullptr, "%.2f");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("inliers distance threshold for laser 2");
+  }
+  ImGui::PopItemWidth();
   ImGui::Separator();
 
   // 从文件加载标定数据
@@ -1123,6 +1164,17 @@ void TwoLasersCalib::draw_ui() {
       } else {
         laser_insts_[0].img_show_dev_ptr->disable();
         laser_insts_[1].img_show_dev_ptr->disable();
+      }
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Checkbox("orthogonal view", &b_show_ortho_)) {
+      if (b_show_ortho_) {
+        printf("showing ortho\n");
+        ortho_show_dev_ptr_->enable("Orthogonal view", false);
+      } else {
+        printf("hiding ortho\n");
+        ortho_show_dev_ptr_->disable();
       }
     }
 
@@ -1283,6 +1335,9 @@ void TwoLasersCalib::draw_ui() {
   if (b_show_image_) {
     laser_insts_[0].img_show_dev_ptr->show_image(b_show_image_);
     laser_insts_[1].img_show_dev_ptr->show_image(b_show_image_);
+  }
+  if (b_show_ortho_) {
+    ortho_show_dev_ptr_->show_image(b_show_ortho_);
   }
 }
 

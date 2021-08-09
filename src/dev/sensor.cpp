@@ -62,6 +62,7 @@ void Sensor::free_model() {
 }
 
 void Sensor::draw_status() {
+//  printf("----- Sensor::draw_status() ..... is_online_ = %d\n", is_online_);
   if (is_online_) {
     ImGui::TextColored(ImVec4(COLOR_ONLINE[0], COLOR_ONLINE[1], COLOR_ONLINE[2], 1.0f), "·");
   } else {

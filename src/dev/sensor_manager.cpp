@@ -49,7 +49,6 @@ void SensorManager::call_sensors_draw_ui() {
 }
 
 void SensorManager::draw_gl(glk::GLSLShader &shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
-//  canvas_ptr->text_renderer_params.emplace_back("Sensor_Manager::draw_gl() - test", 20.0f, 20.0f, 0.3f, glm::vec3(1, 0, 0));
   for (auto &sensors : sensors_map) {
     for (auto &sensor : sensors.second) {
       sensor->draw_gl(shader, canvas_ptr);

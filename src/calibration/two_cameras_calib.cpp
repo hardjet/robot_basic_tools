@@ -519,13 +519,15 @@ bool TwoCamerasCalib::instrument_available() {
   }
 }
 
-bool TwoCamerasCalib::pose_valid() {
+int TwoCamerasCalib::pose_valid() {
   if (task_ptr_->do_task("get_valid_pose", std::bind(&TwoCamerasCalib::get_valid_pose, this))) {  // NOLINT
     if (task_ptr_->result<bool>()) {
-      return true;
+      return 1;
     } else {
-      return false;
+      return 2;
     }
+  } else {
+    return 3;
   }
 }
 
@@ -554,7 +556,7 @@ void TwoCamerasCalib::check_steady() {
   }
 }
 
-bool TwoCamerasCalib::do_calib() {
+int TwoCamerasCalib::do_calib() {
   if (task_ptr_->do_task("calc", std::bind(&TwoCamerasCalib::calc, this))) {  // NOLINT
     // 结束后需要读取结果
     if (task_ptr_->result<bool>()) {
@@ -563,10 +565,12 @@ bool TwoCamerasCalib::do_calib() {
       update_ui_transform();
       is_transform_valid_ = true;
       clear_calib_data_flag();
-      return true;
+      return 1;
     } else {
-      return false;
+      return 2;
     }
+  } else {
+    return 3;
   }
 }
 

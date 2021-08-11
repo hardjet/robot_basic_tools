@@ -104,13 +104,13 @@ class TwoCamerasCalib : public BaseCalib {
   bool instrument_available() override;
 
   /// 获得有效的相机位姿
-  bool pose_valid() override;
+  int pose_valid() override;
 
   /// 图像是否稳定
   void check_steady() override;
 
   /// 执行计算
-  bool do_calib() override;
+  int do_calib() override;
 
  private:
   // 相机数据结构

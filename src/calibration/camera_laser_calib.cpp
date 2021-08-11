@@ -502,15 +502,17 @@ bool CamLaserCalib::instrument_available() {
   }
 }
 
-bool CamLaserCalib::pose_valid() {
+int CamLaserCalib::pose_valid() {
   if (task_ptr_->do_task("get_pose_and_points", std::bind(&CamLaserCalib::get_pose_and_points, this))) {  // NOLINT
     // 结束后需要读取结果
     if (task_ptr_->result<bool>()) {
       update_3d_show();
-      return true;
+      return 1;
     } else {
-      return false;
+      return 2;
     }
+  } else {
+    return 3;
   }
 }
 
@@ -539,15 +541,17 @@ void CamLaserCalib::check_steady() {
   }
 }
 
-bool CamLaserCalib::do_calib() {
+int CamLaserCalib::do_calib() {
   if (task_ptr_->do_task("calc", std::bind(&CamLaserCalib::calc, this))) {  // NOLINT
     if (task_ptr_->result<bool>()) {
       update_related_pose();
       update_ui_transform();
-      return true;
+      return 1;
     } else {
-      return false;
+      return 2;
     }
+  } else {
+    return 3;
   }
 }
 

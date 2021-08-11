@@ -13,8 +13,8 @@ class LineDetector {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
   LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range,
-               int point_limit, int inlier_limit, double thd_dist, bool neglect,
-               Eigen::Matrix<double, 3, 3>  r, Eigen::Vector3d  t);
+               int point_limit, int inlier_limit, double thd_dist, double z,
+               Eigen::Matrix<double, 3, 3> r, Eigen::Vector3d t, int id);
 
   /**
   * 使用ransac找直线点
@@ -33,24 +33,33 @@ class LineDetector {
 
   /// 找两条直线(ransac + fitting)
   bool find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
-                      cv::Mat& img, cv::Mat& ortho, int inst_id) const;
+                      cv::Mat& img, cv::Mat& ortho) const;
+
+  /// 返回激光pc
+  pcl::PointCloud<pcl::PointXYZ>::Ptr get_pc();
 
  private:
   /// 将LaserScan转换为点云
   void scan2points(const sensor_msgs::LaserScan& scan_in);
-  void scan2points_with_neglection(const sensor_msgs::LaserScan& scan_in);
 
  private:
+  // 直线搜索范围 单位m
+  double max_range_;
+  // 角度范围[-angle_range_, +angle_range_] 单位deg
+  double angle_range_;
+  // xs和ys的最小个数
+  int thd_points_;
+  // ransac inliers的最小个数
+  int thd_inliers_;
+  // inliers distance
+  double thd_dist_;
   // 图像显示的宽度
   const int img_w_ = 320;
   // 图像显示焦距
   const double img_focal_ = 600;
   // 拍照高度
   const double img_z_ = 5.0;
-  // 直线搜索范围 单位m
-  double max_range_;
-  // 角度范围[-angle_range_, +angle_range_] 单位deg
-  double angle_range_;
+  const double ortho_z_ = 2.0;
   // laserscan转换为点云，在有效区域
   std::vector<Eigen::Vector3d> points_;
   // laserscan转换为点云，在有效区域，外参转换后
@@ -63,12 +72,6 @@ class LineDetector {
   double angle_max_{0.};
   // 角增量
   double angle_inc_{0.};
-  // xs和ys的最小个数
-  int thd_points_;
-  // ransac inliers的最小个数
-  int thd_inliers_;
-  // inliers distance
-  double thd_dist_;
 
   // 以图像的方式显示
   std::shared_ptr<cv::Mat> img_ptr_;
@@ -78,5 +81,9 @@ class LineDetector {
   Eigen::Matrix3d rotation_;
   // 外参 - 位移
   Eigen::Vector3d translation_;
+  // 本设备pc
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pc_;
+  // Id
+  int id_;
 };
 }  // namespace algorithm

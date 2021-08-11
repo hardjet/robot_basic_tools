@@ -115,11 +115,11 @@ class BaseCalib {
    */
   virtual bool instrument_available() = 0;
 
-  virtual bool pose_valid() = 0;
+  virtual int pose_valid() = 0;
 
   virtual void check_steady() = 0;
 
-  virtual bool do_calib() = 0;
+  virtual int do_calib() = 0;
 
   std::shared_ptr<CalibrationState> next_state() {
     return next_state_ptr_;

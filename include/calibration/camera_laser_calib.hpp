@@ -44,11 +44,11 @@ class CamLaserCalib : public BaseCalib {
 
   bool instrument_available() override;
 
-  bool pose_valid() override;
+  int pose_valid() override;
 
   void check_steady() override;
 
-  bool do_calib() override;
+  int do_calib() override;
 
  private:
   /// 更新数据

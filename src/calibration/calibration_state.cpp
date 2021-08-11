@@ -30,9 +30,9 @@ void StateStart::calibration() {
 }
 
 void StateGetPose::calibration() {
-  if (calib_context_->pose_valid()) {
+  if (calib_context_->pose_valid() == 1) {
     calib_context_->change_current_state(std::make_shared<StateCheckSteady>());
-  } else {
+  } else if (calib_context_->pose_valid() == 2) {
     calib_context_->change_current_state(std::make_shared<StateIdle>());
   }
 }
@@ -47,9 +47,9 @@ void StateStartCalib::calibration() {
 }
 
 void StateInCalib::calibration() {
-  if (calib_context_->do_calib()) {
+  if (calib_context_->do_calib() == 1) {
     calib_context_->change_current_state(std::make_shared<StateIdle>());
-  } else {
+  } else if (calib_context_->do_calib() == 2) {
     std::cout << "calibration failed!!!" << std::endl;
   }
 }

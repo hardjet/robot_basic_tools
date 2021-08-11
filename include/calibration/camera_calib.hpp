@@ -73,11 +73,11 @@ class CameraCalib : public BaseCalib {
   /// 相机是否有新数据
   bool instrument_available() override;
   /// 相机位姿
-  bool pose_valid() override;
+  int pose_valid() override;
   /// 数据稳定检查
   void check_steady() override;
   /// 计算
-  bool do_calib() override;
+  int do_calib() override;
 
  private:
   // 是否使用标准棋盘

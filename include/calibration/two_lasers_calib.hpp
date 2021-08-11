@@ -3,11 +3,17 @@
 #include <memory>
 #include <mutex>
 #include <array>
+#include <algorithm>
 #include <Eigen/Core>
 
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
 #include <sensor_msgs/LaserScan.h>
+
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/registration/icp.h>
+#include <pcl/filters/filter.h>
 
 #include "util/tf_tree.hpp"
 #include "calib_base.hpp"
@@ -47,14 +53,16 @@ class TwoLasersCalib : public BaseCalib {
   /// 判断两个laser是否都有新数据 - 进入STATE_START
   bool instrument_available() override;
   /// 获得有效的相机位姿
-  bool pose_valid() override;
+  int pose_valid() override;
   /// 图像是否稳定
   void check_steady() override;
   /// 执行计算
-  bool do_calib() override;
+  int do_calib() override;
   /// 从/tf的参数中计算默认的变换矩阵
   void autofill_default_transform(const std::string& laser_1_topic, const std::string& laser_2_topic,
                                   const std::vector<geometry_msgs::TransformStamped>& transforms);
+  /// 执行icp计算
+  void apply_icp();
 
  private:
   /// 更新数据
@@ -162,8 +170,6 @@ class TwoLasersCalib : public BaseCalib {
   bool b_show_calib_data_{false};
   // 是否需要更新显示的标定数据
   bool b_need_to_update_cd_{false};
-  // 是否进行激光2到激光1默认变换矩阵参数自动填充
-  bool b_autofill_transform_12_{false};
   // 是否对max range和angle range做图像展示
   bool b_show_range_and_angle_{false};
   // 是否固定tx值
@@ -171,17 +177,25 @@ class TwoLasersCalib : public BaseCalib {
   // 控件使用，保存激光2到激光1变换相关的值 [tx, ty, tz, roll, pitch, yaw]
   std::array<float, 6> transform_12_{};
   // 保存激光2到激光1从/tf参数中计算出的默认变换值 [tx, ty, tz, roll, pitch, yaw]
-  std::array<float, 6> transform_12_prev_{};
+  std::array<float, 6> transform_12_autofilled_{};
   // 激光2到激光1的变换矩阵
   Eigen::Matrix4f T_12_;
+  // 激光2到激光1从/tf加载的变换矩阵
+  Eigen::Matrix4f T_12_autofilled_;
   // 当前选中的数据
   uint32_t selected_calib_data_id_{1};
   // 标定数据显示
   std::array<CalibDataShow, 2> calib_show_data_;
   // max range & angle range display
   std::array<RangeAngleShow, 2> range_angle_data_;
+  // pc
+  std::array<pcl::PointCloud<pcl::PointXYZ>::Ptr, 2> pcs_;
+  // pc locked
+  std::array<pcl::PointCloud<pcl::PointXYZ>::Ptr, 2> pcs_locked_;
   // 资源锁
   std::mutex mtx_;
+  // pc资源锁
+  std::mutex pc_mtx_;
   // 任务对象
   std::shared_ptr<Task> task_ptr_{nullptr};
   // 2个激光实例
@@ -198,15 +212,17 @@ class TwoLasersCalib : public BaseCalib {
   double angle_range_{180.0};
   // 不同数据角度间隔 deg
   double between_angle_{1.0};
+  // 正交图像拍照高度
+  double ortho_z_{2.0};
   // line fitting threshold point
   int min_points_laser_1_{100};
-  int min_points_laser_2_{100};
+  int min_points_laser_2_{60};
   // ransac min inliers
   int min_inliers_laser_1_{50};
-  int min_inliers_laser_2_{50};
+  int min_inliers_laser_2_{30};
   // inliers threshold distance
   double thd_laser_1_{0.05};
-  double thd_laser_2_{0.05};
+  double thd_laser_2_{0.01};
   // 正交图像
   std::shared_ptr<dev::ImageShow> ortho_show_dev_ptr_{nullptr};
   // 显示激光使用的image

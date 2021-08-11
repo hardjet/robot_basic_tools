@@ -170,6 +170,7 @@ find_package(PCL 1.8 REQUIRED
         COMPONENTS
         common
         io
+        filters
         )
 
 #message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
@@ -228,7 +229,6 @@ catkin_package(
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
 add_library(imgui SHARED
         thirdparty/gl3w/gl3w.c
-        thirdparty/glad/glad.c
         thirdparty/imgui/imgui.cpp
         thirdparty/imgui/imgui_demo.cpp
         thirdparty/imgui/imgui_draw.cpp
@@ -293,13 +293,14 @@ set_target_properties(algorithm PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${RDPARTY_SO_PATH}
         )
 target_include_directories(algorithm PUBLIC
-        $<BUILD_INTERFACE:./include;${OpenCV_INCLUDE_DIRS};${catkin_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:./include;${OpenCV_INCLUDE_DIRS};${PCL_INCLUDE_DIRS};${catkin_INCLUDE_DIRS}>
         )
 target_link_libraries(algorithm
         PUBLIC
         ${OpenCV_LIBRARIES}
         # ${MRPT_LIBRARIES}
         ${CERES_LIBRARIES}
+        ${PCL_LIBRARIES}
         camera_model
         )
 
@@ -324,7 +325,6 @@ add_executable(${PROJECT_NAME}
         src/util/tf_tree.cpp
         src/robot_basic_tools.cpp
         )
-message("include = ${include}")
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${catkin_INCLUDE_DIRS}
         ${GLOG_INCLUDE_DIR}
@@ -343,8 +343,3 @@ target_link_libraries(${PROJECT_NAME}
         )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
-
-#add_executable(test_code src/util/test.cpp )
-#target_include_directories(test_code PRIVATE ${catkin_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} )
-#target_link_libraries(test_code ${catkin_LIBRARIES} cv_bridge_rbt guik algorithm glog )
-#add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)

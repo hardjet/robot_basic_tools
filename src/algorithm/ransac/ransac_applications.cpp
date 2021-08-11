@@ -130,7 +130,7 @@ void ransac_detect_2D_lines(const Eigen::VectorXd& x, const Eigen::VectorXd& y,
     );
 
     // Is this plane good enough?
-    printf("----- ransac_detect_2D_lines() ..... best inliers count = %zu\n", this_best_inliers.size());
+//    printf("----- ransac_detect_2D_lines() ..... best inliers count = %zu\n", this_best_inliers.size());
     if (this_best_inliers.size() >= min_inliers_for_valid_line) {
       // Add this plane to the output list:
       out_detected_lines.emplace_back(

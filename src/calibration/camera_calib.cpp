@@ -95,6 +95,7 @@ void CameraCalib::draw_ui() {
         }
       }
     }
+
     // tips
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("load from .json");

@@ -62,7 +62,8 @@ class TwoLasersCalib : public BaseCalib {
   void autofill_default_transform(const std::string& laser_1_topic, const std::string& laser_2_topic,
                                   const std::vector<geometry_msgs::TransformStamped>& transforms);
   /// 执行icp计算
-  void apply_icp();
+  std::pair<double, Eigen::Matrix4f> apply_icp(std::array<pcl::PointCloud<pcl::PointXYZ>::Ptr, 2> pcs);
+  double apply_icp_with_iterative_search();
 
  private:
   /// 更新数据
@@ -174,6 +175,8 @@ class TwoLasersCalib : public BaseCalib {
   bool b_show_range_and_angle_{false};
   // 是否固定tx值
   bool is_tx_fixed_{false};
+  // 是否按下过start
+  bool b_pressed_start_{false};
   // 控件使用，保存激光2到激光1变换相关的值 [tx, ty, tz, roll, pitch, yaw]
   std::array<float, 6> transform_12_{};
   // 保存激光2到激光1从/tf参数中计算出的默认变换值 [tx, ty, tz, roll, pitch, yaw]
@@ -223,6 +226,10 @@ class TwoLasersCalib : public BaseCalib {
   // inliers threshold distance
   double thd_laser_1_{0.05};
   double thd_laser_2_{0.01};
+  // icp search step
+  double icp_search_step_{0.05};
+  // icp starting point of pitch
+  double icp_pitch_starting_point_{0.00};
   // 正交图像
   std::shared_ptr<dev::ImageShow> ortho_show_dev_ptr_{nullptr};
   // 显示激光使用的image

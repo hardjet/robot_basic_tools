@@ -35,10 +35,10 @@ class FrameBuffer {
 
   GLint viewport[4]{};
 
-  std::vector<std::shared_ptr<Texture>> color_buffers;      // color_buffers是一个里面装了指向Texture的指针的vector
+  std::vector<std::shared_ptr<Texture>> color_buffers;  // color_buffers是一个里面装了指向Texture的指针的vector
   std::shared_ptr<Texture> depth_buffer;
 
-  GLuint frame_buffer{};                                    // GLuint = unsigned int
+  GLuint frame_buffer{};  // GLuint = unsigned int
 };
 
 }  // namespace glk

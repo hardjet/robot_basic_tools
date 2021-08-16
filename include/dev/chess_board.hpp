@@ -2,9 +2,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
-namespace camera_model
-{
-  class Chessboard;
+namespace camera_model {
+class Chessboard;
 }
 namespace glk {
 class GLSLShader;
@@ -15,7 +14,7 @@ namespace dev {
  * @brief 棋盘格标定板对象
  *
  */
-class chessboard{
+class chessboard {
  public:
   explicit chessboard(std::string& data_path);
   /**
@@ -45,6 +44,7 @@ class chessboard{
    * @param new_pose
    */
   void set_pose(const Eigen::Matrix4f& new_pose) { T_ = new_pose; }
+
  public:
   // 标定板对象
   boost::shared_ptr<camera_model::Chessboard> board{nullptr};

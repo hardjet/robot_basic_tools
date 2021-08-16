@@ -18,7 +18,7 @@ std::string config_default_path{};
 // 打开数据文件夹默认路径
 std::string data_default_path{};
 // 设备名称
-const std::string dev_type_str[] = {"UNDEF", "CAMERA", "LASER", "LIDAR", "IMU"};//NOLINT
+const std::string dev_type_str[] = {"UNDEF", "CAMERA", "LASER", "LIDAR", "IMU"};  // NOLINT
 
 uint32_t Sensor::sensors_unique_id = 0;
 
@@ -62,7 +62,7 @@ void Sensor::free_model() {
 }
 
 void Sensor::draw_status() {
-//  printf("----- Sensor::draw_status() ..... is_online_ = %d\n", is_online_);
+  //  printf("----- Sensor::draw_status() ..... is_online_ = %d\n", is_online_);
   if (is_online_) {
     ImGui::TextColored(ImVec4(COLOR_ONLINE[0], COLOR_ONLINE[1], COLOR_ONLINE[2], 1.0f), "·");
   } else {
@@ -70,8 +70,9 @@ void Sensor::draw_status() {
   }
 }
 
-void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) const {
-//  printf("----- Sensor::draw_gl_coordinate_system() ..... sensor_name = %s\n", sensor_name.c_str());
+void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader,
+                                       const std::shared_ptr<guik::GLCanvas>& canvas_ptr) const {
+  //  printf("----- Sensor::draw_gl_coordinate_system() ..... sensor_name = %s\n", sensor_name.c_str());
   // 显示坐标轴名称
   std::pair<Eigen::Matrix4f, Eigen::Matrix4f> feedback = canvas_ptr->transformation_matrices();
   Eigen::Matrix4f view = feedback.first;
@@ -85,9 +86,9 @@ void Sensor::draw_gl_coordinate_system(glk::GLSLShader& shader, const std::share
   float s = 0.35f - static_cast<float>(dist - 5.0f) * (0.35f / 5.0f);
   canvas_ptr->text_renderer_params.emplace_back(guik::Parameter(sensor_name, x, y, s, glm::vec3(1, 1, 1)));
 
-//  printf("clipped = [%f, %f, %f, %f]\n", clipped(0), clipped(1), clipped(2), clipped(3));
-//  printf("distance = %f, scale = %f\n", dist, s);
-//  printf("x = %f, y = %f\n\n", x, y);
+  //  printf("clipped = [%f, %f, %f, %f]\n", clipped(0), clipped(1), clipped(2), clipped(3));
+  //  printf("distance = %f, scale = %f\n", dist, s);
+  //  printf("x = %f, y = %f\n\n", x, y);
 
   Eigen::Isometry3f T = Eigen::Isometry3f::Identity();
   T.rotate(T_.block<3, 3>(0, 0));

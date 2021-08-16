@@ -29,7 +29,10 @@ class GLSLShader {
   /**
    * @brief bind the shader
    */
-  void use() const { glUseProgram(shader_program); }    // void glUseProgram(GLuint program) - 使用程序对象作为当前渲染状态的一部分，program提供程序句柄，该程序对象的可执行文件将用作当前渲染状态的一部分
+  void use() const {
+    glUseProgram(shader_program);
+  }  // void glUseProgram(GLuint program) -
+     // 使用程序对象作为当前渲染状态的一部分，program提供程序句柄，该程序对象的可执行文件将用作当前渲染状态的一部分
 
   /** @brief find attribute variable location **/
   GLint attrib(const std::string& name);

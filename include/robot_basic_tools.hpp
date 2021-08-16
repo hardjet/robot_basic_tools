@@ -14,7 +14,7 @@ class CamLaserCalib;
 class TwoLasersCalib;
 class TwoCamerasCalib;
 class CameraCalib;
-}
+}  // namespace calibration
 
 class RobotBasicTools : public guik::Application {
  public:

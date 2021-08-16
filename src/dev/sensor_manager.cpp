@@ -48,7 +48,7 @@ void SensorManager::call_sensors_draw_ui() {
   }
 }
 
-void SensorManager::draw_gl(glk::GLSLShader &shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
+void SensorManager::draw_gl(glk::GLSLShader &shader, const std::shared_ptr<guik::GLCanvas> &canvas_ptr) {
   for (auto &sensors : sensors_map) {
     for (auto &sensor : sensors.second) {
       sensor->draw_gl(shader, canvas_ptr);
@@ -121,7 +121,7 @@ void SensorManager::draw_ui() {
         // ImGui::SameLine();
 
         // 显示当前设备状态
-        sensor->draw_status();        // 这里改了没反应？
+        sensor->draw_status();  // 这里改了没反应？
         ImGui::SameLine();
         // 显示设备名称
         ImGui::Text("%s", sensor->sensor_name.c_str());

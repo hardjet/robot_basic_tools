@@ -38,7 +38,8 @@ class PoseLocalParameterization : public ceres::LocalParameterization {
     // 注意这里需要将切空间角度增量变换为四元数增量
     Eigen::Quaterniond delta_q(delta_se3.block<3, 3>(0, 0));
     // EulerAngles delta_euler = quat2euler(delta_q);
-    // std::cout << "euler_delta_se3: " << delta_euler << ", t:" << delta_se3.block<3, 1>(0, 3).transpose() << std::endl;
+    // std::cout << "euler_delta_se3: " << delta_euler << ", t:" << delta_se3.block<3, 1>(0, 3).transpose() <<
+    // std::endl;
 
     Eigen::Map<Eigen::Vector3d> p(x_plus_delta);
     Eigen::Map<Eigen::Quaterniond> q(x_plus_delta + 3);

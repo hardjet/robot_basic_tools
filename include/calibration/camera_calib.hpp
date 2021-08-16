@@ -36,8 +36,7 @@ class CameraCalib : public BaseCalib {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CameraCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-              std::shared_ptr<dev::AprilBoard>& april_board_ptr,
-              std::shared_ptr<dev::chessboard>& chess_board_ptr,
+              std::shared_ptr<dev::AprilBoard>& april_board_ptr, std::shared_ptr<dev::chessboard>& chess_board_ptr,
               std::shared_ptr<dev::blob_board>& blob_board_ptr);
   // opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;

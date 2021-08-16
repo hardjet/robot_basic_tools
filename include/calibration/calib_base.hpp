@@ -121,9 +121,7 @@ class BaseCalib {
 
   virtual int do_calib() = 0;
 
-  std::shared_ptr<CalibrationState> next_state() {
-    return next_state_ptr_;
-  }
+  std::shared_ptr<CalibrationState> next_state() { return next_state_ptr_; }
 
  protected:
   // 是否显示ui窗口

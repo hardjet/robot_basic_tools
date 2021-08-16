@@ -34,7 +34,8 @@ Camera::Camera(const std::string& name, ros::NodeHandle& ros_nh) : Sensor(name, 
 boost::shared_ptr<cv_bridge::CvImage const> Camera::data() { return image_cv_ptr_; }
 
 void Camera::draw_gl(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) {
-//  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Camera::draw_gl() - test", 20.0f, 50.0f, 0.3f, glm::vec3(1, 0, 0)));
+  //  canvas_ptr->text_renderer_params.emplace_back(guik::Parameter("Camera::draw_gl() - test", 20.0f, 50.0f, 0.3f,
+  //  glm::vec3(1, 0, 0)));
   // 画坐标轴
   draw_gl_coordinate_system(shader, canvas_ptr);
 
@@ -105,17 +106,16 @@ void Camera::creat_instance(int current_camera_type) {
           camera_model::Camera::ModelType::KANNALA_BRANDT, sensor_name, cv::Size{640, 480});
       break;
     case camera_model::Camera::ModelType::MEI:
-      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(
-          camera_model::Camera::ModelType::MEI, sensor_name, cv::Size{640, 480});
+      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::MEI,
+                                                                          sensor_name, cv::Size{640, 480});
       break;
     case camera_model::Camera::ModelType::PINHOLE:
-      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(
-          camera_model::Camera::ModelType::PINHOLE,
+      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE,
                                                                           sensor_name, cv::Size{640, 480});
       break;
     case camera_model::Camera::ModelType::PINHOLE_FULL:
-      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE_FULL,sensor_name,
-                                                                          cv::Size{640, 480});
+      inst_ptr_ = camera_model::CameraFactory::instance()->generateCamera(camera_model::Camera::ModelType::PINHOLE_FULL,
+                                                                          sensor_name, cv::Size{640, 480});
     default:
       break;
   }

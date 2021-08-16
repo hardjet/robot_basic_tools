@@ -40,13 +40,13 @@ void chessboard::update_chessboard_edges() {
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> vertices;
   for (uint r = 0; r < tag_rows_; r++) {
     // 行线
-      vertices.emplace_back(chess_board_points_.at(r * tag_cols_ ).cast<float>());
-      vertices.emplace_back(chess_board_points_.at(r * tag_cols_ + tag_cols_-1).cast<float>());
+    vertices.emplace_back(chess_board_points_.at(r * tag_cols_).cast<float>());
+    vertices.emplace_back(chess_board_points_.at(r * tag_cols_ + tag_cols_ - 1).cast<float>());
   }
   for (uint c = 0; c < tag_cols_; c++) {
     // 列线
     vertices.emplace_back(chess_board_points_.at(c).cast<float>());
-    vertices.emplace_back(chess_board_points_.at((tag_rows_  - 1) * tag_cols_ + c ).cast<float>());
+    vertices.emplace_back(chess_board_points_.at((tag_rows_ - 1) * tag_cols_ + c).cast<float>());
   }
   chess_edges_ptr_.reset(new glk::Lines(0.0005f, vertices));
 }
@@ -60,7 +60,7 @@ void chessboard::draw_gl(glk::GLSLShader& shader) {
   T.pretranslate(T_.block<3, 1>(0, 3));
   // 设置板子起点位置
   Eigen::Isometry3f T_B = Eigen::Isometry3f::Identity();
-  T_B.pretranslate(Eigen::Vector3f(float(board_height_  / 2), float(board_lenght_/ 2 ), 0));
+  T_B.pretranslate(Eigen::Vector3f(float(board_height_ / 2), float(board_lenght_ / 2), 0));
 
   // 增加上下板子边界
   Eigen::Matrix4f model_matrix =
@@ -142,5 +142,4 @@ void chessboard::draw_ui() {
     ImGui::End();
   }
 }
-}
-
+}  // namespace dev

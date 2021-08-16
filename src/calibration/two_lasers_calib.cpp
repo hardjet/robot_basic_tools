@@ -436,15 +436,17 @@ bool TwoLasersCalib::get_valid_lines() {
       param_3 = thd_laser_2_;
       param_5 = T_12_.block<3, 3>(0, 0).cast<double>();
       param_6 = T_12_.block<3, 1>(0, 3).cast<double>();
-//      std::cout << "T_12_ used for pcs_: " << std::endl;
-//      std::cout << T_12_.matrix() << std::endl;
+      //      std::cout << "T_12_ used for pcs_: " << std::endl;
+      //      std::cout << T_12_.matrix() << std::endl;
     }
 
-    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_, param_1, param_2, param_3, param_4, param_5, param_6, count);
+    algorithm::LineDetector line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_, param_1, param_2,
+                                          param_3, param_4, param_5, param_6, count);
 
     pcs_[count] = line_detector.get_pc();
 
-    if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show, ortho_img_show)) {
+    if (line_detector.find_two_lines(laser_inst.lines_params, laser_inst.lines_min_max, laser_img_show,
+                                     ortho_img_show)) {
       auto end_time = ros::WallTime::now();
       double time_used = (end_time - start_time).toSec() * 1000;
 
@@ -677,7 +679,7 @@ void TwoLasersCalib::check_steady() {
   } else {
     // 检查相机位姿是否一致
     double delta = abs(calib_data_vec_.at(0).angle - calib_data_.angle);
-//    std::cout << "delta: " << delta << " deg" << std::endl;
+    //    std::cout << "delta: " << delta << " deg" << std::endl;
     // 抖动小于0.2°
     if (delta < 0.2) {
       calib_data_vec_.push_back(calib_data_);
@@ -864,8 +866,9 @@ void TwoLasersCalib::update_ui_transform() {
   transform_12_[4] = RAD2DEG_RBT(euler.pitch);
   transform_12_[5] = RAD2DEG_RBT(euler.yaw);
 
-//  printf("transform_12_ updated from T_12_, transform_12_ = [%f, %f, %f, %f, %f, %f]\n",
-//         transform_12_[0], transform_12_[1], transform_12_[2], transform_12_[3], transform_12_[4], transform_12_[5]);
+  //  printf("transform_12_ updated from T_12_, transform_12_ = [%f, %f, %f, %f, %f, %f]\n",
+  //         transform_12_[0], transform_12_[1], transform_12_[2], transform_12_[3], transform_12_[4],
+  //         transform_12_[5]);
 }
 
 void TwoLasersCalib::draw_ui_transform() {
@@ -905,8 +908,9 @@ void TwoLasersCalib::draw_ui_transform() {
   ImGui::PopItemWidth();
   // 更新变换矩阵
   if (is_changed) {
-//    printf("----- TwoLasersCalib::draw_ui_transform() ..... transform_12_ changed: [%f, %f, %f, %f, %f, %f]\n",
-//           transform_12_[0], transform_12_[1], transform_12_[2], transform_12_[3], transform_12_[4], transform_12_[5]);
+    //    printf("----- TwoLasersCalib::draw_ui_transform() ..... transform_12_ changed: [%f, %f, %f, %f, %f, %f]\n",
+    //           transform_12_[0], transform_12_[1], transform_12_[2], transform_12_[3], transform_12_[4],
+    //           transform_12_[5]);
     update_T12();
     update_laser2_pose();
   }
@@ -922,8 +926,8 @@ void TwoLasersCalib::update_T12() {
   T_12_.block<3, 3>(0, 0) = q_12.toRotationMatrix().cast<float>();
   T_12_.block<3, 1>(0, 3) = t_12;
 
-//  std::cout << "T_12_ updated from transform_12_, T_12_: " << std::endl;
-//  std::cout << T_12_.matrix() << std::endl;
+  //  std::cout << "T_12_ updated from transform_12_, T_12_: " << std::endl;
+  //  std::cout << T_12_.matrix() << std::endl;
 }
 
 void TwoLasersCalib::draw_calib_params() {
@@ -967,7 +971,6 @@ void TwoLasersCalib::draw_calib_params() {
   }
 
   ImGui::PopItemWidth();
-
 }
 
 void TwoLasersCalib::autofill_default_transform(const std::string& laser_1_topic, const std::string& laser_2_topic,
@@ -979,13 +982,15 @@ void TwoLasersCalib::autofill_default_transform(const std::string& laser_1_topic
   for (auto& item : transforms) {
     if (std::strcmp(item.header.frame_id.c_str(), "base_link") == 0 &&
         std::strcmp(item.child_frame_id.c_str(), laser_1_topic.c_str()) == 0) {
-      printf("----- TwoLasersCalib::autofill_default_transform() ..... Found laser 1 [%s] to baselink!\n", laser_1_topic.c_str());
+      printf("----- TwoLasersCalib::autofill_default_transform() ..... Found laser 1 [%s] to baselink!\n",
+             laser_1_topic.c_str());
       found_laser_1 = true;
       tf::transformStampedMsgToTF(item, laser_1_to_baselink);
     }
     if (std::strcmp(item.header.frame_id.c_str(), "base_link") == 0 &&
         std::strcmp(item.child_frame_id.c_str(), laser_2_topic.c_str()) == 0) {
-      printf("----- TwoLasersCalib::autofill_default_transform() ..... Found laser 2 [%s] to baselink!\n", laser_2_topic.c_str());
+      printf("----- TwoLasersCalib::autofill_default_transform() ..... Found laser 2 [%s] to baselink!\n",
+             laser_2_topic.c_str());
       found_laser_2 = true;
       tf::transformStampedMsgToTF(item, laser_2_to_baselink);
     }
@@ -994,9 +999,12 @@ void TwoLasersCalib::autofill_default_transform(const std::string& laser_1_topic
     }
   }
 
-  transform_12_autofilled_[0] = static_cast<float>(laser_2_to_baselink.getOrigin().x() - laser_1_to_baselink.getOrigin().x());
-  transform_12_autofilled_[1] = static_cast<float>(laser_2_to_baselink.getOrigin().y() - laser_1_to_baselink.getOrigin().y());
-  transform_12_autofilled_[2] = static_cast<float>(laser_2_to_baselink.getOrigin().z() - laser_1_to_baselink.getOrigin().z());
+  transform_12_autofilled_[0] =
+      static_cast<float>(laser_2_to_baselink.getOrigin().x() - laser_1_to_baselink.getOrigin().x());
+  transform_12_autofilled_[1] =
+      static_cast<float>(laser_2_to_baselink.getOrigin().y() - laser_1_to_baselink.getOrigin().y());
+  transform_12_autofilled_[2] =
+      static_cast<float>(laser_2_to_baselink.getOrigin().z() - laser_1_to_baselink.getOrigin().z());
 
   double laser_1_roll, laser_1_pitch, laser_1_yaw;
   tf::Matrix3x3(laser_1_to_baselink.getRotation()).getRPY(laser_1_roll, laser_1_pitch, laser_1_yaw);
@@ -1007,20 +1015,23 @@ void TwoLasersCalib::autofill_default_transform(const std::string& laser_1_topic
   transform_12_autofilled_[4] = static_cast<float>(RAD2DEG_RBT(laser_2_pitch) - RAD2DEG_RBT(laser_1_pitch));
   transform_12_autofilled_[5] = static_cast<float>(RAD2DEG_RBT(laser_2_yaw) - RAD2DEG_RBT(laser_1_yaw));
 
-  Eigen::Quaterniond q = algorithm::ypr2quat(DEG2RAD_RBT(transform_12_autofilled_[5]), DEG2RAD_RBT(transform_12_autofilled_[4]), DEG2RAD_RBT(transform_12_autofilled_[3]));
+  Eigen::Quaterniond q =
+      algorithm::ypr2quat(DEG2RAD_RBT(transform_12_autofilled_[5]), DEG2RAD_RBT(transform_12_autofilled_[4]),
+                          DEG2RAD_RBT(transform_12_autofilled_[3]));
   Eigen::Vector3f t{transform_12_autofilled_[0], transform_12_autofilled_[1], transform_12_autofilled_[2]};
   T_12_autofilled_.block<3, 3>(0, 0) = q.toRotationMatrix().cast<float>();
   T_12_autofilled_.block<3, 1>(0, 3) = t;
 }
 
-std::pair<double, Eigen::Matrix4f> TwoLasersCalib::apply_icp(std::array<pcl::PointCloud<pcl::PointXYZ>::Ptr, 2> incoming_pcs) {
+std::pair<double, Eigen::Matrix4f> TwoLasersCalib::apply_icp(
+    std::array<pcl::PointCloud<pcl::PointXYZ>::Ptr, 2> incoming_pcs) {
   {
     std::lock_guard<std::mutex> lock(pc_mtx_);
     pcs_locked_[0] = incoming_pcs[0];
     pcs_locked_[1] = incoming_pcs[1];
   }
-//  printf("icp starts! pcs_locked_[0].size() = %zu, pcs_locked_[1].size() = %zu\n",
-//         pcs_locked_[0]->points.size(), pcs_locked_[1]->points.size());
+  //  printf("icp starts! pcs_locked_[0].size() = %zu, pcs_locked_[1].size() = %zu\n",
+  //         pcs_locked_[0]->points.size(), pcs_locked_[1]->points.size());
 
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
 
@@ -1036,7 +1047,7 @@ std::pair<double, Eigen::Matrix4f> TwoLasersCalib::apply_icp(std::array<pcl::Poi
   icp.align(final);
 
   auto fitness_score = icp.getFitnessScore();
-//  printf("                         fitness_score = %f\n", fitness_score);
+  //  printf("                         fitness_score = %f\n", fitness_score);
 
   float x, y, z, roll, pitch, yaw;
   Eigen::Affine3f icp_final_transformation;
@@ -1068,9 +1079,8 @@ double TwoLasersCalib::apply_icp_with_iterative_search() {
   double min_icp_score = 1000.0;
 
   for (int iter = 0; iter < total_iter; ++iter) {
-
     current_pitch = icp_pitch_starting_point_ + iter * icp_search_step_;
-//    printf("----- ----- [iter %.3d] : ", iter);
+    //    printf("----- ----- [iter %.3d] : ", iter);
 
     int count = 0;
     std::array<pcl::PointCloud<pcl::PointXYZ>::Ptr, 2> current_pcs;
@@ -1084,8 +1094,7 @@ double TwoLasersCalib::apply_icp_with_iterative_search() {
       Eigen::Vector3d param_6 = Eigen::Vector3d{0, 0, 0};
       if (count != 0) {
         Eigen::Matrix4f current_T = Eigen::Matrix4f::Identity();
-        Eigen::Quaterniond current_q = algorithm::ypr2quat(DEG2RAD_RBT(transform_12_[5]),
-                                                           DEG2RAD_RBT(current_pitch),
+        Eigen::Quaterniond current_q = algorithm::ypr2quat(DEG2RAD_RBT(transform_12_[5]), DEG2RAD_RBT(current_pitch),
                                                            DEG2RAD_RBT(transform_12_[3]));
         current_T.block<3, 3>(0, 0) = current_q.toRotationMatrix().cast<float>();
         current_T.block<3, 1>(0, 3) = Eigen::Vector3f{transform_12_[0], transform_12_[1], transform_12_[2]};
@@ -1096,14 +1105,14 @@ double TwoLasersCalib::apply_icp_with_iterative_search() {
         param_5 = current_T.block<3, 3>(0, 0).cast<double>();
         param_6 = current_T.block<3, 1>(0, 3).cast<double>();
       }
-      algorithm::LineDetector current_line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_,
-                                                    param_1, param_2, param_3, param_4, param_5, param_6, count);
+      algorithm::LineDetector current_line_detector(*laser_inst.calib_data_ptr, angle_range_, max_range_, param_1,
+                                                    param_2, param_3, param_4, param_5, param_6, count);
       current_pcs[count] = current_line_detector.get_pc();
       count++;
     }
 
     std::pair<double, Eigen::Matrix4f> output = apply_icp(current_pcs);
-//    printf("                         current pitch = %f \t current score = %f\n", current_pitch, output.first);
+    //    printf("                         current pitch = %f \t current score = %f\n", current_pitch, output.first);
     if (output.first < min_icp_score) {
       min_icp_score = output.first;
       min_pitch = current_pitch;
@@ -1304,22 +1313,22 @@ void TwoLasersCalib::draw_ui() {
     }
 
     // 选项 - 进行icp计算
-//    ImGui::SameLine();
-//    if (ImGui::Button("icp")) {
-//      std::pair<double, Eigen::Matrix4f> output = apply_icp(pcs_);
-//      T_12_ = output.second;
-//      update_ui_transform();
-//      update_laser2_pose();
-//    }
-//    if (ImGui::IsItemHovered()) {
-//      ImGui::SetTooltip("use ICP to calculate transformation, with autofilled params as inital guess");
-//    }
+    //    ImGui::SameLine();
+    //    if (ImGui::Button("icp")) {
+    //      std::pair<double, Eigen::Matrix4f> output = apply_icp(pcs_);
+    //      T_12_ = output.second;
+    //      update_ui_transform();
+    //      update_laser2_pose();
+    //    }
+    //    if (ImGui::IsItemHovered()) {
+    //      ImGui::SetTooltip("use ICP to calculate transformation, with autofilled params as inital guess");
+    //    }
 
     ImGui::SameLine();
     if (ImGui::Button("icp iterative search")) {
       if (b_pressed_start_) {
         double opt_pitch = apply_icp_with_iterative_search();
-//      printf("optmized pitch = %f\n", opt_pitch);
+        //      printf("optmized pitch = %f\n", opt_pitch);
         transform_12_[4] = static_cast<float>(opt_pitch);
         update_T12();
         update_laser2_pose();
@@ -1343,7 +1352,8 @@ void TwoLasersCalib::draw_ui() {
 
     ImGui::SameLine();
     icp_pitch_starting_point_ = transform_12_[4] - 10;
-    ImGui::DragScalar("starting point", ImGuiDataType_Double, &icp_pitch_starting_point_, 0.01, &min_v, nullptr, "%.2f");
+    ImGui::DragScalar("starting point", ImGuiDataType_Double, &icp_pitch_starting_point_, 0.01, &min_v, nullptr,
+                      "%.2f");
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("starting point of pitch for icp");
     }

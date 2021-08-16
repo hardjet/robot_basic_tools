@@ -17,7 +17,8 @@ class SensorData {
  public:
   typedef boost::shared_ptr<M const> MConstPtr;
 
-  explicit SensorData(ros::NodeHandle& ros_nh, int msgs_deque_size = 10) : nh_(ros_nh), msgs_deque_size_(msgs_deque_size) {}
+  explicit SensorData(ros::NodeHandle& ros_nh, int msgs_deque_size = 10)
+      : nh_(ros_nh), msgs_deque_size_(msgs_deque_size) {}
 
   /**
    * @brief 订阅指定话题。如果首次订阅则新建订阅对象，重新订阅则使用之前的订阅对象

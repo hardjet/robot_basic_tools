@@ -45,9 +45,7 @@ void ArcCameraControl::drag(const Eigen::Vector2i& p, int button) {
   drag_last_pos = p;
 }
 
-double ArcCameraControl::access_distance() const {
-  return distance;
-}
+double ArcCameraControl::access_distance() const { return distance; }
 
 void ArcCameraControl::scroll(const Eigen::Vector2f& rel) {
   if (rel[0] > 0) {

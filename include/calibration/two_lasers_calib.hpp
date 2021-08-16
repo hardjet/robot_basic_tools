@@ -39,8 +39,7 @@ class TwoLasersCalib : public BaseCalib {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   explicit TwoLasersCalib(std::shared_ptr<dev::SensorManager>& sensor_manager_ptr,
-                          std::shared_ptr<util::TfTree>& tr_ptr,
-                          const ros::NodeHandle& nh);
+                          std::shared_ptr<util::TfTree>& tr_ptr, const ros::NodeHandle& nh);
 
   /// opengl渲染
   void draw_gl(glk::GLSLShader& shader) override;

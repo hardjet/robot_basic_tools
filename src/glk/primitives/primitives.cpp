@@ -49,7 +49,7 @@ const glk::Drawable &Primitives::primitive(PrimitiveType type) {
         glk::Flatize flat(cone.vertices, cone.indices);
         meshes[type].reset(new glk::Mesh(flat.vertices, flat.normals, flat.indices));
       } break;
-      case GRID: {      // 栅格
+      case GRID: {  // 栅格
         glk::Grid grid;
         meshes[type].reset(new glk::Lines(0.01f, grid.vertices));
       } break;

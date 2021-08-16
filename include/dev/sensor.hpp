@@ -50,7 +50,7 @@ class Sensor {
         sensor_type_str(dev_type_str[type]),
         nh_(ros_nh) {
     T_ = Eigen::Matrix4f::Identity();
-//    T_(0,3) = 1.0;
+    //    T_(0,3) = 1.0;
   }
 
   /**
@@ -94,9 +94,9 @@ class Sensor {
   void draw_status();
 
   /**
-  * 在空间中绘制传感器的坐标系，表征传感器的位置
-  * @param shader
-  */
+   * 在空间中绘制传感器的坐标系，表征传感器的位置
+   * @param shader
+   */
   void draw_gl_coordinate_system(glk::GLSLShader& shader, const std::shared_ptr<guik::GLCanvas>& canvas_ptr) const;
 
   /**

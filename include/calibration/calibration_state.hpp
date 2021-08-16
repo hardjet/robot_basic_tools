@@ -6,7 +6,7 @@
 
 namespace calibration {
 
-//typedef void(*func_ptr)();
+// typedef void(*func_ptr)();
 class BaseCalib;
 
 class CalibrationState {
@@ -66,4 +66,4 @@ class StateInCalib : public CalibrationState {
   void calibration() override;
 };
 
-} // namespace calibration
+}  // namespace calibration

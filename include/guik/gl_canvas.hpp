@@ -24,9 +24,9 @@ namespace guik {
 
 class Parameter {
  public:
-  Parameter(std::string text, float x, float y, float scale, glm::vec3 color = glm::vec3(0.3, 0.3, 0.8)) : text_(std::move(text)), bl_x_(x), bl_y_(y),
-                                                                                                           scale_(scale), color_(color) {
-  }
+  Parameter(std::string text, float x, float y, float scale, glm::vec3 color = glm::vec3(0.3, 0.3, 0.8))
+      : text_(std::move(text)), bl_x_(x), bl_y_(y), scale_(scale), color_(color) {}
+
  public:
   std::string text_;
   float bl_x_, bl_y_, scale_;

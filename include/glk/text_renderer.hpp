@@ -20,9 +20,9 @@ struct Character {
   // 字形id
   unsigned int TextureID;
   // 字形size
-  glm::ivec2   Size;
+  glm::ivec2 Size;
   // offset from baseline
-  glm::ivec2   Bearing;
+  glm::ivec2 Bearing;
   // Horizontal offset to advance to next glyph
   unsigned int Advance;
 };
@@ -36,7 +36,8 @@ class TextRenderer {
     shader.use();
 
     projection = glm::ortho(0.0f, static_cast<GLfloat>(window_size[0]), 0.0f, static_cast<GLfloat>(window_size[1]));
-    glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"), 1, GL_FALSE,
+                       glm::value_ptr(projection));
 
     if (FT_Init_FreeType(&ft_lib)) {
       std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
@@ -57,17 +58,16 @@ class TextRenderer {
         GLuint texture;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                     static_cast<int>(ft_face->glyph->bitmap.width), static_cast<int>(ft_face->glyph->bitmap.rows),
-                     0, GL_RED, GL_UNSIGNED_BYTE, ft_face->glyph->bitmap.buffer);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, static_cast<int>(ft_face->glyph->bitmap.width),
+                     static_cast<int>(ft_face->glyph->bitmap.rows), 0, GL_RED, GL_UNSIGNED_BYTE,
+                     ft_face->glyph->bitmap.buffer);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        Character character = {texture,
-                               glm::ivec2(ft_face->glyph->bitmap.width,ft_face->glyph->bitmap.rows),
+        Character character = {texture, glm::ivec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows),
                                glm::ivec2(ft_face->glyph->bitmap_left, ft_face->glyph->bitmap_top),
                                static_cast<unsigned int>(ft_face->glyph->advance.x)};
         Characters.insert(std::pair<GLchar, Character>(c, character));
@@ -93,7 +93,8 @@ class TextRenderer {
     glDeleteBuffers(1, &vbo);
   }
 
-  void render_text(const std::string& text, float x, float y, float scale, glm::vec3 color, const Eigen::Vector2i& size) {
+  void render_text(const std::string& text, float x, float y, float scale, glm::vec3 color,
+                   const Eigen::Vector2i& size) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -102,10 +103,9 @@ class TextRenderer {
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(vao);
 
-    glUniformMatrix4fv(glGetUniformLocation(shader.get_shader_program(), "projection"),
-                       1,
-                       GL_FALSE,
-                       glm::value_ptr(glm::ortho(0.0f, static_cast<GLfloat>(size[0]), 0.0f, static_cast<GLfloat>(size[1]))));
+    glUniformMatrix4fv(
+        glGetUniformLocation(shader.get_shader_program(), "projection"), 1, GL_FALSE,
+        glm::value_ptr(glm::ortho(0.0f, static_cast<GLfloat>(size[0]), 0.0f, static_cast<GLfloat>(size[1]))));
 
     (scale < 0.1) ? (scale = 0.1) : scale;
     (scale > 0.5) ? (scale = 0.5) : scale;
@@ -121,12 +121,9 @@ class TextRenderer {
       float h = static_cast<float>(current_ch.Size.y) * scale;
 
       // update VBO
-      float vertices[6][4] = {{ xpos,     ypos + h,   0.0f, 0.0f },
-                              { xpos,     ypos,       0.0f, 1.0f },
-                              { xpos + w, ypos,       1.0f, 1.0f },
-                              { xpos,     ypos + h,   0.0f, 0.0f },
-                              { xpos + w, ypos,       1.0f, 1.0f },
-                              { xpos + w, ypos + h,   1.0f, 0.0f }};
+      float vertices[6][4] = {{xpos, ypos + h, 0.0f, 0.0f}, {xpos, ypos, 0.0f, 1.0f},
+                              {xpos + w, ypos, 1.0f, 1.0f}, {xpos, ypos + h, 0.0f, 0.0f},
+                              {xpos + w, ypos, 1.0f, 1.0f}, {xpos + w, ypos + h, 1.0f, 0.0f}};
 
       glBindTexture(GL_TEXTURE_2D, current_ch.TextureID);
       glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -151,9 +148,9 @@ class TextRenderer {
   GLuint vbo{};
 
   FT_Library ft_lib;
-  FT_Face  ft_face;
+  FT_Face ft_face;
 };
 
-} // namespace glk
+}  // namespace glk
 
 #endif

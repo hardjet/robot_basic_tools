@@ -14,17 +14,17 @@ namespace glk {
 
 class GLSLShader;
 
-class PointCloudBuffer : public Drawable{
+class PointCloudBuffer : public Drawable {
  public:
   using Ptr = std::shared_ptr<PointCloudBuffer>;
 
   explicit PointCloudBuffer(const std::string& cloud_filename);
   explicit PointCloudBuffer(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& cloud);
-  explicit PointCloudBuffer(const std::vector<Eigen::Vector3d> &points);
+  explicit PointCloudBuffer(const std::vector<Eigen::Vector3d>& points);
 
   void free() override;
 
-  void draw(glk::GLSLShader &shader) const override;
+  void draw(glk::GLSLShader& shader) const override;
 
  private:
   GLuint vao{};

@@ -25,12 +25,18 @@ LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_rang
   scan2points(scan);
 }
 
-LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range,
-                           int point_limit, int inlier_limit, double thd_dist, double z,
-                           Eigen::Matrix<double, 3, 3>  r, Eigen::Vector3d t, int id)
-    : max_range_(max_range), angle_range_(DEG2RAD_RBT(angle_range)),
-      thd_points_(point_limit), thd_inliers_(inlier_limit), thd_dist_(thd_dist), ortho_z_(z),
-      rotation_(std::move(r)), translation_(std::move(t)), id_(id) {
+LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit,
+                           int inlier_limit, double thd_dist, double z, Eigen::Matrix<double, 3, 3> r,
+                           Eigen::Vector3d t, int id)
+    : max_range_(max_range),
+      angle_range_(DEG2RAD_RBT(angle_range)),
+      thd_points_(point_limit),
+      thd_inliers_(inlier_limit),
+      thd_dist_(thd_dist),
+      ortho_z_(z),
+      rotation_(std::move(r)),
+      translation_(std::move(t)),
+      id_(id) {
   points_.resize(0);
   outlier_points_.resize(0);
   img_ptr_ = std::make_shared<cv::Mat>(img_w_, img_w_, CV_8UC3, cv::Scalar(0, 0, 0));
@@ -42,7 +48,7 @@ LineDetector::LineDetector(const sensor_msgs::LaserScan& scan, double angle_rang
 
 void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
   size_t n_pts = scan_in.ranges.size();
-//  printf("----- ----- LineDetector::scan2points() ..... n_pts = %zu\n", n_pts);
+  //  printf("----- ----- LineDetector::scan2points() ..... n_pts = %zu\n", n_pts);
 
   double angle = scan_in.angle_min;
   double x, y;
@@ -66,7 +72,8 @@ void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
         pc_->push_back(p);
       }
     } else {
-      if (!isnan(current_point_projected.x()) && !isnan(current_point_projected.y()) && !isnan(current_point_projected.z())) {
+      if (!isnan(current_point_projected.x()) && !isnan(current_point_projected.y()) &&
+          !isnan(current_point_projected.z())) {
         pcl::PointXYZ p{float(current_point_projected.x()), float(current_point_projected.y()), 0.};
         pc_->push_back(p);
       }
@@ -77,12 +84,10 @@ void LineDetector::scan2points(const sensor_msgs::LaserScan& scan_in) {
   }
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr LineDetector::get_pc() {
-  return pc_;
-}
+pcl::PointCloud<pcl::PointXYZ>::Ptr LineDetector::get_pc() { return pc_; }
 
-bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, std::array<Eigen::Vector2d, 2>& lines_min_max,
-                                  cv::Mat& img, cv::Mat& ortho) const {
+bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params,
+                                  std::array<Eigen::Vector2d, 2>& lines_min_max, cv::Mat& img, cv::Mat& ortho) const {
   img = img_ptr_->clone();
   if (id_ == 0) {
     ortho = ortho_ptr_->clone();
@@ -156,7 +161,7 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, 
   cv::line(img, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
   cv::line(ortho, cv::Point{orig_col, orig_row}, cv::Point{y_axis_col, y_axis_row}, cv::Scalar(0, 255, 0), 4);
 
-//  std::cout << "valid pts num: " << xs.size() << std::endl;
+  //  std::cout << "valid pts num: " << xs.size() << std::endl;
 
   // 点数过少
   // printf("----- LineDetector::find_two_lines() ..... xs.size() = %zu\tys.size() = %zu\n", xs.size(), ys.size());
@@ -174,15 +179,15 @@ bool LineDetector::find_two_lines(std::array<Eigen::Vector3d, 2>& lines_params, 
   Eigen::Map<Eigen::VectorXd> x_e(xs.data(), xs.size());
   Eigen::Map<Eigen::VectorXd> y_e(ys.data(), ys.size());
 
-//  std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
-//  double thd = 0.05;
+  //  std::cout << "ransac_detect_2D_lines in --------------" << std::endl;
+  //  double thd = 0.05;
   double thd = thd_dist_;
   algorithm::ransac::ransac_detect_2D_lines(x_e, y_e, detectedLines, thd, thd_inliers_);
-//  std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
+  //  std::cout << "-------------- ransac_detect_2D_lines out " << std::endl;
 
   // 检测到两条直线认为有效
   if (detectedLines.size() != 2) {
-//    std::cout << "detected lines num != 2. " << detectedLines.size() << std::endl;
+    //    std::cout << "detected lines num != 2. " << detectedLines.size() << std::endl;
     return false;
   }
 

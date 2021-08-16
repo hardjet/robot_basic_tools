@@ -44,4 +44,4 @@ class TfTree {
   bool b_show_window_{false};
 };
 
-}
+}  // namespace util

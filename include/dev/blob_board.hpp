@@ -12,7 +12,7 @@ namespace dev {
  * @brief 棋盘格标定板对象
  *
  */
-class blob_board{
+class blob_board {
  public:
   explicit blob_board(std::string& data_path);
   /**
@@ -44,14 +44,9 @@ class blob_board{
   void set_pose(const Eigen::Matrix4f& new_pose) { T_ = new_pose; }
 
  public:
-  cv::Size get_board_size()const
-  {
-    return cv::Size{tag_rows_,tag_cols_};
-  }
-  double  get_tag_size_()const
-  {
-    return tag_size_;
-  }
+  cv::Size get_board_size() const { return cv::Size{tag_rows_, tag_cols_}; }
+  double get_tag_size_() const { return tag_size_; }
+
  private:
   /// 更新chessboard 3d边框显示相关
   void update_blob_board_edges();

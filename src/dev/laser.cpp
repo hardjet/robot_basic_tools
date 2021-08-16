@@ -97,10 +97,11 @@ void Laser::check_online_status() {
   // 获取深度点云最新数据
   auto laser_data_ptr = laser_data_ptr_->data();
   if (laser_data_ptr) {
-//    std::cout << "unsigned int: " << ros::Time::now().sec - laser_data_ptr->header.stamp.sec << std::endl;
-//    std::cout << "         int: " << static_cast<int>(ros::Time::now().sec) - static_cast<int>(laser_data_ptr->header.stamp.sec) << std::endl;
-//    std::cout << "ros::Time::now().sec: " << ros::Time::now().sec << std::endl;
-//    std::cout << "laser_data_ptr->header.stamp.sec: " << laser_data_ptr->header.stamp.sec << std::endl;
+    //    std::cout << "unsigned int: " << ros::Time::now().sec - laser_data_ptr->header.stamp.sec << std::endl;
+    //    std::cout << "         int: " << static_cast<int>(ros::Time::now().sec) -
+    //    static_cast<int>(laser_data_ptr->header.stamp.sec) << std::endl; std::cout << "ros::Time::now().sec: " <<
+    //    ros::Time::now().sec << std::endl; std::cout << "laser_data_ptr->header.stamp.sec: " <<
+    //    laser_data_ptr->header.stamp.sec << std::endl;
     if (ros::Time::now().sec - laser_data_ptr->header.stamp.sec < 2) {
       printf("difference < 2!");
       online = true;
@@ -135,8 +136,8 @@ void Laser::draw_ui_topic_name() {
       is_online_ = false;
     }
   }
-//  printf("----- Laser::draw_ui_topic_name() ..... b_enable_topic_ = %d\n", b_enable_topic_);
-//  printf("----- Laser::draw_ui_topic_name() ..... is_online_ = %d\n", is_online_);
+  //  printf("----- Laser::draw_ui_topic_name() ..... b_enable_topic_ = %d\n", b_enable_topic_);
+  //  printf("----- Laser::draw_ui_topic_name() ..... is_online_ = %d\n", is_online_);
   // 提示设备状态
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("pick to enable laser receive");

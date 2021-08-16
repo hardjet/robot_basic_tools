@@ -12,19 +12,18 @@ class LineDetector {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range);
-  LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range,
-               int point_limit, int inlier_limit, double thd_dist, double z,
-               Eigen::Matrix<double, 3, 3> r, Eigen::Vector3d t, int id);
+  LineDetector(const sensor_msgs::LaserScan& scan, double angle_range, double max_range, int point_limit,
+               int inlier_limit, double thd_dist, double z, Eigen::Matrix<double, 3, 3> r, Eigen::Vector3d t, int id);
 
   /**
-  * 使用ransac找直线点
-  * @param line_pts
-  * @param line_params
-  * @param img
-  * @param dist_thd 点到直线的距离门限
-  * @param min_num_of_pts 直线最少包含的点数
-  * @return
-  */
+   * 使用ransac找直线点
+   * @param line_pts
+   * @param line_params
+   * @param img
+   * @param dist_thd 点到直线的距离门限
+   * @param min_num_of_pts 直线最少包含的点数
+   * @return
+   */
   bool find_line_ransac(std::vector<Eigen::Vector3d>& line_pts, Eigen::Vector3d& line_params, cv::Mat& img,
                         double dist_thd = 0.05, uint32_t min_num_of_pts = 50) const;
 

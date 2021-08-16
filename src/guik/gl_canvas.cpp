@@ -23,11 +23,8 @@ namespace guik {
  * @param data_directory
  * @param size
  */
-GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size) : size(size),
-                                                                                     point_size(80.0f),
-                                                                                     min_z(-5.0f),
-                                                                                     max_z(20.0f),
-                                                                                     z_clipping(true) {
+GLCanvas::GLCanvas(const std::string &data_directory, const Eigen::Vector2i &size)
+    : size(size), point_size(80.0f), min_z(-5.0f), max_z(20.0f), z_clipping(true) {
   frame_buffer = std::make_unique<glk::FrameBuffer>(size);
   frame_buffer->add_color_buffer(GL_RGBA32I, GL_RGBA_INTEGER, GL_INT);
 
@@ -119,7 +116,7 @@ void GLCanvas::render_to_screen(int color_buffer_id) {
   texture_renderer->draw(frame_buffer->color(color_buffer_id).id());
 
   if (!text_renderer_params.empty()) {
-    for (const auto& param : text_renderer_params) {
+    for (const auto &param : text_renderer_params) {
       text_renderer->render_text(param.text_, param.bl_x_, param.bl_y_, param.scale_, param.color_, size);
     }
     text_renderer_params.clear();
@@ -176,7 +173,7 @@ Eigen::Vector4i GLCanvas::pick_info(const Eigen::Vector2i &p, int window) const 
 
   std::sort(ps.begin(), ps.end(),
             [=](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) { return lhs.norm() < rhs.norm(); });
-  for (const auto & i : ps) {
+  for (const auto &i : ps) {
     Eigen::Vector2i p_ = p + i;
     int index = ((size[1] - p[1]) * size[0] + p_[0]) * 4;
     Eigen::Vector4i info = Eigen::Map<Eigen::Vector4i>(&pixels[index]);
@@ -213,7 +210,7 @@ float GLCanvas::pick_depth(const Eigen::Vector2i &p, int window) const {
 
   std::sort(ps.begin(), ps.end(),
             [=](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) { return lhs.norm() < rhs.norm(); });
-  for (const auto & i : ps) {
+  for (const auto &i : ps) {
     Eigen::Vector2i p_ = p + i;
     int index = ((size[1] - p[1]) * size[0] + p_[0]);
     float depth = pixels[index];
@@ -264,15 +261,12 @@ void GLCanvas::draw_ui() {
 void GLCanvas::show_projection_setting() const { projection_control->show(); }
 
 std::pair<Eigen::Matrix4f, Eigen::Matrix4f> GLCanvas::transformation_matrices() const {
-  return std::pair<Eigen::Matrix4f, Eigen::Matrix4f>{camera_control->view_matrix(), projection_control->projection_matrix()};
+  return std::pair<Eigen::Matrix4f, Eigen::Matrix4f>{camera_control->view_matrix(),
+                                                     projection_control->projection_matrix()};
 }
 
-Eigen::Vector2i GLCanvas::window_size() const {
-  return size;
-}
+Eigen::Vector2i GLCanvas::window_size() const { return size; }
 
-double GLCanvas::viewer_diatance() const {
-  return camera_control->access_distance();
-}
+double GLCanvas::viewer_diatance() const { return camera_control->access_distance(); }
 
 }  // namespace guik

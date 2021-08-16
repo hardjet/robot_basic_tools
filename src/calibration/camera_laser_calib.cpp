@@ -150,7 +150,7 @@ void CamLaserCalib::draw_gl(glk::GLSLShader& shader) {
 
   draw_calib_data(shader);
 
-//  if (next_state_ != STATE_START || !laser_line_3d_ptr) {
+  //  if (next_state_ != STATE_START || !laser_line_3d_ptr) {
   if (next_state_ptr_->id() != 1 || !laser_line_3d_ptr) {
     return;
   }
@@ -271,9 +271,9 @@ bool CamLaserCalib::get_pose_and_points() {
     // 检测激光中的直线
     cv::Mat laser_img_show;
     algorithm::LineDetector line_detector(*cur_laser_data, angle_range_, max_range_);
-     if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
-                                        min_num_of_pts_)) {
-//    if (line_detector.find_line(calib_data_.line_pts, calib_data_.line_params, laser_img_show)) {
+    if (line_detector.find_line_ransac(calib_data_.line_pts, calib_data_.line_params, laser_img_show, dist_thd_,
+                                       min_num_of_pts_)) {
+      //    if (line_detector.find_line(calib_data_.line_pts, calib_data_.line_params, laser_img_show)) {
       // 计算直线上的点
       // 激光所在直线不能垂直于某个轴
       double x_start(calib_data_.line_pts.begin()->x()), x_end(calib_data_.line_pts.end()->x());
@@ -832,9 +832,9 @@ void CamLaserCalib::draw_ui() {
     }
 
     // 闲置状态下才可以设置
-//    if (next_state_ == STATE_IDLE) {
-//      draw_calib_params();
-//    }
+    //    if (next_state_ == STATE_IDLE) {
+    //      draw_calib_params();
+    //    }
     if (next_state_ptr_->id() == 0) {
       draw_calib_params();
     }
@@ -843,10 +843,10 @@ void CamLaserCalib::draw_ui() {
     draw_ui_transform();
 
     // 标定逻辑
-//    calibration();
+    //    calibration();
     new_calibration();
 
-//    if (next_state_ == STATE_IDLE) {
+    //    if (next_state_ == STATE_IDLE) {
     if (next_state_ptr_->id() == 0) {
       if (ImGui::Button("start")) {
         // 检测相机模型是否已经选择
@@ -857,21 +857,21 @@ void CamLaserCalib::draw_ui() {
           b_show_calib_data_ = false;
           // 清空上次的标定数据
           calib_valid_data_vec_.clear();
-//          next_state_ = STATE_START;
+          //          next_state_ = STATE_START;
           change_next_state(std::make_shared<StateStart>());
         }
       }
     } else {
       if (ImGui::Button("stop")) {
-//        next_state_ = STATE_IDLE;
+        //        next_state_ = STATE_IDLE;
         change_next_state(std::make_shared<StateIdle>());
       }
     }
 
     // 标定状态只需要设定一次
-//    if (cur_state_ == STATE_IN_CALIB) {
-//      next_state_ = STATE_IDLE;
-//    }
+    //    if (cur_state_ == STATE_IN_CALIB) {
+    //      next_state_ = STATE_IDLE;
+    //    }
     if (cur_state_ptr_->id() == 5) {
       change_next_state(std::make_shared<StateIdle>());
     }
@@ -881,14 +881,14 @@ void CamLaserCalib::draw_ui() {
       ImGui::SameLine();
       // 开始执行标定
       if (ImGui::Button("calib")) {
-//        next_state_ = STATE_START_CALIB;
+        //        next_state_ = STATE_START_CALIB;
         change_next_state(std::make_shared<StateStartCalib>());
       }
     }
   }
 
   // 标定数据相关操作
-//  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
+  //  if (next_state_ == STATE_IDLE && !calib_valid_data_vec_.empty()) {
   if (next_state_ptr_->id() == 0 && !calib_valid_data_vec_.empty()) {
     if (ImGui::Checkbox("##show_calib_data", &b_show_calib_data_)) {
       if (b_show_calib_data_) {

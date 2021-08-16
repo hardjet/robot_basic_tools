@@ -1074,12 +1074,11 @@ double TwoLasersCalib::apply_icp_with_iterative_search() {
   printf("----- search gap      = %f (deg)\n", gap);
   printf("----- total iteration = %d (iterations)\n", total_iter);
 
-  double current_pitch;
   double min_pitch = icp_pitch_starting_point_;
   double min_icp_score = 1000.0;
 
   for (int iter = 0; iter < total_iter; ++iter) {
-    current_pitch = icp_pitch_starting_point_ + iter * icp_search_step_;
+    double current_pitch = icp_pitch_starting_point_ + iter * icp_search_step_;
     //    printf("----- ----- [iter %.3d] : ", iter);
 
     int count = 0;
